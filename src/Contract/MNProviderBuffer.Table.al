@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Temporary projection of registered providers and their persisted state.</summary>
@@ -68,3 +69,4 @@ table 77782 "BJF MN Provider Buffer"
         }
     }
 }
+#endif

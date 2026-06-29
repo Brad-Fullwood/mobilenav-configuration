@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Validates a complete provider definition before any persistent data is changed.</summary>
@@ -77,3 +78,4 @@ codeunit 77785 "BJF MN Config Validator"
         PageOperationKeyTok: Label 'PAGE|%1', Locked = true;
         FieldOperationKeyTok: Label 'FIELD|%1|%2', Locked = true;
 }
+#endif

@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 using System.Integration;
@@ -30,3 +31,4 @@ codeunit 77787 "BJF MN Web Service Mgt."
         TenantWebService.Modify(true);
     end;
 }
+#endif

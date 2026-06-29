@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Owns MobileNAV page registration, lookup, and metadata refresh.</summary>
@@ -71,3 +72,4 @@ codeunit 77788 "BJF MN Page Mgt."
         MetadataProcessing: Codeunit "MobileNAV Metadata Processing";
         CoreFunctions: Codeunit "MobileNAV Core Functions";
 }
+#endif

@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
@@ -27,3 +28,4 @@ interface "BJF MN Config Provider"
     /// </summary>
     procedure DefineConfiguration(var Configuration: Codeunit "BJF MN Config Builder")
 }
+#endif

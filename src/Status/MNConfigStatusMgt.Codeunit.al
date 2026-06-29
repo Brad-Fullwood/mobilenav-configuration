@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Owns persisted provider application and manual-outdated state.</summary>
@@ -63,3 +64,4 @@ codeunit 77783 "BJF MN Config Status Mgt."
     var
         NotAppliedErr: Label 'MobileNAV configuration provider %1 has not been applied and cannot be marked outdated.', Comment = '%1 = provider id';
 }
+#endif
