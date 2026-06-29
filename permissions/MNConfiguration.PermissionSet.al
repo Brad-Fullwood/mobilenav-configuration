@@ -12,11 +12,8 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF Empty MN Provider" = X,
         codeunit "BJF MN Config Builder" = X,
         codeunit "BJF MN Provider Catalog" = X,
-        codeunit "BJF MN Config Status Mgt." = X,
         codeunit "BJF MN Config Application" = X,
         codeunit "BJF MN Config Validator" = X,
-        codeunit "BJF MN Config Executor" = X,
-        codeunit "BJF MN Web Service Mgt." = X,
         codeunit "BJF MN Page Mgt." = X,
         codeunit "BJF MN Field Mgt." = X,
         page "BJF Custom MN Config" = X;

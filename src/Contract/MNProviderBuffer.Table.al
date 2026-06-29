@@ -11,51 +11,43 @@ table 77782 "BJF MN Provider Buffer"
 
     fields
     {
-        field(1; "Entry No."; Integer)
-        {
-            Caption = 'Entry No.';
-        }
-        field(2; Selected; Boolean)
-        {
-            Caption = 'Selected';
-        }
-        field(3; Provider; Enum "BJF MN Config Provider")
-        {
-            Caption = 'Provider';
-        }
-        field(4; "Provider ID"; Code[50])
+        field(1; "Provider ID"; Code[50])
         {
             Caption = 'Provider ID';
         }
-        field(5; Name; Text[100])
+        field(2; Provider; Enum "BJF MN Config Provider")
+        {
+            Caption = 'Provider';
+        }
+        field(3; Name; Text[100])
         {
             Caption = 'Name';
         }
-        field(6; Description; Text[250])
+        field(4; Description; Text[250])
         {
             Caption = 'Description';
         }
-        field(7; "Defined Version"; Integer)
+        field(5; "Defined Version"; Integer)
         {
             Caption = 'Defined Version';
         }
-        field(8; "Applied Previously"; Boolean)
+        field(6; "Applied Previously"; Boolean)
         {
             Caption = 'Applied Previously';
         }
-        field(9; State; Enum "BJF MN Config State")
+        field(7; State; Enum "BJF MN Config State")
         {
             Caption = 'State';
         }
-        field(10; "Applied Version"; Integer)
+        field(8; "Applied Version"; Integer)
         {
             Caption = 'Applied Version';
         }
-        field(11; "Applied At"; DateTime)
+        field(9; "Applied At"; DateTime)
         {
             Caption = 'Applied At';
         }
-        field(12; "Applied By"; Code[50])
+        field(10; "Applied By"; Code[50])
         {
             Caption = 'Applied By';
         }
@@ -63,7 +55,7 @@ table 77782 "BJF MN Provider Buffer"
 
     keys
     {
-        key(PK; "Entry No.")
+        key(PK; "Provider ID")
         {
             Clustered = true;
         }
