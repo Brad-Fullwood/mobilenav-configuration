@@ -1,47 +1,59 @@
 # MobileNAV Configuration
 
-A reusable Business Central extension for defining MobileNAV setup in AL instead of maintaining it manually per tenant.
+A declarative Business Central framework for defining, applying, and tracking custom MobileNAV configuration in AL.
 
-It extracts the general configuration mechanism first implemented in an internal `Setup.Codeunit.al`: publish page web services, register drill-target pages, refresh host-page metadata, expose extension fields, and bind fields that open filtered MobileNAV pages. Consumer-specific page ids, control names, and filters stay in the consuming extension.
+It extracts the reusable mechanism first implemented in an internal `Setup.Codeunit.al`: publish page web services, register drill-target pages, refresh host-page metadata, configure extension fields, and bind fields that open filtered MobileNAV pages. Customer-specific page IDs and control names remain in small provider codeunits owned by the consuming extension.
 
-## Architecture
+## Contract
 
-- `codeunit "BJF MobileNAV Configurator"` is the public, idempotent API over MobileNAV's configuration tables and metadata codeunits.
-- `interface "BJF MobileNAV Setup Module"` defines one independent unit of app-specific setup.
-- `enum "BJF MobileNAV Setup Module"` is an extensible registry. A consuming app contributes a module through an `enumextension`.
-- `codeunit "BJF MobileNAV Setup Runner"` applies one module during install/upgrade or all registered modules on demand.
-- `report "BJF Apply MN Configuration"` provides the **Apply MobileNAV Configuration** Tell Me action for manual and development-publish scenarios.
+A provider implements `interface "BJF MN Config Provider"` and must supply:
 
-The library has no customer-specific setup and does not run configuration from its own install trigger. A dependency is installed before its consumer, so the consuming app's setup module is not available when this library is first installed. Each consumer calls `ApplyModule` from its own install and upgrade codeunits.
+- a stable, non-localized provider ID;
+- a display name and description;
+- a positive configuration version;
+- a declarative definition built with `codeunit "BJF MN Config Builder"`.
 
-## Public API
+The builder supports only these operations:
 
-| Procedure | Behaviour |
-|---|---|
-| `PublishPageWebService(PageId, ServiceName)` | Creates or repairs a published tenant page web service. |
-| `EnsurePage(PageId, PreferredServiceName, var ServiceName)` | Creates the MobileNAV Main row if needed, refreshes metadata, and returns the actual service name. Existing names are preserved. |
-| `EnsurePublishedPage(PageId, PreferredServiceName, var ServiceName)` | Ensures the MobileNAV page and publishes its web service using the actual retained service name. |
-| `RefreshConfiguredPage(PageId, var ServiceName)` | Refreshes an existing MobileNAV host page; returns `false` if it is not configured. |
-| `ShowField(ServiceName, ControlName, Editable)` | Makes a refreshed field visible and sets its editability; returns `false` if metadata did not contain it. |
-| `ConfigureField(...)` | Explicitly sets visible, editable, and display-in-menu values. |
-| `ShowLinkedField(...)` | Makes a field visible and upserts its relation plus FIELD filter to a registered target service. |
-| `ConvertFieldName(OriginalName)` | Exposes MobileNAV's control/field-name normalization. |
+- `AddPublishedPage`;
+- `AddField` / `AddVisibleField`;
+- `AddLinkedField`.
 
-`ShowLinkedField` converges existing relation/filter rows to the requested values on repeat runs. This fixes a limitation of the original implementation, which treated any existing relation as complete even when its target or filter had changed.
+There is deliberately no `ApplySetup()` method. Providers describe desired state; the framework validates and applies it. Empty definitions, incomplete operations, duplicate targets, duplicate provider IDs, empty metadata, and non-positive versions are rejected.
+
+AL interfaces cannot enforce purity: a deliberately hostile implementation can still perform side effects inside any interface method. The framework contract does ensure that no provider receives an arbitrary execution callback, and no framework-owned MobileNAV mutation starts until the complete declared plan has passed validation.
+
+## Responsibilities
+
+- **Provider contract and builder** collect a constrained intermediate configuration plan.
+- **Provider catalog** discovers enum-registered providers and validates required metadata and unique IDs.
+- **Validator** validates the complete plan before persistent MobileNAV changes begin.
+- **Executor** orders dependencies: published pages, referenced-page metadata, fields, then links.
+- **Web service, page, and field managers** each own one MobileNAV persistence concern.
+- **Status manager** records successful provider/version applications and manual invalidation.
+- **Apply custom MobileNAV config** is the single administration page for selecting, applying, and marking providers outdated.
+
+The status page shows every provider registered through an `enumextension`, whether it has ever been applied, its current and applied versions, last application details, and one of these states:
+
+- **Not Applied** — no successful application is recorded;
+- **Applied** — the applied version matches the provider version;
+- **Outdated** — the provider version changed or an administrator marked it outdated.
+
+Applying a provider clears its manual-outdated flag. Incrementing `GetVersion()` makes existing application state outdated automatically.
 
 ## Using it from another extension
 
-1. Add **MobileNAV Configuration** to the consumer's `app.json` dependencies.
-2. Implement `"BJF MobileNAV Setup Module"` in a small codeunit containing that app's setup only.
-3. Register the codeunit with an `enumextension` of `"BJF MobileNAV Setup Module"`.
-4. Call `SetupRunner.ApplyModule(...)` from the consumer's install and upgrade codeunits.
-5. Add the consumer module codeunit to the consumer's permission set so administrators can use the manual apply report.
+1. Add **MobileNAV Configuration 2.0.0.0** to the consumer's `app.json` dependencies.
+2. Implement `"BJF MN Config Provider"` in one codeunit.
+3. Register it through an `enumextension` of `"BJF MN Config Provider"`.
+4. Call `"BJF MN Config Application".ApplyProvider(...)` from the consumer's install or upgrade codeunit when automatic application is required.
+5. Grant execute permission to the consumer provider codeunit and assign/include the library permission set for the administration page.
 
 See [examples/ConsumerExtension.md](examples/ConsumerExtension.md) for a complete skeleton.
 
 ## Build
 
-The app currently targets Business Central 27 (`runtime 16.0`) and MobileNAV 12. Put the matching Microsoft and `MULTISOFT KFT_MobileNAV` symbol packages in `.alpackages`, then compile with the AL extension or `alc`:
+The app targets Business Central 27 (`runtime 16.0`) and MobileNAV 12. Put the matching Microsoft and `MULTISOFT KFT_MobileNAV` symbol packages in `.alpackages`, then compile with the AL extension or `alc`:
 
 ```sh
 alc /project:. /packagecachepath:.alpackages /out:MobileNAV-Configuration.app

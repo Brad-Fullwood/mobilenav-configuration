@@ -1,58 +1,64 @@
 # Consumer extension example
 
-The consuming app declares this extension as a dependency, implements one setup module, and registers it through an enum extension.
+The consuming app declares this extension as a dependency, implements the provider contract, and registers the implementation through an enum extension.
 
 ```al
 namespace Contoso.MobileNAV;
 
 using BradFullwood.MobileNAV.Configuration;
 
-codeunit 50100 "CTO MobileNAV Setup" implements "BJF MobileNAV Setup Module"
+codeunit 50100 "CTO MN Config Provider" implements "BJF MN Config Provider"
 {
-    procedure ApplySetup()
-    var
-        Configurator: Codeunit "BJF MobileNAV Configurator";
-        HostServiceName: Text[100];
-        TargetServiceName: Text[100];
+    procedure GetId(): Code[50]
     begin
-        Configurator.EnsurePublishedPage(Page::"CTO Mobile Lookup", LookupServiceNameTok, TargetServiceName);
-
-        if not Configurator.RefreshConfiguredPage(Page::"MobileNAV Item", HostServiceName) then
-            Error(PageNotConfiguredErr, Page::"MobileNAV Item");
-        if not Configurator.ShowField(HostServiceName, 'CTO Reference', false) then
-            Error(FieldNotFoundErr, 'CTO Reference', HostServiceName);
-        if not Configurator.ShowLinkedField(
-            HostServiceName, 'CTO Open Lookup', CopyStr(TargetServiceName, 1, 75),
-            'Item No.', 'No.')
-        then
-            Error(FieldNotFoundErr, 'CTO Open Lookup', HostServiceName);
+        exit('CONTOSO-MOBILE');
     end;
 
-    var
-        LookupServiceNameTok: Label 'CTOMobileLookup', Locked = true;
-        PageNotConfiguredErr: Label 'MobileNAV page %1 has not been configured.', Comment = '%1 = page object id';
-        FieldNotFoundErr: Label 'Control %1 was not found on MobileNAV service %2.', Comment = '%1 = control name, %2 = service name';
+    procedure GetName(): Text[100]
+    begin
+        exit('Contoso MobileNAV');
+    end;
+
+    procedure GetDescription(): Text[250]
+    begin
+        exit('Configures Contoso item fields and the mobile lookup page.');
+    end;
+
+    procedure GetVersion(): Integer
+    begin
+        exit(1);
+    end;
+
+    procedure DefineConfiguration(var Configuration: Codeunit "BJF MN Config Builder")
+    begin
+        Configuration.AddPublishedPage(Page::"CTO Mobile Lookup", 'CTOMobileLookup');
+        Configuration.AddVisibleField(Page::"MobileNAV Item", 'CTO Reference', false);
+        Configuration.AddLinkedField(
+            Page::"MobileNAV Item", 'CTO Open Lookup', Page::"CTO Mobile Lookup",
+            'Item No.', 'No.');
+    end;
 }
 
-enumextension 50100 "CTO MN Setup Modules" extends "BJF MobileNAV Setup Module"
+enumextension 50100 "CTO MN Config Providers" extends "BJF MN Config Provider"
 {
     value(50100; "Contoso MobileNAV")
     {
         Caption = 'Contoso MobileNAV';
-        Implementation = "BJF MobileNAV Setup Module" = "CTO MobileNAV Setup";
+        Implementation = "BJF MN Config Provider" = "CTO MN Config Provider";
     }
 }
 ```
 
-Call only the consumer's module from its install and upgrade codeunits. This avoids reapplying unrelated modules while an app is being installed.
+To apply this provider automatically from the consumer's install or upgrade codeunit:
 
 ```al
-local procedure ApplyMobileNAVSetup()
+local procedure ApplyMobileNAVConfiguration()
 var
-    SetupRunner: Codeunit "BJF MobileNAV Setup Runner";
+    ConfigurationApplication: Codeunit "BJF MN Config Application";
 begin
-    SetupRunner.ApplyModule(Enum::"BJF MobileNAV Setup Module"::"Contoso MobileNAV");
+    ConfigurationApplication.ApplyProvider(
+        Enum::"BJF MN Config Provider"::"Contoso MobileNAV");
 end;
 ```
 
-Users can also run **Apply MobileNAV Configuration** to apply every registered module on demand. The consumer's permission set must grant execute permission to its setup-module codeunit for that manual route.
+The consumer permission set must grant execute permission to `"CTO MN Config Provider"`. Administrators can then use **Apply custom MobileNAV config** to inspect state, select providers, apply them, or mark previously applied providers outdated.
