@@ -4,8 +4,19 @@ permissionset 77780 "BJF MN Configuration"
 {
     Assignable = true;
     Caption = 'MobileNAV Configuration';
-    Permissions = codeunit "BJF MobileNAV Configurator" = X,
-        codeunit "BJF Empty MN Setup Module" = X,
-        codeunit "BJF MobileNAV Setup Runner" = X,
-        report "BJF Apply MN Configuration" = X;
+    Permissions = table "BJF MN Config Line" = X,
+        table "BJF MN Config Status" = X,
+        tabledata "BJF MN Config Status" = RIMD,
+        table "BJF MN Provider Buffer" = X,
+        codeunit "BJF Empty MN Provider" = X,
+        codeunit "BJF MN Config Builder" = X,
+        codeunit "BJF MN Provider Catalog" = X,
+        codeunit "BJF MN Config Status Mgt." = X,
+        codeunit "BJF MN Config Application" = X,
+        codeunit "BJF MN Config Validator" = X,
+        codeunit "BJF MN Config Executor" = X,
+        codeunit "BJF MN Web Service Mgt." = X,
+        codeunit "BJF MN Page Mgt." = X,
+        codeunit "BJF MN Field Mgt." = X,
+        page "BJF Custom MN Config" = X;
 }

@@ -2,9 +2,9 @@
   "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
   "name": "MobileNAV Configuration",
   "publisher": "Brad Fullwood",
-  "version": "1.0.0.0",
-  "brief": "Reusable configuration framework for MobileNAV pages and fields.",
-  "description": "Provides a public API and extensible module registry for publishing MobileNAV page web services, refreshing page metadata, configuring fields, and maintaining linked-page filters from AL.",
+  "version": "2.0.0.0",
+  "brief": "Declarative configuration framework for MobileNAV pages and fields.",
+  "description": "Provides a validated provider contract, application tracking, and an administration page for defining and applying custom MobileNAV configuration from AL.",
   "privacyStatement": "",
   "EULA": "",
   "help": "",
@@ -24,7 +24,7 @@
   "idRanges": [
     {
       "from": 77780,
-      "to": 77789
+      "to": 77799
     }
   ],
   "features": [
