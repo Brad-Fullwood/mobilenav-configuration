@@ -30,6 +30,9 @@
   "features": [
     "NoImplicitWith"
   ],
+  "preprocessorSymbols": [
+    "BJF_MN_CONFIG_SOURCE"
+  ],
   "resourceExposurePolicy": {
     "allowDebugging": true,
     "allowDownloadingSource": false,

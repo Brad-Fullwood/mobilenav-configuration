@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
@@ -34,3 +35,4 @@ codeunit 77784 "BJF MN Config Application"
         ConfigurationExecutor: Codeunit "BJF MN Config Executor";
         StatusManagement: Codeunit "BJF MN Config Status Mgt.";
 }
+#endif

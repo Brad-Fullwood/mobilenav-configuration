@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Owns MobileNAV field state and linked-page relation/filter persistence.</summary>
@@ -132,3 +133,4 @@ codeunit 77789 "BJF MN Field Mgt."
         WebServiceHandling: Codeunit "MobileNAV Web Service Handling";
         TargetServiceMissingErr: Label 'MobileNAV service %1 is not registered.', Comment = '%1 = MobileNAV service name';
 }
+#endif

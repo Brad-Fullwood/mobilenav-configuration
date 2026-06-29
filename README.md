@@ -60,3 +60,7 @@ alc /project:. /packagecachepath:.alpackages /out:MobileNAV-Configuration.app
 ```
 
 The repository does not include proprietary MobileNAV or Microsoft symbol packages.
+
+## Nested git submodules
+
+All AL objects are guarded by the `BJF_MN_CONFIG_SOURCE` preprocessor symbol, which is defined only by this app's manifest. This lets a consuming AL project keep the repository as a nested git submodule without compiling the library objects into the consumer. The consumer still declares the app dependency and places a compiled `MobileNAV Configuration` package in its symbol cache.

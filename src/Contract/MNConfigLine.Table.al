@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Validated intermediate representation produced by a configuration provider.</summary>
@@ -64,3 +65,4 @@ table 77780 "BJF MN Config Line"
         }
     }
 }
+#endif

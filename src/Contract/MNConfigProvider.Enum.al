@@ -1,3 +1,4 @@
+#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Extensible registry of declarative MobileNAV configuration providers.</summary>
@@ -14,3 +15,4 @@ enum 77780 "BJF MN Config Provider" implements "BJF MN Config Provider"
         Implementation = "BJF MN Config Provider" = "BJF Empty MN Provider";
     }
 }
+#endif
