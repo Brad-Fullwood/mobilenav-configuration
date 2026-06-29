@@ -2,11 +2,13 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
-/// Application boundary: resolves one provider, validates its complete declaration,
-/// executes it, and records success in the same transaction.
+/// Validates and applies one provider definition in deterministic dependency order,
+/// then records success in the same transaction.
 /// </summary>
 codeunit 77784 "BJF MN Config Application"
 {
+    Permissions = tabledata "BJF MN Config Status" = rim;
+
     procedure ApplyProvider(ProviderType: Enum "BJF MN Config Provider")
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
@@ -25,14 +27,109 @@ codeunit 77784 "BJF MN Config Application"
         ConfigurationBuilder.GetLines(TempConfigurationLine);
 
         ConfigurationValidator.Validate(TempConfigurationLine);
-        ConfigurationExecutor.Execute(TempConfigurationLine);
-        StatusManagement.RecordApplied(ProviderId, ProviderName, ProviderVersion);
+        Execute(TempConfigurationLine);
+        ConfigurationStatus.RecordApplied(ProviderId, ProviderName, ProviderVersion);
+    end;
+
+    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary)
+    var
+        PageServices: Dictionary of [Integer, Text];
+    begin
+        PreparePublishedPages(TempConfigurationLine, PageServices);
+        PrepareReferencedPages(TempConfigurationLine, PageServices);
+        ApplyFields(TempConfigurationLine, PageServices);
+        ApplyLinkedFields(TempConfigurationLine, PageServices);
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure PreparePublishedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text[100];
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Published Page");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                PageManagement.EnsurePage(
+                    TempConfigurationLine."Page ID", TempConfigurationLine."Service Name", ServiceName);
+                PageManagement.PublishPage(TempConfigurationLine."Page ID", ServiceName);
+                PageServices.Add(TempConfigurationLine."Page ID", ServiceName);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure PrepareReferencedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Field);
+        if TempConfigurationLine.FindSet() then
+            repeat
+                ResolvePage(TempConfigurationLine."Page ID", PageServices);
+            until TempConfigurationLine.Next() = 0;
+
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Linked Field");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                ResolvePage(TempConfigurationLine."Page ID", PageServices);
+                ResolvePage(TempConfigurationLine."Target Page ID", PageServices);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure ApplyFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Field);
+        if TempConfigurationLine.FindSet() then
+            repeat
+                PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
+                if not FieldManagement.ConfigureField(
+                    CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
+                    TempConfigurationLine.Visible, TempConfigurationLine.Editable,
+                    TempConfigurationLine."Display In Menu")
+                then
+                    Error(FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure ApplyLinkedFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+        TargetServiceName: Text;
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Linked Field");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
+                PageServices.Get(TempConfigurationLine."Target Page ID", TargetServiceName);
+                if not FieldManagement.ConfigureLinkedField(
+                    CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
+                    CopyStr(TargetServiceName, 1, 75), TempConfigurationLine."Target Filter Field",
+                    TempConfigurationLine."Source Field")
+                then
+                    Error(FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure ResolvePage(PageId: Integer; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text[100];
+    begin
+        if PageServices.ContainsKey(PageId) then
+            exit;
+        if not PageManagement.RefreshConfiguredPage(PageId, ServiceName) then
+            Error(PageMissingErr, PageId);
+        PageServices.Add(PageId, ServiceName);
     end;
 
     var
+        ConfigurationStatus: Record "BJF MN Config Status";
         ProviderCatalog: Codeunit "BJF MN Provider Catalog";
         ConfigurationValidator: Codeunit "BJF MN Config Validator";
-        ConfigurationExecutor: Codeunit "BJF MN Config Executor";
-        StatusManagement: Codeunit "BJF MN Config Status Mgt.";
+        PageManagement: Codeunit "BJF MN Page Mgt.";
+        FieldManagement: Codeunit "BJF MN Field Mgt.";
+        PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
+        FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';
 }
 #endif

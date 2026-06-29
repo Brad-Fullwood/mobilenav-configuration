@@ -28,10 +28,10 @@ AL interfaces cannot enforce purity: a deliberately hostile implementation can s
 - **Provider contract and builder** collect a constrained intermediate configuration plan.
 - **Provider catalog** discovers enum-registered providers and validates required metadata and unique IDs.
 - **Validator** validates the complete plan before persistent MobileNAV changes begin.
-- **Executor** orders dependencies: published pages, referenced-page metadata, fields, then links.
-- **Web service, page, and field managers** each own one MobileNAV persistence concern.
-- **Status manager** records successful provider/version applications and manual invalidation.
-- **Apply custom MobileNAV config** is the single administration page for selecting, applying, and marking providers outdated.
+- **Application service** validates a definition, orders its dependencies, applies it, and records success in one transaction.
+- **Page and field managers** isolate MobileNAV persistence from provider and UI code.
+- **Status table** owns provider/version application state and manual invalidation rules.
+- **Apply custom MobileNAV config** uses standard row selection to apply or mark one or more providers outdated.
 
 The status page shows every provider registered through an `enumextension`, whether it has ever been applied, its current and applied versions, last application details, and one of these states:
 

@@ -10,7 +10,6 @@ codeunit 77782 "BJF MN Provider Catalog"
     var
         ProviderType: Enum "BJF MN Config Provider";
         Ordinal: Integer;
-        EntryNo: Integer;
     begin
         ProviderBuffer.Reset();
         ProviderBuffer.DeleteAll();
@@ -18,8 +17,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         foreach Ordinal in Enum::"BJF MN Config Provider".Ordinals() do
             if Ordinal <> Enum::"BJF MN Config Provider"::None.AsInteger() then begin
                 ProviderType := Enum::"BJF MN Config Provider".FromInteger(Ordinal);
-                EntryNo += 1;
-                AddProvider(ProviderBuffer, ProviderType, EntryNo);
+                AddProvider(ProviderBuffer, ProviderType);
             end;
     end;
 
@@ -38,7 +36,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         ValidateMetadata(ProviderId, ProviderName, ProviderDescription, ProviderVersion);
     end;
 
-    local procedure AddProvider(var ProviderBuffer: Record "BJF MN Provider Buffer" temporary; ProviderType: Enum "BJF MN Config Provider"; EntryNo: Integer)
+    local procedure AddProvider(var ProviderBuffer: Record "BJF MN Provider Buffer" temporary; ProviderType: Enum "BJF MN Config Provider")
     var
         ProviderId: Code[50];
         ProviderName: Text[100];
@@ -49,13 +47,12 @@ codeunit 77782 "BJF MN Provider Catalog"
         EnsureUniqueId(ProviderBuffer, ProviderId);
 
         ProviderBuffer.Init();
-        ProviderBuffer."Entry No." := EntryNo;
         ProviderBuffer.Provider := ProviderType;
         ProviderBuffer."Provider ID" := ProviderId;
         ProviderBuffer.Name := ProviderName;
         ProviderBuffer.Description := ProviderDescription;
         ProviderBuffer."Defined Version" := ProviderVersion;
-        StatusManagement.PopulateState(ProviderBuffer);
+        ConfigurationStatus.PopulateState(ProviderBuffer);
         ProviderBuffer.Insert();
     end;
 
@@ -80,7 +77,7 @@ codeunit 77782 "BJF MN Provider Catalog"
     end;
 
     var
-        StatusManagement: Codeunit "BJF MN Config Status Mgt.";
+        ConfigurationStatus: Record "BJF MN Config Status";
         NoneProviderErr: Label 'The None value is not a configuration provider.';
         IdRequiredErr: Label 'A MobileNAV configuration provider returned an empty provider ID.';
         NameRequiredErr: Label 'MobileNAV configuration provider %1 returned an empty name.', Comment = '%1 = provider id';
