@@ -53,7 +53,7 @@ See [examples/ConsumerExtension.md](examples/ConsumerExtension.md) for a complet
 
 ## Build
 
-The app targets Business Central 27 (`runtime 16.0`) and MobileNAV 12. Put the matching Microsoft and `MULTISOFT KFT_MobileNAV` symbol packages in `.alpackages`, then compile with the AL extension or `alc`:
+The app targets Business Central 25 (`runtime 14.3`) and MobileNAV 11 or later. Put compatible Microsoft and `MULTISOFT KFT_MobileNAV` symbol packages in `.alpackages`, then compile with the AL extension or `alc`:
 
 ```sh
 alc /project:. /packagecachepath:.alpackages /out:MobileNAV-Configuration.app
