@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 enum 77781 "BJF MN Config Operation"
@@ -20,4 +20,3 @@ enum 77781 "BJF MN Config Operation"
         Caption = 'Linked Field';
     }
 }
-#endif

@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 permissionset 77780 "BJF MN Configuration"
@@ -18,4 +18,3 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF MN Field Mgt." = X,
         page "BJF Custom MN Config" = X;
 }
-#endif
