@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Lists registered providers and applies or invalidates the selected rows.</summary>
@@ -188,4 +188,3 @@ page 77780 "BJF Custom MN Config"
         AppliedSelectionRequiredErr: Label 'Select at least one provider that has been applied previously.';
         AppliedMsg: Label '%1 MobileNAV configuration provider(s) were applied.', Comment = '%1 = number of providers';
 }
-#endif

@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 enum 77782 "BJF MN Config State"
@@ -20,4 +20,3 @@ enum 77782 "BJF MN Config State"
         Caption = 'Outdated';
     }
 }
-#endif

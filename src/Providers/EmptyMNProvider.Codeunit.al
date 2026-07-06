@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 codeunit 77780 "BJF Empty MN Provider" implements "BJF MN Config Provider"
@@ -29,4 +29,3 @@ codeunit 77780 "BJF Empty MN Provider" implements "BJF MN Config Provider"
     begin
     end;
 }
-#endif

@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 using System.Integration;
@@ -97,4 +97,3 @@ codeunit 77788 "BJF MN Page Mgt."
         MetadataProcessing: Codeunit "MobileNAV Metadata Processing";
         CoreFunctions: Codeunit "MobileNAV Core Functions";
 }
-#endif

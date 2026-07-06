@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
@@ -65,4 +65,3 @@ codeunit 77781 "BJF MN Config Builder"
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
         NextEntryNo: Integer;
 }
-#endif

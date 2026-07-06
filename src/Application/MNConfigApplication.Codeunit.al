@@ -1,4 +1,3 @@
-#if BJF_MN_CONFIG_SOURCE
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
@@ -132,4 +131,3 @@ codeunit 77784 "BJF MN Config Application"
         PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
         FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';
 }
-#endif

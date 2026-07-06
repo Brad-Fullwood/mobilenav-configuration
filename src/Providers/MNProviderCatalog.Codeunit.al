@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Discovers registered providers and validates their required metadata contract.</summary>
@@ -85,4 +85,3 @@ codeunit 77782 "BJF MN Provider Catalog"
         VersionRequiredErr: Label 'MobileNAV configuration provider %1 must return a positive version.', Comment = '%1 = provider id';
         DuplicateIdErr: Label 'More than one MobileNAV configuration provider uses the ID %1.', Comment = '%1 = provider id';
 }
-#endif

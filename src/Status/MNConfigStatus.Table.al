@@ -1,4 +1,4 @@
-#if BJF_MN_CONFIG_SOURCE
+
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Per-company application state for each stable provider id.</summary>
@@ -101,4 +101,3 @@ table 77781 "BJF MN Config Status"
     var
         NotAppliedErr: Label 'MobileNAV configuration provider %1 has not been applied and cannot be marked outdated.', Comment = '%1 = provider id';
 }
-#endif
