@@ -17,7 +17,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         foreach Ordinal in Enum::"BJF MN Config Provider".Ordinals() do
             if Ordinal <> Enum::"BJF MN Config Provider"::None.AsInteger() then begin
                 ProviderType := Enum::"BJF MN Config Provider".FromInteger(Ordinal);
-                AddProvider(ProviderBuffer, ProviderType);
+                this.AddProvider(ProviderBuffer, ProviderType);
             end;
     end;
 
@@ -33,7 +33,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         ProviderName := Provider.GetName();
         ProviderDescription := Provider.GetDescription();
         ProviderVersion := Provider.GetVersion();
-        ValidateMetadata(ProviderId, ProviderName, ProviderDescription, ProviderVersion);
+        this.ValidateMetadata(ProviderId, ProviderName, ProviderDescription, ProviderVersion);
     end;
 
     local procedure AddProvider(var ProviderBuffer: Record "BJF MN Provider Buffer" temporary; ProviderType: Enum "BJF MN Config Provider")
@@ -43,8 +43,8 @@ codeunit 77782 "BJF MN Provider Catalog"
         ProviderDescription: Text[250];
         ProviderVersion: Integer;
     begin
-        GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription, ProviderVersion);
-        EnsureUniqueId(ProviderBuffer, ProviderId);
+        this.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription, ProviderVersion);
+        this.EnsureUniqueId(ProviderBuffer, ProviderId);
 
         ProviderBuffer.Init();
         ProviderBuffer.Provider := ProviderType;

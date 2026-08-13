@@ -26,7 +26,7 @@ codeunit 77784 "BJF MN Config Application"
         ConfigurationBuilder.GetLines(TempConfigurationLine);
 
         ConfigurationValidator.Validate(TempConfigurationLine);
-        Execute(TempConfigurationLine);
+        this.Execute(TempConfigurationLine);
         ConfigurationStatus.RecordApplied(ProviderId, ProviderName, ProviderVersion);
     end;
 
@@ -34,11 +34,12 @@ codeunit 77784 "BJF MN Config Application"
     var
         PageServices: Dictionary of [Integer, Text];
     begin
-        PreparePublishedPages(TempConfigurationLine, PageServices);
-        PrepareReferencedPages(TempConfigurationLine, PageServices);
-        ApplyFields(TempConfigurationLine, PageServices);
-        ApplyLinkedFields(TempConfigurationLine, PageServices);
+        this.PreparePublishedPages(TempConfigurationLine, PageServices);
+        this.PrepareReferencedPages(TempConfigurationLine, PageServices);
+        this.ApplyFields(TempConfigurationLine, PageServices);
+        this.ApplyLinkedFields(TempConfigurationLine, PageServices);
         TempConfigurationLine.Reset();
+        PageManagement.PublishConfigurationToDevices();
     end;
 
     local procedure PreparePublishedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])

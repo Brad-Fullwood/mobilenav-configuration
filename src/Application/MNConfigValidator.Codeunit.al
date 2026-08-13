@@ -16,7 +16,7 @@ codeunit 77785 "BJF MN Config Validator"
 
         if ConfigurationLine.FindSet() then
             repeat
-                ValidateLine(ConfigurationLine, DefinedOperations);
+                this.ValidateLine(ConfigurationLine, DefinedOperations);
             until ConfigurationLine.Next() = 0;
         ConfigurationLine.Reset();
     end;
@@ -29,24 +29,24 @@ codeunit 77785 "BJF MN Config Validator"
         case ConfigurationLine.Operation of
             Enum::"BJF MN Config Operation"::"Published Page":
                 begin
-                    RequireValue(ConfigurationLine."Service Name", ServiceNameRequiredErr, ConfigurationLine."Entry No.");
-                    EnsureUnique(DefinedOperations, StrSubstNo(PageOperationKeyTok, ConfigurationLine."Page ID"));
+                    this.RequireValue(ConfigurationLine."Service Name", ServiceNameRequiredErr, ConfigurationLine."Entry No.");
+                    this.EnsureUnique(DefinedOperations, StrSubstNo(PageOperationKeyTok, ConfigurationLine."Page ID"));
                 end;
             Enum::"BJF MN Config Operation"::Field:
                 begin
-                    RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
-                    EnsureUnique(
+                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
+                    this.EnsureUnique(
                         DefinedOperations,
                         StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
                 end;
             Enum::"BJF MN Config Operation"::"Linked Field":
                 begin
-                    RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
                     if ConfigurationLine."Target Page ID" <= 0 then
                         Error(TargetPageIdRequiredErr, ConfigurationLine."Entry No.");
-                    RequireValue(ConfigurationLine."Target Filter Field", TargetFieldRequiredErr, ConfigurationLine."Entry No.");
-                    RequireValue(ConfigurationLine."Source Field", SourceFieldRequiredErr, ConfigurationLine."Entry No.");
-                    EnsureUnique(
+                    this.RequireValue(ConfigurationLine."Target Filter Field", TargetFieldRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireValue(ConfigurationLine."Source Field", SourceFieldRequiredErr, ConfigurationLine."Entry No.");
+                    this.EnsureUnique(
                         DefinedOperations,
                         StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
                 end;
