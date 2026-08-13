@@ -45,7 +45,7 @@ codeunit 77788 "BJF MN Page Mgt."
             ServiceSetup.Insert(true);
         end;
 
-        RefreshMetadata(ServiceSetup);
+        this.RefreshMetadata(ServiceSetup);
         ServiceName := ServiceSetup."Service Name";
     end;
 
@@ -56,7 +56,7 @@ codeunit 77788 "BJF MN Page Mgt."
         if not FindMainPage(PageId, ServiceSetup) then
             exit(false);
 
-        RefreshMetadata(ServiceSetup);
+        this.RefreshMetadata(ServiceSetup);
         ServiceName := ServiceSetup."Service Name";
         exit(true);
     end;
@@ -83,6 +83,21 @@ codeunit 77788 "BJF MN Page Mgt."
         ServiceSetup.SetRange("Object ID", PageId);
         ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
         exit(ServiceSetup.FindFirst());
+    end;
+
+    /// <summary>
+    /// Hands the applied configuration over to MobileNAV so it reaches devices. Writing the
+    /// service setup rows is not enough on its own: users log in against a profile, and a
+    /// newly configured field only appears on a device once the profile hierarchy has been
+    /// rebuilt to include it, MobileNAV has regenerated the configuration it derives from
+    /// the setup tables, and devices have been told to reload rather than reuse the
+    /// configuration they already hold.
+    /// </summary>
+    procedure PublishConfigurationToDevices()
+    begin
+        CoreFunctions.RebuildProfileHierarchy();
+        CoreFunctions.RunPostConfigurationProcess();
+        CoreFunctions.SetEnforcedMajorConfigChanged();
     end;
 
     local procedure RefreshMetadata(var ServiceSetup: Record "MobileNAV Service Setup")

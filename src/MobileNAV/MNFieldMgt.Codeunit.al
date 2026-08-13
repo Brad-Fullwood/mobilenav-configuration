@@ -26,7 +26,7 @@ codeunit 77789 "BJF MN Field Mgt."
         FieldSetup: Record "MobileNAV Service Setup";
         RelatedTableNo: Integer;
     begin
-        if not FindField(ServiceName, ControlName, FieldSetup) then
+        if not this.FindField(ServiceName, ControlName, FieldSetup) then
             exit(false);
         if not PageManagement.GetServiceTableNo(TargetServiceName, RelatedTableNo) then
             Error(TargetServiceMissingErr, TargetServiceName);
@@ -35,8 +35,8 @@ codeunit 77789 "BJF MN Field Mgt."
         FieldSetup.DisplayInMenu := true;
         FieldSetup.Modify(true);
 
-        UpsertRelation(FieldSetup, TargetServiceName, TargetFilterField, RelatedTableNo);
-        UpsertFilter(FieldSetup, TargetServiceName, TargetFilterField, SourceField, RelatedTableNo);
+        this.UpsertRelation(FieldSetup, TargetServiceName, TargetFilterField, RelatedTableNo);
+        this.UpsertFilter(FieldSetup, TargetServiceName, TargetFilterField, SourceField, RelatedTableNo);
         exit(true);
     end;
 
@@ -45,7 +45,7 @@ codeunit 77789 "BJF MN Field Mgt."
         ServiceSetup.SetRange("Object Type", ServiceSetup."Object Type"::Page);
         ServiceSetup.SetRange("Service Name", ServiceName);
         ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Field);
-        ServiceSetup.SetRange(FieldName, ConvertFieldName(ControlName));
+        ServiceSetup.SetRange(FieldName, this.ConvertFieldName(ControlName));
         exit(ServiceSetup.FindFirst());
     end;
 
@@ -76,7 +76,7 @@ codeunit 77789 "BJF MN Field Mgt."
         RelationSetup.FieldName := FieldSetup.FieldName;
         RelationSetup.RelatedPageName := TargetServiceName;
         RelationSetup."Related Table No." := RelatedTableNo;
-        RelationSetup.RelatedPgCodeFldName := ConvertFieldName(TargetFilterField);
+        RelationSetup.RelatedPgCodeFldName := this.ConvertFieldName(TargetFilterField);
 
         if IsNew then
             RelationSetup.Insert(true)
@@ -114,8 +114,8 @@ codeunit 77789 "BJF MN Field Mgt."
         FilterSetup."Related Table No." := RelatedTableNo;
         FilterSetup.FilterType := FilterSetup.FilterType::FIELD;
         FilterSetup."Filter Comparsion Type" := FilterSetup."Filter Comparsion Type"::Equal;
-        FilterSetup.DestFieldName := ConvertFieldName(TargetFilterField);
-        FilterSetup.SourceFieldName := ConvertFieldName(SourceField);
+        FilterSetup.DestFieldName := this.ConvertFieldName(TargetFilterField);
+        FilterSetup.SourceFieldName := this.ConvertFieldName(SourceField);
 
         if IsNew then
             FilterSetup.Insert(true)
