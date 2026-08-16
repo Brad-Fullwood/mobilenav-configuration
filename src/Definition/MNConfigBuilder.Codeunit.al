@@ -67,6 +67,73 @@ codeunit 77781 "BJF MN Config Builder"
         TempConfigurationLine.Modify();
     end;
 
+    /// <summary>
+    /// Registers, refreshes, and publishes a MobileNAV page web service and sets its main menu
+    /// action. MainMenuAction follows MobileNAV's vocabulary ('Create' opens the page straight
+    /// onto a new record from the home tile, 'Open' opens the single existing record). When a
+    /// Main row for the page already exists under a different service name, a second,
+    /// independently configured service is created for this one.
+    /// </summary>
+    procedure AddPublishedPage(PageId: Integer; PreferredServiceName: Text[100]; MainMenuAction: Text[30])
+    begin
+        this.AddPublishedPage(PageId, PreferredServiceName);
+        TempConfigurationLine."Main Menu Action" := MainMenuAction;
+        TempConfigurationLine.Modify();
+    end;
+
+    /// <summary>
+    /// Makes a field visible and editable and renders it as a barcode-scannable control.
+    /// ValidationBehavior follows MobileNAV's vocabulary (for example 'ScanOrManualEntry';
+    /// empty leaves the default behavior).
+    /// </summary>
+    procedure AddScanField(PageId: Integer; ControlName: Text[100]; ValidationBehavior: Text[50])
+    begin
+        this.AddLine(Enum::"BJF MN Config Operation"::"Scan Field", PageId);
+        TempConfigurationLine."Control Name" := ControlName;
+        TempConfigurationLine."Mobile Type" := 'Barcode';
+        TempConfigurationLine."Validation Behavior" := ValidationBehavior;
+        TempConfigurationLine.Modify();
+    end;
+
+    /// <summary>
+    /// Turns the page into a staged wizard (staging behavior 'Always from scratch'). Declare
+    /// this before any AddStage or AddStageField call for the same page; stages render in the
+    /// order they are added.
+    /// </summary>
+    procedure EnableStaging(PageId: Integer; AutoNext: Boolean; BackNextVisible: Boolean)
+    begin
+        this.AddLine(Enum::"BJF MN Config Operation"::Staging, PageId);
+        TempConfigurationLine."Auto Next Stage" := AutoNext;
+        TempConfigurationLine."Back-Next Visible" := BackNextVisible;
+        TempConfigurationLine.Modify();
+    end;
+
+    /// <summary>
+    /// Adds a wizard stage to a page declared with EnableStaging. The description becomes the
+    /// stage's caption (a MobileNAV category record); fields not assigned to a stage via
+    /// AddStageField stay hidden while that stage is active.
+    /// </summary>
+    procedure AddStage(PageId: Integer; StageId: Code[100]; Description: Text[250])
+    begin
+        this.AddLine(Enum::"BJF MN Config Operation"::Stage, PageId);
+        TempConfigurationLine."Stage Id" := StageId;
+        TempConfigurationLine."Stage Description" := Description;
+        TempConfigurationLine.Modify();
+    end;
+
+    /// <summary>
+    /// Shows a field while the given stage is active. FieldEnabled=true lets the user edit or
+    /// tap it; false shows it read-only for context. Declare the stage with AddStage first.
+    /// </summary>
+    procedure AddStageField(PageId: Integer; StageId: Code[100]; ControlName: Text[100]; FieldEnabled: Boolean)
+    begin
+        this.AddLine(Enum::"BJF MN Config Operation"::"Stage Field", PageId);
+        TempConfigurationLine."Stage Id" := StageId;
+        TempConfigurationLine."Control Name" := ControlName;
+        TempConfigurationLine."Stage Enabled" := FieldEnabled;
+        TempConfigurationLine.Modify();
+    end;
+
     internal procedure GetLines(var Target: Record "BJF MN Config Line" temporary)
     begin
         Target.Copy(TempConfigurationLine, true);

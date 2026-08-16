@@ -66,7 +66,34 @@ codeunit 77789 "BJF MN Field Mgt."
         exit(true);
     end;
 
-    local procedure SetOptionField(var ServiceSetup: Record "MobileNAV Service Setup"; FieldNumber: Integer; ValueName: Text)
+    /// <summary>
+    /// Makes a field visible and editable and renders it as a barcode-scannable control with
+    /// the given validation behavior (MobileNAV vocabulary, for example 'ScanOrManualEntry';
+    /// empty keeps the default). Values are resolved against the option members of the
+    /// MobileNAV Service Setup fields, matching how MobileNAV's own config import writes them.
+    /// </summary>
+    procedure ConfigureScanField(ServiceName: Text[100]; ControlName: Text[100]; MobileType: Text[30]; ValidationBehavior: Text[50]): Boolean
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        if not this.FindField(ServiceName, ControlName, ServiceSetup) then
+            exit(false);
+
+        ServiceSetup.Validate(Visible, true);
+        ServiceSetup.Editable := true;
+        this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(MobileType), MobileType);
+        if ValidationBehavior <> '' then
+            this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Validation Behavior"), ValidationBehavior);
+        ServiceSetup.Modify(true);
+        exit(true);
+    end;
+
+    /// <summary>
+    /// Resolves a MobileNAV option value by member name and assigns it without running
+    /// validation, matching how MobileNAV's own config XML import writes option fields.
+    /// Shared with the page and stage management codeunits.
+    /// </summary>
+    procedure SetOptionField(var ServiceSetup: Record "MobileNAV Service Setup"; FieldNumber: Integer; ValueName: Text)
     var
         SetupRecordRef: RecordRef;
         OptionFieldRef: FieldRef;

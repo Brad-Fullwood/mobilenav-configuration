@@ -33,11 +33,18 @@ codeunit 77788 "BJF MN Page Mgt."
         TenantWebService.Modify(true);
     end;
 
+    /// <summary>
+    /// Registers the page under the preferred service name and refreshes its metadata. The
+    /// lookup is keyed on page id AND service name, so a page whose Main row already exists
+    /// under a different service name gets a second, independently configured service rather
+    /// than adopting the existing one — that is how a guided variant of a stock MobileNAV
+    /// page coexists with the vendor's own service over the same page object.
+    /// </summary>
     procedure EnsurePage(PageId: Integer; PreferredServiceName: Text[100]; var ServiceName: Text[100])
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
-        if not FindMainPage(PageId, ServiceSetup) then begin
+        if not FindMainPageByService(PageId, PreferredServiceName, ServiceSetup) then begin
             ServiceSetup.Init();
             ServiceSetup."Object Type" := ServiceSetup."Object Type"::Page;
             ServiceSetup."Object ID" := PageId;
@@ -84,6 +91,53 @@ codeunit 77788 "BJF MN Page Mgt."
         ServiceSetup.SetRange("Object ID", PageId);
         ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
         exit(ServiceSetup.FindFirst());
+    end;
+
+    local procedure FindMainPageByService(PageId: Integer; ServiceName: Text[100]; var ServiceSetup: Record "MobileNAV Service Setup"): Boolean
+    begin
+        ServiceSetup.Reset();
+        ServiceSetup.SetRange("Object Type", ServiceSetup."Object Type"::Page);
+        ServiceSetup.SetRange("Object ID", PageId);
+        ServiceSetup.SetRange("Service Name", ServiceName);
+        ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
+        exit(ServiceSetup.FindFirst());
+    end;
+
+    /// <summary>Sets the page's main menu action ('Create' or 'Open', MobileNAV vocabulary).</summary>
+    procedure SetMainMenuAction(ServiceName: Text[100]; ActionName: Text[30])
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        this.GetMainPageByService(ServiceName, ServiceSetup);
+        FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Main Menu Action"), ActionName);
+        ServiceSetup.Modify(true);
+    end;
+
+    /// <summary>
+    /// Turns the page into a staged wizard. Enable Staging is validated (not assigned) so
+    /// MobileNAV propagates the flag to existing profile rows; staging behavior is fixed to
+    /// 'Always from scratch', which restarts the wizard on every record.
+    /// </summary>
+    procedure SetStaging(ServiceName: Text[100]; AutoNext: Boolean; BackNextVisible: Boolean)
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        this.GetMainPageByService(ServiceName, ServiceSetup);
+        ServiceSetup.Validate("Enable Staging", true);
+        ServiceSetup."Staging Behavior" := ServiceSetup."Staging Behavior"::Always;
+        ServiceSetup."Auto Next Stage" := AutoNext;
+        ServiceSetup."Back-Next Visible" := BackNextVisible;
+        ServiceSetup.Modify(true);
+    end;
+
+    local procedure GetMainPageByService(ServiceName: Text[100]; var ServiceSetup: Record "MobileNAV Service Setup")
+    begin
+        ServiceSetup.Reset();
+        ServiceSetup.SetRange("Object Type", ServiceSetup."Object Type"::Page);
+        ServiceSetup.SetRange("Service Name", ServiceName);
+        ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
+        if not ServiceSetup.FindFirst() then
+            Error(ServiceMissingErr, ServiceName);
     end;
 
     /// <summary>
@@ -159,4 +213,6 @@ codeunit 77788 "BJF MN Page Mgt."
     var
         MetadataProcessing: Codeunit "MobileNAV Metadata Processing";
         CoreFunctions: Codeunit "MobileNAV Core Functions";
+        FieldManagement: Codeunit "BJF MN Field Mgt.";
+        ServiceMissingErr: Label 'MobileNAV service %1 is not registered.', Comment = '%1 = MobileNAV service name';
 }

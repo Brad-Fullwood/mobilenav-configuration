@@ -60,6 +60,38 @@ codeunit 77785 "BJF MN Config Validator"
                         DefinedOperations,
                         StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
                 end;
+            Enum::"BJF MN Config Operation"::"Scan Field":
+                begin
+                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
+                    this.EnsureUnique(
+                        DefinedOperations,
+                        StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+                end;
+            Enum::"BJF MN Config Operation"::Staging:
+                this.EnsureUnique(DefinedOperations, StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID"));
+            Enum::"BJF MN Config Operation"::Stage:
+                begin
+                    this.RequireValue(ConfigurationLine."Stage Id", StageIdRequiredErr, ConfigurationLine."Entry No.");
+                    if not DefinedOperations.ContainsKey(StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID")) then
+                        Error(StagingNotDeclaredErr, ConfigurationLine."Entry No.");
+                    this.EnsureUnique(
+                        DefinedOperations,
+                        StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")));
+                end;
+            Enum::"BJF MN Config Operation"::"Stage Field":
+                begin
+                    this.RequireValue(ConfigurationLine."Stage Id", StageIdRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
+                    if not DefinedOperations.ContainsKey(
+                        StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")))
+                    then
+                        Error(StageNotDeclaredErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
+                    this.EnsureUnique(
+                        DefinedOperations,
+                        StrSubstNo(
+                            StageFieldOperationKeyTok, ConfigurationLine."Page ID",
+                            LowerCase(ConfigurationLine."Stage Id"), LowerCase(ConfigurationLine."Control Name")));
+                end;
         end;
     end;
 
@@ -87,7 +119,13 @@ codeunit 77785 "BJF MN Config Validator"
         MobileTypeRequiredErr: Label 'Configuration line %1 must specify a mobile type.', Comment = '%1 = configuration line number';
         FunctionNameRequiredErr: Label 'Configuration line %1 must specify a function name.', Comment = '%1 = configuration line number';
         FunctionTypeRequiredErr: Label 'Configuration line %1 must specify a function type.', Comment = '%1 = configuration line number';
+        StageIdRequiredErr: Label 'Configuration line %1 must specify a stage id.', Comment = '%1 = configuration line number';
+        StagingNotDeclaredErr: Label 'Configuration line %1 defines a stage on a page without a preceding EnableStaging declaration.', Comment = '%1 = configuration line number';
+        StageNotDeclaredErr: Label 'Configuration line %1 assigns a field to stage %2, which has no preceding AddStage declaration.', Comment = '%1 = configuration line number, %2 = stage id';
         DuplicateOperationErr: Label 'The provider defines the same configuration target more than once: %1.', Comment = '%1 = normalized operation key';
         PageOperationKeyTok: Label 'PAGE|%1', Locked = true;
         FieldOperationKeyTok: Label 'FIELD|%1|%2', Locked = true;
+        StagingOperationKeyTok: Label 'STAGING|%1', Locked = true;
+        StageOperationKeyTok: Label 'STAGE|%1|%2', Locked = true;
+        StageFieldOperationKeyTok: Label 'STAGEFIELD|%1|%2|%3', Locked = true;
 }

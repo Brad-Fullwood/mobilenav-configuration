@@ -71,6 +71,30 @@ table 77780 "BJF MN Config Line"
         {
             Caption = 'Validation Behavior';
         }
+        field(16; "Main Menu Action"; Text[30])
+        {
+            Caption = 'Main Menu Action';
+        }
+        field(17; "Auto Next Stage"; Boolean)
+        {
+            Caption = 'Auto Next Stage';
+        }
+        field(18; "Back-Next Visible"; Boolean)
+        {
+            Caption = 'Back-Next Visible';
+        }
+        field(19; "Stage Id"; Code[100])
+        {
+            Caption = 'Stage Id';
+        }
+        field(20; "Stage Enabled"; Boolean)
+        {
+            Caption = 'Stage Enabled';
+        }
+        field(21; "Stage Description"; Text[250])
+        {
+            Caption = 'Stage Description';
+        }
     }
 
     keys

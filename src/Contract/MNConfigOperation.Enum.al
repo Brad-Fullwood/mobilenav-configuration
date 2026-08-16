@@ -23,4 +23,20 @@ enum 77781 "BJF MN Config Operation"
     {
         Caption = 'Function Field';
     }
+    value(4; "Scan Field")
+    {
+        Caption = 'Scan Field';
+    }
+    value(5; Staging)
+    {
+        Caption = 'Staging';
+    }
+    value(6; Stage)
+    {
+        Caption = 'Stage';
+    }
+    value(7; "Stage Field")
+    {
+        Caption = 'Stage Field';
+    }
 }
