@@ -92,12 +92,22 @@ codeunit 77788 "BJF MN Page Mgt."
     /// rebuilt to include it, MobileNAV has regenerated the configuration it derives from
     /// the setup tables, and devices have been told to reload rather than reuse the
     /// configuration they already hold.
+    ///
+    /// MobileNAV does this work through routines that can confirm with the user, so they only
+    /// run in a session that has a client to answer them. Install and upgrade have none, and
+    /// a confirmation raised there fails the whole deployment, so the handover is skipped and
+    /// left for an administrator to complete from the administration page.
     /// </summary>
-    procedure PublishConfigurationToDevices()
+    /// <returns>True when the handover ran; false when there was no session to run it in.</returns>
+    procedure PublishConfigurationToDevices(): Boolean
     begin
+        if not GuiAllowed() then
+            exit(false);
+
         CoreFunctions.RebuildProfileHierarchy();
         CoreFunctions.RunPostConfigurationProcess();
         CoreFunctions.SetEnforcedMajorConfigChanged();
+        exit(true);
     end;
 
     local procedure RefreshMetadata(var ServiceSetup: Record "MobileNAV Service Setup")

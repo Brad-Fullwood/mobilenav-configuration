@@ -1,4 +1,3 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
 permissionset 77780 "BJF MN Configuration"

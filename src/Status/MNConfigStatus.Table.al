@@ -42,6 +42,10 @@ table 77781 "BJF MN Config Status"
         {
             Caption = 'Outdated By';
         }
+        field(9; "Device Handover Pending"; Boolean)
+        {
+            Caption = 'Device Handover Pending';
+        }
     }
 
     keys
@@ -63,13 +67,16 @@ table 77781 "BJF MN Config Status"
         TempProviderBuffer."Applied At" := "Applied At";
         TempProviderBuffer."Applied By" := "Applied By";
 
-        if "Manually Outdated" or ("Applied Version" <> TempProviderBuffer."Defined Version") then
+        // A pending device handover counts as outdated: the configuration is in the setup
+        // tables but has not reached the devices, and only applying again from this page
+        // can finish the job.
+        if "Manually Outdated" or "Device Handover Pending" or ("Applied Version" <> TempProviderBuffer."Defined Version") then
             TempProviderBuffer.State := Enum::"BJF MN Config State"::Outdated
         else
             TempProviderBuffer.State := Enum::"BJF MN Config State"::Applied;
     end;
 
-    procedure RecordApplied(ProviderId: Code[50]; ProviderName: Text[100]; ProviderVersion: Integer)
+    procedure RecordApplied(ProviderId: Code[50]; ProviderName: Text[100]; ProviderVersion: Integer; DeviceHandoverPending: Boolean)
     begin
         if not Get(ProviderId) then begin
             Init();
@@ -82,6 +89,7 @@ table 77781 "BJF MN Config Status"
         "Applied At" := CurrentDateTime();
         "Applied By" := CopyStr(UserId(), 1, MaxStrLen("Applied By"));
         "Manually Outdated" := false;
+        "Device Handover Pending" := DeviceHandoverPending;
         Clear("Outdated At");
         Clear("Outdated By");
         Modify();

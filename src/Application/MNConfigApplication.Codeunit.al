@@ -17,6 +17,7 @@ codeunit 77784 "BJF MN Config Application"
         ProviderName: Text[100];
         ProviderDescription: Text[250];
         ProviderVersion: Integer;
+        DeviceHandoverCompleted: Boolean;
     begin
         ProviderCatalog.GetMetadata(
             ProviderType, ProviderId, ProviderName, ProviderDescription, ProviderVersion);
@@ -26,11 +27,12 @@ codeunit 77784 "BJF MN Config Application"
         ConfigurationBuilder.GetLines(TempConfigurationLine);
 
         ConfigurationValidator.Validate(TempConfigurationLine);
-        this.Execute(TempConfigurationLine);
-        ConfigurationStatus.RecordApplied(ProviderId, ProviderName, ProviderVersion);
+        DeviceHandoverCompleted := this.Execute(TempConfigurationLine);
+        ConfigurationStatus.RecordApplied(
+            ProviderId, ProviderName, ProviderVersion, not DeviceHandoverCompleted);
     end;
 
-    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary)
+    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary) DeviceHandoverCompleted: Boolean
     var
         PageServices: Dictionary of [Integer, Text];
     begin
@@ -39,7 +41,7 @@ codeunit 77784 "BJF MN Config Application"
         this.ApplyFields(TempConfigurationLine, PageServices);
         this.ApplyLinkedFields(TempConfigurationLine, PageServices);
         TempConfigurationLine.Reset();
-        PageManagement.PublishConfigurationToDevices();
+        exit(PageManagement.PublishConfigurationToDevices());
     end;
 
     local procedure PreparePublishedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
