@@ -50,6 +50,16 @@ codeunit 77785 "BJF MN Config Validator"
                         DefinedOperations,
                         StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
                 end;
+            Enum::"BJF MN Config Operation"::"Function Field":
+                begin
+                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireValue(ConfigurationLine."Mobile Type", MobileTypeRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireValue(ConfigurationLine."Function Name", FunctionNameRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireValue(ConfigurationLine."Function Type", FunctionTypeRequiredErr, ConfigurationLine."Entry No.");
+                    this.EnsureUnique(
+                        DefinedOperations,
+                        StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+                end;
         end;
     end;
 
@@ -74,6 +84,9 @@ codeunit 77785 "BJF MN Config Validator"
         TargetPageIdRequiredErr: Label 'Configuration line %1 must specify a positive target page ID.', Comment = '%1 = configuration line number';
         TargetFieldRequiredErr: Label 'Configuration line %1 must specify a target filter field.', Comment = '%1 = configuration line number';
         SourceFieldRequiredErr: Label 'Configuration line %1 must specify a source field.', Comment = '%1 = configuration line number';
+        MobileTypeRequiredErr: Label 'Configuration line %1 must specify a mobile type.', Comment = '%1 = configuration line number';
+        FunctionNameRequiredErr: Label 'Configuration line %1 must specify a function name.', Comment = '%1 = configuration line number';
+        FunctionTypeRequiredErr: Label 'Configuration line %1 must specify a function type.', Comment = '%1 = configuration line number';
         DuplicateOperationErr: Label 'The provider defines the same configuration target more than once: %1.', Comment = '%1 = normalized operation key';
         PageOperationKeyTok: Label 'PAGE|%1', Locked = true;
         FieldOperationKeyTok: Label 'FIELD|%1|%2', Locked = true;

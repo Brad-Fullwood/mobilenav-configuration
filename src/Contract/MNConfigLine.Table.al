@@ -55,6 +55,22 @@ table 77780 "BJF MN Config Line"
         {
             Caption = 'Source Field';
         }
+        field(12; "Mobile Type"; Text[30])
+        {
+            Caption = 'Mobile Type';
+        }
+        field(13; "Function Name"; Text[50])
+        {
+            Caption = 'Function Name';
+        }
+        field(14; "Function Type"; Text[30])
+        {
+            Caption = 'Function Type';
+        }
+        field(15; "Validation Behavior"; Text[50])
+        {
+            Caption = 'Validation Behavior';
+        }
     }
 
     keys

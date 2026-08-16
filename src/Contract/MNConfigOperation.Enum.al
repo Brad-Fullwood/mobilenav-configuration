@@ -19,4 +19,8 @@ enum 77781 "BJF MN Config Operation"
     {
         Caption = 'Linked Field';
     }
+    value(3; "Function Field")
+    {
+        Caption = 'Function Field';
+    }
 }

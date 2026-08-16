@@ -40,6 +40,49 @@ codeunit 77789 "BJF MN Field Mgt."
         exit(true);
     end;
 
+    /// <summary>
+    /// Binds a field to a MobileNAV page function and mobile control type, making it visible,
+    /// editable, and shown in the menu. Option values arrive as text and are resolved against
+    /// the option members of the MobileNAV Service Setup fields, so this codeunit never has to
+    /// track MobileNAV's option lists. Function Name is validated through MobileNAV's own
+    /// table procedure, which also coerces the field class for BLOB function types.
+    /// </summary>
+    procedure ConfigureFunctionField(ServiceName: Text[100]; ControlName: Text[100]; Editable: Boolean; MobileType: Text[30]; FunctionName: Text[50]; FunctionType: Text[30]; ValidationBehavior: Text[50]): Boolean
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        if not this.FindField(ServiceName, ControlName, ServiceSetup) then
+            exit(false);
+
+        ServiceSetup.Validate(Visible, true);
+        ServiceSetup.Editable := Editable;
+        ServiceSetup.DisplayInMenu := true;
+        this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(MobileType), MobileType);
+        this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Function Type"), FunctionType);
+        ServiceSetup.ValidateFunctionName(FunctionName, false);
+        if ValidationBehavior <> '' then
+            this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Validation Behavior"), ValidationBehavior);
+        ServiceSetup.Modify(true);
+        exit(true);
+    end;
+
+    local procedure SetOptionField(var ServiceSetup: Record "MobileNAV Service Setup"; FieldNumber: Integer; ValueName: Text)
+    var
+        SetupRecordRef: RecordRef;
+        OptionFieldRef: FieldRef;
+        MemberIndex: Integer;
+    begin
+        SetupRecordRef.GetTable(ServiceSetup);
+        OptionFieldRef := SetupRecordRef.Field(FieldNumber);
+        for MemberIndex := 1 to OptionFieldRef.EnumValueCount() do
+            if UpperCase(OptionFieldRef.GetEnumValueName(MemberIndex)) = UpperCase(ValueName) then begin
+                OptionFieldRef.Value := OptionFieldRef.GetEnumValueOrdinal(MemberIndex);
+                SetupRecordRef.SetTable(ServiceSetup);
+                exit;
+            end;
+        Error(UnknownOptionValueErr, ValueName, OptionFieldRef.Caption());
+    end;
+
     local procedure FindField(ServiceName: Text[100]; ControlName: Text[100]; var ServiceSetup: Record "MobileNAV Service Setup"): Boolean
     begin
         ServiceSetup.SetRange("Object Type", ServiceSetup."Object Type"::Page);
@@ -132,4 +175,5 @@ codeunit 77789 "BJF MN Field Mgt."
         PageManagement: Codeunit "BJF MN Page Mgt.";
         WebServiceHandling: Codeunit "MobileNAV Web Service Handling";
         TargetServiceMissingErr: Label 'MobileNAV service %1 is not registered.', Comment = '%1 = MobileNAV service name';
+        UnknownOptionValueErr: Label '%1 is not a valid value for %2 in this MobileNAV version.', Comment = '%1 = requested option value, %2 = field caption';
 }

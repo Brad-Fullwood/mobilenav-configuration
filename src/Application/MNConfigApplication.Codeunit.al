@@ -36,9 +36,13 @@ codeunit 77784 "BJF MN Config Application"
     var
         PageServices: Dictionary of [Integer, Text];
     begin
+        // MobileNAV only carries configuration through to devices for changes made while its
+        // construction window is open, so the whole apply runs inside one.
+        PageManagement.BeginConfigurationChange();
         this.PreparePublishedPages(TempConfigurationLine, PageServices);
         this.PrepareReferencedPages(TempConfigurationLine, PageServices);
         this.ApplyFields(TempConfigurationLine, PageServices);
+        this.ApplyFunctionFields(TempConfigurationLine, PageServices);
         this.ApplyLinkedFields(TempConfigurationLine, PageServices);
         TempConfigurationLine.Reset();
         exit(PageManagement.PublishConfigurationToDevices());
@@ -67,6 +71,12 @@ codeunit 77784 "BJF MN Config Application"
                 ResolvePage(TempConfigurationLine."Page ID", PageServices);
             until TempConfigurationLine.Next() = 0;
 
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Function Field");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                ResolvePage(TempConfigurationLine."Page ID", PageServices);
+            until TempConfigurationLine.Next() = 0;
+
         TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Linked Field");
         if TempConfigurationLine.FindSet() then
             repeat
@@ -88,6 +98,25 @@ codeunit 77784 "BJF MN Config Application"
                     CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
                     TempConfigurationLine.Visible, TempConfigurationLine.Editable,
                     TempConfigurationLine."Display In Menu")
+                then
+                    Error(FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure ApplyFunctionFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Function Field");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
+                if not FieldManagement.ConfigureFunctionField(
+                    CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
+                    TempConfigurationLine.Editable,
+                    TempConfigurationLine."Mobile Type", TempConfigurationLine."Function Name",
+                    TempConfigurationLine."Function Type", TempConfigurationLine."Validation Behavior")
                 then
                     Error(FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
             until TempConfigurationLine.Next() = 0;

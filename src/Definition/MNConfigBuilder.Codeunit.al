@@ -46,6 +46,27 @@ codeunit 77781 "BJF MN Config Builder"
         TempConfigurationLine.Modify();
     end;
 
+    /// <summary>
+    /// Makes a field visible and binds it to a MobileNAV page function so the device renders
+    /// it as a special control (for example a Signature pad bound to a BLOB function).
+    /// Editable false shows the control read-only, for example a captured signature on a
+    /// posted document. Names are matched against MobileNAV's own option members at apply
+    /// time, so they follow MobileNAV's vocabulary: MobileType (for example 'Signature',
+    /// 'Image'), FunctionType (for example 'BLOB', 'BLOB with GPS'), and ValidationBehavior
+    /// (for example 'Mandatory'; empty leaves the field optional).
+    /// </summary>
+    procedure AddFunctionField(PageId: Integer; ControlName: Text[100]; Editable: Boolean; MobileType: Text[30]; FunctionName: Text[50]; FunctionType: Text[30]; ValidationBehavior: Text[50])
+    begin
+        this.AddLine(Enum::"BJF MN Config Operation"::"Function Field", PageId);
+        TempConfigurationLine."Control Name" := ControlName;
+        TempConfigurationLine.Editable := Editable;
+        TempConfigurationLine."Mobile Type" := MobileType;
+        TempConfigurationLine."Function Name" := FunctionName;
+        TempConfigurationLine."Function Type" := FunctionType;
+        TempConfigurationLine."Validation Behavior" := ValidationBehavior;
+        TempConfigurationLine.Modify();
+    end;
+
     internal procedure GetLines(var Target: Record "BJF MN Config Line" temporary)
     begin
         Target.Copy(TempConfigurationLine, true);
