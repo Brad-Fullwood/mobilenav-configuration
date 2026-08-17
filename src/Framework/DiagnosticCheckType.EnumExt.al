@@ -19,4 +19,9 @@ enumextension 77740 "BJF Diagnostic Check Type WMS" extends "BJF Diagnostic Chec
         Caption = 'Package Consistency';
         Implementation = "BJF Diagnostic Check" = "BJF Check Package Consistency";
     }
+    value(102; "Split Packages")
+    {
+        Caption = 'Split Packages';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Split Packages";
+    }
 }

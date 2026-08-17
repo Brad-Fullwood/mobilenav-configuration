@@ -8,6 +8,7 @@ permissionset 77740 "BJF Diagnostics WMS"
     Assignable = true;
     Permissions = codeunit "BJF Check Inventory Setup" = X,
         codeunit "BJF Check Package Consistency" = X,
+        codeunit "BJF Check Split Packages" = X,
         tabledata "Inventory Setup" = r,
         tabledata "MUL WMS Package" = r;
 }

@@ -2,7 +2,7 @@
   "id": "a7e0d38d-9896-45a5-b337-dc130656dd5f",
   "name": "MobileNAV Diagnostics WMS",
   "publisher": "Brad Fullwood",
-  "version": "1.0.0.0",
+  "version": "1.1.0.0",
   "brief": "WMS MobileNAV checks for the MobileNAV Diagnostics toolbox.",
   "description": "Contributes the checks that need WMS MobileNAV - inventory setup for package tracking, and package record consistency - to the MobileNAV Diagnostics toolbox. Kept separate so the toolbox installs in environments without WMS MobileNAV.",
   "privacyStatement": "",
