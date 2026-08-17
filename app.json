@@ -2,7 +2,7 @@
     "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
     "name": "MobileNAV Configuration",
     "publisher": "Brad Fullwood",
-    "version": "2.3.0.0",
+    "version": "2.3.0.1",
     "brief": "Declarative configuration framework for MobileNAV pages and fields.",
     "description": "Provides a validated provider contract, application tracking, and an administration page for defining and applying custom MobileNAV configuration from AL.",
     "privacyStatement": "",

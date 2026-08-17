@@ -35,10 +35,12 @@ codeunit 77788 "BJF MN Page Mgt."
 
     /// <summary>
     /// Registers the page under the preferred service name and refreshes its metadata. The
-    /// lookup is keyed on page id AND service name, so a page whose Main row already exists
-    /// under a different service name gets a second, independently configured service rather
-    /// than adopting the existing one — that is how a guided variant of a stock MobileNAV
-    /// page coexists with the vendor's own service over the same page object.
+    /// lookup is keyed on page id AND service name so a mismatch is caught here rather than
+    /// silently adopting an existing row. Note that MobileNAV allows only ONE service per
+    /// page object: RefreshPageByMetadata resolves the service name from the page object id
+    /// and renames the Main row to it, so declaring a second service over a page that already
+    /// has one does not survive the refresh — to reshape a stock page, target its existing
+    /// service name.
     /// </summary>
     procedure EnsurePage(PageId: Integer; PreferredServiceName: Text[100]; var ServiceName: Text[100])
     var
