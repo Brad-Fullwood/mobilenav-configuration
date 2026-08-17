@@ -30,7 +30,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         tabledata "Item Journal Batch" = ri,
         tabledata "Item Journal Line" = rimd,
         tabledata "Reservation Entry" = rimd,
-        tabledata "MUL WMS Package" = r;
+        tabledata "MUL WMS Package" = ri;
 
     procedure RunCheck(var Finding: Record "BJF Diagnostic Finding")
     var
@@ -54,17 +54,18 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         foreach PackageNo in BinPlacements.Keys() do
             if (BinPlacements.Get(PackageNo).Count() > 1) and not IsMultiLocation(LocationPlacements, PackageNo) then begin
                 FindingCount += 1;
-                if FindingCount <= MaxFindings() then
-                    if WMSPackage.Get(PackageNo) then
-                        Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(SplitBinMsg, PackageNo, JoinPlacements(BinPlacements.Get(PackageNo))),
-                            WMSPackage.RecordId(),
-                            StrSubstNo(ConsolidateFixLbl, PackageNo))
-                    else
-                        // No MUL WMS Package record to hang the fix on; the Package
-                        // Consistency check reports that root problem separately.
-                        Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(SplitBinMsg, PackageNo, JoinPlacements(BinPlacements.Get(PackageNo))));
+                if FindingCount <= MaxFindings() then begin
+                    // The package number rides in Fix Context; the Related Record ID is only
+                    // for navigation and may legitimately be blank - the fix creates a
+                    // missing MUL WMS Package record itself.
+                    Clear(WMSPackage);
+                    if WMSPackage.Get(PackageNo) then;
+                    Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
+                        StrSubstNo(SplitBinMsg, PackageNo, JoinPlacements(BinPlacements.Get(PackageNo))),
+                        WMSPackage.RecordId(),
+                        StrSubstNo(ConsolidateFixLbl, PackageNo),
+                        PackageNo);
+                end;
             end;
 
         if FindingCount > MaxFindings() then
@@ -76,12 +77,18 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
     var
         WMSPackage: Record "MUL WMS Package";
         RecRef: RecordRef;
+        PackageNo: Code[50];
     begin
-        if Finding."Related Record ID".TableNo() <> Database::"MUL WMS Package" then
+        PackageNo := CopyStr(Finding."Fix Context", 1, MaxStrLen(PackageNo));
+        // Findings recorded before Fix Context existed anchored the package to its record id.
+        if (PackageNo = '') and (Finding."Related Record ID".TableNo() = Database::"MUL WMS Package") then
+            if RecRef.Get(Finding."Related Record ID") then begin
+                RecRef.SetTable(WMSPackage);
+                PackageNo := WMSPackage."Package No.";
+            end;
+        if PackageNo = '' then
             Error(NoAutomaticFixErr);
-        RecRef.Get(Finding."Related Record ID");
-        RecRef.SetTable(WMSPackage);
-        ConsolidatePackage(WMSPackage."Package No.");
+        ConsolidatePackage(PackageNo);
     end;
 
     /// <summary>
@@ -140,6 +147,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
     /// </summary>
     local procedure ConsolidatePackage(PackageNo: Code[50])
     var
+        WMSPackage: Record "MUL WMS Package";
         ItemJournalBatch: Record "Item Journal Batch";
         ItemJournalLine: Record "Item Journal Line";
         ItemJnlPostBatch: Codeunit "Item Jnl.-Post Batch";
@@ -154,6 +162,14 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         TargetBin := FindTargetBin(BinQty);
         if TargetBin = '' then
             Error(NothingToConsolidateErr, PackageNo);
+
+        // The vendor integrity check hard-Gets this record after the posting below; create
+        // it when missing (validating Package No. computes location, bin and hierarchy).
+        if not WMSPackage.Get(PackageNo) then begin
+            WMSPackage.Init();
+            WMSPackage.Validate("Package No.", PackageNo);
+            WMSPackage.Insert();
+        end;
 
         PrepareFixBatch(ItemJournalBatch);
 
