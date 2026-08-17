@@ -72,6 +72,10 @@ codeunit 77785 "BJF MN Config Validator"
             Enum::"BJF MN Config Operation"::Stage:
                 begin
                     this.RequireValue(ConfigurationLine."Stage Id", StageIdRequiredErr, ConfigurationLine."Entry No.");
+                    // Stage ids double as MobileNAV category codes (Code[20]); a longer id
+                    // passes the apply but fails on the device during configuration sync.
+                    if StrLen(ConfigurationLine."Stage Id") > MaxStageIdLength() then
+                        Error(StageIdTooLongErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id", MaxStageIdLength());
                     if not DefinedOperations.ContainsKey(StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID")) then
                         Error(StagingNotDeclaredErr, ConfigurationLine."Entry No.");
                     this.EnsureUnique(
@@ -93,6 +97,13 @@ codeunit 77785 "BJF MN Config Validator"
                             LowerCase(ConfigurationLine."Stage Id"), LowerCase(ConfigurationLine."Control Name")));
                 end;
         end;
+    end;
+
+    local procedure MaxStageIdLength(): Integer
+    var
+        MasterData: Record "MobileNAV Master Data";
+    begin
+        exit(MaxStrLen(MasterData.Code));
     end;
 
     local procedure RequireValue(Value: Text; ErrorMessage: Text; EntryNo: Integer)
@@ -120,6 +131,7 @@ codeunit 77785 "BJF MN Config Validator"
         FunctionNameRequiredErr: Label 'Configuration line %1 must specify a function name.', Comment = '%1 = configuration line number';
         FunctionTypeRequiredErr: Label 'Configuration line %1 must specify a function type.', Comment = '%1 = configuration line number';
         StageIdRequiredErr: Label 'Configuration line %1 must specify a stage id.', Comment = '%1 = configuration line number';
+        StageIdTooLongErr: Label 'Configuration line %1: stage id %2 exceeds %3 characters. Stage ids double as MobileNAV category codes and longer ids fail on the device during configuration sync.', Comment = '%1 = configuration line number, %2 = stage id, %3 = maximum length';
         StagingNotDeclaredErr: Label 'Configuration line %1 defines a stage on a page without a preceding EnableStaging declaration.', Comment = '%1 = configuration line number';
         StageNotDeclaredErr: Label 'Configuration line %1 assigns a field to stage %2, which has no preceding AddStage declaration.', Comment = '%1 = configuration line number, %2 = stage id';
         DuplicateOperationErr: Label 'The provider defines the same configuration target more than once: %1.', Comment = '%1 = normalized operation key';

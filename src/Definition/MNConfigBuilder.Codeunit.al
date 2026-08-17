@@ -26,10 +26,17 @@ codeunit 77781 "BJF MN Config Builder"
         TempConfigurationLine.Modify();
     end;
 
-    /// <summary>Makes a field visible, displays it in the menu, and sets its editability.</summary>
+    /// <summary>
+    /// Makes a field visible on the page and sets its editability.
+    ///
+    /// Display in Menu is deliberately not set. In MobileNAV that flag marks a field as an
+    /// entry in the page's menu — which is what a drill-down button is — rather than a value
+    /// drawn on the card, so setting it on an ordinary field keeps that field off the card.
+    /// Use AddLinkedField for drill-downs, or AddField if a caller genuinely needs the flag.
+    /// </summary>
     procedure AddVisibleField(PageId: Integer; ControlName: Text[100]; Editable: Boolean)
     begin
-        this.AddField(PageId, ControlName, true, Editable, true);
+        this.AddField(PageId, ControlName, true, Editable, false);
     end;
 
     /// <summary>
