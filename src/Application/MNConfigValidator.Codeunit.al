@@ -35,6 +35,10 @@ codeunit 77785 "BJF MN Config Validator"
             Enum::"BJF MN Config Operation"::Field:
                 begin
                     this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
+                    // The builder always emits an importance, so an empty one means the line
+                    // did not come from the builder rather than "leave MobileNAV's default".
+                    this.RequireValue(ConfigurationLine.Importance, ImportanceRequiredErr, ConfigurationLine."Entry No.");
+                    this.RequireImportanceValue(ConfigurationLine);
                     this.EnsureUnique(
                         DefinedOperations,
                         StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
@@ -106,6 +110,15 @@ codeunit 77785 "BJF MN Config Validator"
         exit(MaxStrLen(MasterData.Code));
     end;
 
+    local procedure RequireImportanceValue(ConfigurationLine: Record "BJF MN Config Line" temporary)
+    begin
+        case UpperCase(ConfigurationLine.Importance) of
+            'NONE', 'REQUIREDFORINSERT', 'MANDATORY', 'ADDITIONAL':
+                exit;
+        end;
+        Error(ImportanceInvalidErr, ConfigurationLine."Entry No.", ConfigurationLine.Importance, SupportedImportanceTok);
+    end;
+
     local procedure RequireValue(Value: Text; ErrorMessage: Text; EntryNo: Integer)
     begin
         if Value = '' then
@@ -130,11 +143,14 @@ codeunit 77785 "BJF MN Config Validator"
         MobileTypeRequiredErr: Label 'Configuration line %1 must specify a mobile type.', Comment = '%1 = configuration line number';
         FunctionNameRequiredErr: Label 'Configuration line %1 must specify a function name.', Comment = '%1 = configuration line number';
         FunctionTypeRequiredErr: Label 'Configuration line %1 must specify a function type.', Comment = '%1 = configuration line number';
+        ImportanceRequiredErr: Label 'Configuration line %1 must specify an importance.', Comment = '%1 = configuration line number';
+        ImportanceInvalidErr: Label 'Configuration line %1 specifies importance %2, which is not one of %3.', Comment = '%1 = configuration line number, %2 = requested importance, %3 = supported importance values';
         StageIdRequiredErr: Label 'Configuration line %1 must specify a stage id.', Comment = '%1 = configuration line number';
         StageIdTooLongErr: Label 'Configuration line %1: stage id %2 exceeds %3 characters. Stage ids double as MobileNAV category codes and longer ids fail on the device during configuration sync.', Comment = '%1 = configuration line number, %2 = stage id, %3 = maximum length';
         StagingNotDeclaredErr: Label 'Configuration line %1 defines a stage on a page without a preceding EnableStaging declaration.', Comment = '%1 = configuration line number';
         StageNotDeclaredErr: Label 'Configuration line %1 assigns a field to stage %2, which has no preceding AddStage declaration.', Comment = '%1 = configuration line number, %2 = stage id';
         DuplicateOperationErr: Label 'The provider defines the same configuration target more than once: %1.', Comment = '%1 = normalized operation key';
+        SupportedImportanceTok: Label 'None, RequiredForInsert, Mandatory, Additional', Locked = true;
         PageOperationKeyTok: Label 'PAGE|%1', Locked = true;
         FieldOperationKeyTok: Label 'FIELD|%1|%2', Locked = true;
         StagingOperationKeyTok: Label 'STAGING|%1', Locked = true;

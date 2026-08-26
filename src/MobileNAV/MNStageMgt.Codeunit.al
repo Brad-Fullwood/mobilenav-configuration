@@ -133,7 +133,7 @@ codeunit 77790 "BJF MN Stage Mgt."
     var
         MasterData: Record "MobileNAV Master Data";
     begin
-        if MasterData.Get(MasterData.Type::Category, CopyStr(StageId, 1, MaxStrLen(MasterData.Code))) then begin
+        if MasterData.Get(MasterData.Type::Category, CopyStr(StageId, 1, MaxStrLen(MasterData.Code)), 0, '', MasterData.Area::Normal) then begin
             if (Description <> '') and (MasterData.Description <> Description) then begin
                 MasterData.Description := CopyStr(Description, 1, MaxStrLen(MasterData.Description));
                 MasterData.Modify(false);

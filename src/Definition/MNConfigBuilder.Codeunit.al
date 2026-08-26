@@ -15,19 +15,39 @@ codeunit 77781 "BJF MN Config Builder"
         TempConfigurationLine.Modify();
     end;
 
-    /// <summary>Adds an explicit field configuration for an existing MobileNAV page.</summary>
+    /// <summary>
+    /// Adds an explicit field configuration for an existing MobileNAV page, placing the field
+    /// in MobileNAV's standard section and leaving it out of the device filter pane. Use the
+    /// Importance/Filterable overload to place a field elsewhere or make it filterable.
+    /// </summary>
     procedure AddField(PageId: Integer; ControlName: Text[100]; Visible: Boolean; Editable: Boolean; DisplayInMenu: Boolean)
+    begin
+        this.AddField(PageId, ControlName, Visible, Editable, DisplayInMenu, StandardImportanceTok, false);
+    end;
+
+    /// <summary>
+    /// Adds an explicit field configuration for an existing MobileNAV page and controls where
+    /// the device draws it and whether it can be filtered on. Importance follows MobileNAV's
+    /// vocabulary: 'None' places the field in the standard section, 'RequiredForInsert' and
+    /// 'Mandatory' mark it as required, and 'Additional' hides it behind the card's additional
+    /// fields section (MobileNAV's own default for a new field). Filterable true also offers
+    /// the field in the device's filter pane. Filter Scope is left at MobileNAV's default.
+    /// </summary>
+    procedure AddField(PageId: Integer; ControlName: Text[100]; Visible: Boolean; Editable: Boolean; DisplayInMenu: Boolean; Importance: Text[30]; Filterable: Boolean)
     begin
         this.AddLine(Enum::"BJF MN Config Operation"::Field, PageId);
         TempConfigurationLine."Control Name" := ControlName;
         TempConfigurationLine.Visible := Visible;
         TempConfigurationLine.Editable := Editable;
         TempConfigurationLine."Display In Menu" := DisplayInMenu;
+        TempConfigurationLine.Importance := Importance;
+        TempConfigurationLine.Filterable := Filterable;
         TempConfigurationLine.Modify();
     end;
 
     /// <summary>
-    /// Makes a field visible on the page and sets its editability.
+    /// Makes a field visible on the page in MobileNAV's standard section and sets its
+    /// editability.
     ///
     /// Display in Menu is deliberately not set. In MobileNAV that flag marks a field as an
     /// entry in the page's menu — which is what a drill-down button is — rather than a value
@@ -36,7 +56,17 @@ codeunit 77781 "BJF MN Config Builder"
     /// </summary>
     procedure AddVisibleField(PageId: Integer; ControlName: Text[100]; Editable: Boolean)
     begin
-        this.AddField(PageId, ControlName, true, Editable, false);
+        this.AddField(PageId, ControlName, true, Editable, false, StandardImportanceTok, false);
+    end;
+
+    /// <summary>
+    /// Makes a field visible in MobileNAV's standard section, sets its editability, and offers
+    /// it in the device's filter pane. Filter Scope is left at MobileNAV's default, so the
+    /// filter applies wherever that default allows.
+    /// </summary>
+    procedure AddFilterableField(PageId: Integer; ControlName: Text[100]; Editable: Boolean)
+    begin
+        this.AddField(PageId, ControlName, true, Editable, false, StandardImportanceTok, true);
     end;
 
     /// <summary>
@@ -159,4 +189,5 @@ codeunit 77781 "BJF MN Config Builder"
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
         NextEntryNo: Integer;
+        StandardImportanceTok: Label 'None', Locked = true;
 }

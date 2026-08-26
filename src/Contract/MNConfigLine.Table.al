@@ -95,6 +95,14 @@ table 77780 "BJF MN Config Line"
         {
             Caption = 'Stage Description';
         }
+        field(22; Importance; Text[30])
+        {
+            Caption = 'Importance';
+        }
+        field(23; Filterable; Boolean)
+        {
+            Caption = 'Filterable';
+        }
     }
 
     keys

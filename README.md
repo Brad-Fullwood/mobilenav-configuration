@@ -16,8 +16,10 @@ A provider implements `interface "BJF MN Config Provider"` and must supply:
 The builder supports only these operations:
 
 - `AddPublishedPage`;
-- `AddField` / `AddVisibleField`;
+- `AddField` / `AddVisibleField` / `AddFilterableField`;
 - `AddLinkedField`.
+
+`AddField` and `AddVisibleField` place a field in MobileNAV's standard section and leave it out of the device filter pane. MobileNAV itself defaults a new field to *Additional* importance, which hides it behind the card's additional fields section, so the framework always writes importance explicitly. The `AddField` overload taking `Importance` and `Filterable` accepts MobileNAV's own importance vocabulary (`None`, `RequiredForInsert`, `Mandatory`, `Additional`) and offers the field in the filter pane; `AddFilterableField` is the visible, standard, filterable shorthand. Filter Scope is left at MobileNAV's default.
 
 There is deliberately no `ApplySetup()` method. Providers describe desired state; the framework validates and applies it. Empty definitions, incomplete operations, duplicate targets, duplicate provider IDs, empty metadata, and non-positive versions are rejected.
 

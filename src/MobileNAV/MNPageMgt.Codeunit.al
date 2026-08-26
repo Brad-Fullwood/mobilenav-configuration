@@ -154,7 +154,7 @@ codeunit 77788 "BJF MN Page Mgt."
     begin
         if not GuiAllowed() then
             exit;
-        if not MasterData.Get(MasterData.Type::General) then
+        if not MasterData.Get(MasterData.Type::General, '', 0, '', MasterData.Area::Normal) then
             exit;
         if MasterData."Under Construction" then
             exit;
@@ -183,7 +183,7 @@ codeunit 77788 "BJF MN Page Mgt."
     begin
         if not GuiAllowed() then
             exit(false);
-        if not MasterData.Get(MasterData.Type::General) then
+        if not MasterData.Get(MasterData.Type::General, '', 0, '', MasterData.Area::Normal) then
             exit(false);
 
         // Flag what changed, then run the post-configuration process while the window is
@@ -196,7 +196,7 @@ codeunit 77788 "BJF MN Page Mgt."
 
         // Close the window and clear the flags it consumed, as MobileNAV does when an
         // administrator turns construction off by hand.
-        MasterData.Get(MasterData.Type::General);
+        MasterData.Get(MasterData.Type::General, '', 0, '', MasterData.Area::Normal);
         MasterData."Under Construction" := false;
         MasterData."Page Hierarchy Changed" := false;
         MasterData."Enforced Major Config Change" := false;

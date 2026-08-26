@@ -33,6 +33,9 @@ codeunit 50100 "CTO MN Config Provider" implements "BJF MN Config Provider"
     begin
         Configuration.AddPublishedPage(Page::"CTO Mobile Lookup", 'CTOMobileLookup');
         Configuration.AddVisibleField(Page::"MobileNAV Item", 'CTO Reference', false);
+        Configuration.AddFilterableField(Page::"MobileNAV Item", 'CTO Region Code', false);
+        Configuration.AddField(
+            Page::"MobileNAV Item", 'CTO Warehouse Note', true, true, false, 'Additional', false);
         Configuration.AddLinkedField(
             Page::"MobileNAV Item", 'CTO Open Lookup', Page::"CTO Mobile Lookup",
             'Item No.', 'No.');
@@ -48,6 +51,8 @@ enumextension 50100 "CTO MN Config Providers" extends "BJF MN Config Provider"
     }
 }
 ```
+
+`AddVisibleField` and the five-argument `AddField` place a field in MobileNAV's standard section. `AddFilterableField` does the same and also offers the field in the device's filter pane. The seven-argument `AddField` overload takes an importance from MobileNAV's own vocabulary — `None` (standard), `RequiredForInsert`, `Mandatory`, or `Additional` — and a filterable flag, for the cases where the defaults are not what the page needs.
 
 To apply this provider automatically from the consumer's install or upgrade codeunit:
 

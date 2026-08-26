@@ -15,5 +15,6 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF MN Config Validator" = X,
         codeunit "BJF MN Page Mgt." = X,
         codeunit "BJF MN Field Mgt." = X,
+        codeunit "BJF MN Stage Mgt." = X,
         page "BJF Custom MN Config" = X;
 }

@@ -92,7 +92,8 @@ codeunit 77784 "BJF MN Config Application"
                 if not FieldManagement.ConfigureField(
                     CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
                     TempConfigurationLine.Visible, TempConfigurationLine.Editable,
-                    TempConfigurationLine."Display In Menu")
+                    TempConfigurationLine."Display In Menu", TempConfigurationLine.Importance,
+                    TempConfigurationLine.Filterable)
                 then
                     Error(FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
             until TempConfigurationLine.Next() = 0;

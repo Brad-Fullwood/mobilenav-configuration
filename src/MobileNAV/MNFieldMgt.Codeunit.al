@@ -7,16 +7,26 @@ codeunit 77789 "BJF MN Field Mgt."
     Access = Internal;
     Permissions = tabledata "MobileNAV Service Setup" = rim;
 
-    procedure ConfigureField(ServiceName: Text[100]; ControlName: Text[100]; Visible: Boolean; Editable: Boolean; DisplayInMenu: Boolean): Boolean
+    /// <summary>
+    /// Sets a field's visibility, editability, menu flag, placement, and filter availability.
+    /// Importance is MobileNAV's Mandatory field (caption Importance) and is resolved against
+    /// its option members, so this codeunit never has to track MobileNAV's option list. It
+    /// must be written on every apply: MobileNAV initializes it to Additional, which hides an
+    /// otherwise visible field behind the card's additional fields section. Filter Scope is
+    /// deliberately left at MobileNAV's default.
+    /// </summary>
+    procedure ConfigureField(ServiceName: Text[100]; ControlName: Text[100]; Visible: Boolean; Editable: Boolean; DisplayInMenu: Boolean; Importance: Text[30]; Filterable: Boolean): Boolean
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
-        if not FindField(ServiceName, ControlName, ServiceSetup) then
+        if not this.FindField(ServiceName, ControlName, ServiceSetup) then
             exit(false);
 
         ServiceSetup.Validate(Visible, Visible);
         ServiceSetup.Editable := Editable;
         ServiceSetup.DisplayInMenu := DisplayInMenu;
+        this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(Mandatory), Importance);
+        ServiceSetup."Visible as Filter" := Filterable;
         ServiceSetup.Modify(true);
         exit(true);
     end;
