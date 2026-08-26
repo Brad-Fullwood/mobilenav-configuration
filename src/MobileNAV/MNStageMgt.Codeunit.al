@@ -17,22 +17,26 @@ codeunit 77790 "BJF MN Stage Mgt."
     procedure ApplyPageStaging(ServiceName: Text[100]; var ConfigurationLine: Record "BJF MN Config Line" temporary; PageId: Integer)
     var
         StageIds: List of [Text];
+        RestartFromStageId: Text;
     begin
         ConfigurationLine.Reset();
         ConfigurationLine.SetRange("Page ID", PageId);
         ConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Staging);
         ConfigurationLine.FindFirst();
         PageManagement.SetStaging(
-            ServiceName, ConfigurationLine."Auto Next Stage", ConfigurationLine."Back-Next Visible");
+            ServiceName, ConfigurationLine."Auto Next Stage", ConfigurationLine."Back-Next Visible",
+            ConfigurationLine."Staging Behavior");
 
         ConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Stage);
         if ConfigurationLine.FindSet() then
             repeat
                 StageIds.Add(ConfigurationLine."Stage Id");
+                if ConfigurationLine."Stage Restart From" then
+                    RestartFromStageId := ConfigurationLine."Stage Id";
                 this.EnsureStageCategory(ConfigurationLine."Stage Id", ConfigurationLine."Stage Description");
             until ConfigurationLine.Next() = 0;
 
-        this.RebuildStageRows(ServiceName, StageIds);
+        this.RebuildStageRows(ServiceName, StageIds, RestartFromStageId);
         this.InitializeFieldMasks(ServiceName, StageIds.Count());
 
         ConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Stage Field");
@@ -45,7 +49,7 @@ codeunit 77790 "BJF MN Stage Mgt."
         ConfigurationLine.Reset();
     end;
 
-    local procedure RebuildStageRows(ServiceName: Text[100]; StageIds: List of [Text])
+    local procedure RebuildStageRows(ServiceName: Text[100]; StageIds: List of [Text]; RestartFromStageId: Text)
     var
         StageRow: Record "MobileNAV Service Setup";
         StageId: Text;
@@ -55,7 +59,9 @@ codeunit 77790 "BJF MN Stage Mgt."
         StageRow.SetRange("Line Type", StageRow."Line Type"::Stage);
         StageRow.DeleteAll();
 
-        // Mirrors ImportPageStages: stage rows carry only the primary key and the stage id.
+        // Mirrors ImportPageStages: stage rows carry only the primary key, the stage id, and
+        // the restart-from flag ('Restart From Here' — the stage the device re-enters the
+        // wizard at when the next record starts it, keeping what earlier stages captured).
         foreach StageId in StageIds do begin
             PageLineNo += 10000;
             StageRow.Init();
@@ -65,6 +71,7 @@ codeunit 77790 "BJF MN Stage Mgt."
             StageRow."Relation No." := 0;
             StageRow."Line No." := 0;
             StageRow.Stage := CopyStr(StageId, 1, MaxStrLen(StageRow.Stage));
+            StageRow."Staging Restart From" := (RestartFromStageId <> '') and (StageId = RestartFromStageId);
             StageRow.Insert(false);
         end;
     end;

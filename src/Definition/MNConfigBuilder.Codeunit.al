@@ -139,9 +139,22 @@ codeunit 77781 "BJF MN Config Builder"
     /// </summary>
     procedure EnableStaging(PageId: Integer; AutoNext: Boolean; BackNextVisible: Boolean)
     begin
+        this.EnableStaging(PageId, AutoNext, BackNextVisible, '');
+    end;
+
+    /// <summary>
+    /// Turns the page into a staged wizard with an explicit staging behavior. StagingBehavior
+    /// follows MobileNAV's vocabulary ('Always' restarts the wizard on every record,
+    /// 'CreationOnly' stages only while a record is being created, 'PersistState' resumes a
+    /// part-finished wizard; empty keeps 'Always'). Declare this before any AddStage or
+    /// AddStageField call for the same page; stages render in the order they are added.
+    /// </summary>
+    procedure EnableStaging(PageId: Integer; AutoNext: Boolean; BackNextVisible: Boolean; StagingBehavior: Text[30])
+    begin
         this.AddLine(Enum::"BJF MN Config Operation"::Staging, PageId);
         TempConfigurationLine."Auto Next Stage" := AutoNext;
         TempConfigurationLine."Back-Next Visible" := BackNextVisible;
+        TempConfigurationLine."Staging Behavior" := StagingBehavior;
         TempConfigurationLine.Modify();
     end;
 
@@ -152,9 +165,22 @@ codeunit 77781 "BJF MN Config Builder"
     /// </summary>
     procedure AddStage(PageId: Integer; StageId: Code[100]; Description: Text[250])
     begin
+        this.AddStage(PageId, StageId, Description, false);
+    end;
+
+    /// <summary>
+    /// Adds a wizard stage and optionally marks it as the stage the wizard restarts from
+    /// (MobileNAV's 'Restart From Here'). When a later record starts the wizard again, the
+    /// device re-enters at this stage and keeps what the earlier stages captured — for
+    /// example a scanned bin retained while items in that bin are counted one after another.
+    /// MobileNAV allows one restart-from stage per page, and it cannot be the first stage.
+    /// </summary>
+    procedure AddStage(PageId: Integer; StageId: Code[100]; Description: Text[250]; RestartFrom: Boolean)
+    begin
         this.AddLine(Enum::"BJF MN Config Operation"::Stage, PageId);
         TempConfigurationLine."Stage Id" := StageId;
         TempConfigurationLine."Stage Description" := Description;
+        TempConfigurationLine."Stage Restart From" := RestartFrom;
         TempConfigurationLine.Modify();
     end;
 

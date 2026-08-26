@@ -116,17 +116,30 @@ codeunit 77788 "BJF MN Page Mgt."
     end;
 
     /// <summary>
-    /// Turns the page into a staged wizard. Enable Staging is validated (not assigned) so
-    /// MobileNAV propagates the flag to existing profile rows; staging behavior is fixed to
-    /// 'Always from scratch', which restarts the wizard on every record.
+    /// Turns the page into a staged wizard with staging behavior 'Always from scratch', which
+    /// restarts the wizard on every record.
     /// </summary>
     procedure SetStaging(ServiceName: Text[100]; AutoNext: Boolean; BackNextVisible: Boolean)
+    begin
+        this.SetStaging(ServiceName, AutoNext, BackNextVisible, '');
+    end;
+
+    /// <summary>
+    /// Turns the page into a staged wizard. Enable Staging is validated (not assigned) so
+    /// MobileNAV propagates the flag to existing profile rows. StagingBehavior is resolved
+    /// against MobileNAV's own option members ('Always', 'CreationOnly', 'PersistState');
+    /// empty keeps 'Always from scratch', which restarts the wizard on every record.
+    /// </summary>
+    procedure SetStaging(ServiceName: Text[100]; AutoNext: Boolean; BackNextVisible: Boolean; StagingBehavior: Text[30])
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
         this.GetMainPageByService(ServiceName, ServiceSetup);
         ServiceSetup.Validate("Enable Staging", true);
-        ServiceSetup."Staging Behavior" := ServiceSetup."Staging Behavior"::Always;
+        if StagingBehavior = '' then
+            ServiceSetup."Staging Behavior" := ServiceSetup."Staging Behavior"::Always
+        else
+            FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Staging Behavior"), StagingBehavior);
         ServiceSetup."Auto Next Stage" := AutoNext;
         ServiceSetup."Back-Next Visible" := BackNextVisible;
         ServiceSetup.Modify(true);

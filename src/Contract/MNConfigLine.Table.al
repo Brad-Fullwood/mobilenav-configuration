@@ -103,6 +103,14 @@ table 77780 "BJF MN Config Line"
         {
             Caption = 'Filterable';
         }
+        field(24; "Staging Behavior"; Text[30])
+        {
+            Caption = 'Staging Behavior';
+        }
+        field(25; "Stage Restart From"; Boolean)
+        {
+            Caption = 'Stage Restart From';
+        }
     }
 
     keys

@@ -72,7 +72,10 @@ codeunit 77785 "BJF MN Config Validator"
                         StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
                 end;
             Enum::"BJF MN Config Operation"::Staging:
-                this.EnsureUnique(DefinedOperations, StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID"));
+                begin
+                    this.RequireStagingBehaviorValue(ConfigurationLine);
+                    this.EnsureUnique(DefinedOperations, StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID"));
+                end;
             Enum::"BJF MN Config Operation"::Stage:
                 begin
                     this.RequireValue(ConfigurationLine."Stage Id", StageIdRequiredErr, ConfigurationLine."Entry No.");
@@ -82,6 +85,20 @@ codeunit 77785 "BJF MN Config Validator"
                         Error(StageIdTooLongErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id", MaxStageIdLength());
                     if not DefinedOperations.ContainsKey(StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID")) then
                         Error(StagingNotDeclaredErr, ConfigurationLine."Entry No.");
+                    if ConfigurationLine."Stage Restart From" then begin
+                        // Restarting from the first stage is what MobileNAV does anyway, so a
+                        // flag there means the provider marked the wrong stage.
+                        if not DefinedOperations.ContainsKey(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID")) then
+                            Error(RestartFromFirstStageErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
+                        // MobileNAV's stage configurator keeps a single restart-from stage per
+                        // page (it clears the flag from every other stage), so two flagged
+                        // stages cannot both survive an apply.
+                        if DefinedOperations.ContainsKey(StrSubstNo(RestartFromKeyTok, ConfigurationLine."Page ID")) then
+                            Error(RestartFromDuplicateErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
+                        DefinedOperations.Add(StrSubstNo(RestartFromKeyTok, ConfigurationLine."Page ID"), true);
+                    end;
+                    if not DefinedOperations.ContainsKey(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID")) then
+                        DefinedOperations.Add(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID"), true);
                     this.EnsureUnique(
                         DefinedOperations,
                         StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")));
@@ -108,6 +125,20 @@ codeunit 77785 "BJF MN Config Validator"
         MasterData: Record "MobileNAV Master Data";
     begin
         exit(MaxStrLen(MasterData.Code));
+    end;
+
+    local procedure RequireStagingBehaviorValue(ConfigurationLine: Record "BJF MN Config Line" temporary)
+    begin
+        // Empty keeps the library's long-standing default ('Always'). The member names are
+        // checked here so a typo fails the validation pass rather than the option resolution
+        // midway through an apply.
+        case UpperCase(ConfigurationLine."Staging Behavior") of
+            '', 'ALWAYS', 'CREATIONONLY', 'PERSISTSTATE':
+                exit;
+        end;
+        Error(
+            StagingBehaviorInvalidErr, ConfigurationLine."Entry No.",
+            ConfigurationLine."Staging Behavior", SupportedStagingBehaviorTok);
     end;
 
     local procedure RequireImportanceValue(ConfigurationLine: Record "BJF MN Config Line" temporary)
@@ -150,10 +181,16 @@ codeunit 77785 "BJF MN Config Validator"
         StagingNotDeclaredErr: Label 'Configuration line %1 defines a stage on a page without a preceding EnableStaging declaration.', Comment = '%1 = configuration line number';
         StageNotDeclaredErr: Label 'Configuration line %1 assigns a field to stage %2, which has no preceding AddStage declaration.', Comment = '%1 = configuration line number, %2 = stage id';
         DuplicateOperationErr: Label 'The provider defines the same configuration target more than once: %1.', Comment = '%1 = normalized operation key';
+        StagingBehaviorInvalidErr: Label 'Configuration line %1 specifies staging behavior %2, which is not one of %3.', Comment = '%1 = configuration line number, %2 = requested staging behavior, %3 = supported staging behavior values';
+        RestartFromFirstStageErr: Label 'Configuration line %1 marks stage %2 as the restart-from stage, but it is the page''s first stage. The wizard restarts from the first stage anyway, so flag a later stage or none.', Comment = '%1 = configuration line number, %2 = stage id';
+        RestartFromDuplicateErr: Label 'Configuration line %1 marks stage %2 as the restart-from stage, but the page already has one. MobileNAV keeps a single restart-from stage per page.', Comment = '%1 = configuration line number, %2 = stage id';
         SupportedImportanceTok: Label 'None, RequiredForInsert, Mandatory, Additional', Locked = true;
+        SupportedStagingBehaviorTok: Label 'Always, CreationOnly, PersistState', Locked = true;
         PageOperationKeyTok: Label 'PAGE|%1', Locked = true;
         FieldOperationKeyTok: Label 'FIELD|%1|%2', Locked = true;
         StagingOperationKeyTok: Label 'STAGING|%1', Locked = true;
+        FirstStageKeyTok: Label 'STAGEFIRST|%1', Locked = true;
+        RestartFromKeyTok: Label 'STAGERESTART|%1', Locked = true;
         StageOperationKeyTok: Label 'STAGE|%1|%2', Locked = true;
         StageFieldOperationKeyTok: Label 'STAGEFIELD|%1|%2|%3', Locked = true;
 }
