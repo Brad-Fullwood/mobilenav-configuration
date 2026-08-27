@@ -12,7 +12,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         Ordinal: Integer;
     begin
         ProviderBuffer.Reset();
-        ProviderBuffer.DeleteAll();
+        ProviderBuffer.DeleteAll(false);
 
         foreach Ordinal in Enum::"BJF MN Config Provider".Ordinals() do
             if Ordinal <> Enum::"BJF MN Config Provider"::None.AsInteger() then begin
@@ -53,7 +53,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         ProviderBuffer.Description := ProviderDescription;
         ProviderBuffer."Defined Version" := ProviderVersion;
         ConfigurationStatus.PopulateState(ProviderBuffer);
-        ProviderBuffer.Insert();
+        ProviderBuffer.Insert(false);
     end;
 
     local procedure EnsureUniqueId(var ProviderBuffer: Record "BJF MN Provider Buffer" temporary; ProviderId: Code[50])

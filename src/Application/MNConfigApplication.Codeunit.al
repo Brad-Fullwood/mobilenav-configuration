@@ -6,8 +6,15 @@ namespace BradFullwood.MobileNAV.Configuration;
 /// </summary>
 codeunit 77784 "BJF MN Config Application"
 {
+    // The status write happens inside "BJF MN Config Status".RecordApplied, which the
+    // analyzer cannot see through, so it reports this object as performing no database
+    // operations. The permission is still required at runtime.
+#pragma warning disable AC0032
     Permissions = tabledata "BJF MN Config Status" = rim;
+#pragma warning restore AC0032
 
+    /// <summary>Validates the given provider's declared configuration, applies it, and records that it was applied.</summary>
+    /// <param name="ProviderType">The configuration provider to validate and apply.</param>
     procedure ApplyProvider(ProviderType: Enum "BJF MN Config Provider")
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
@@ -32,7 +39,7 @@ codeunit 77784 "BJF MN Config Application"
             ProviderId, ProviderName, ProviderVersion, not DeviceHandoverCompleted);
     end;
 
-    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary) DeviceHandoverCompleted: Boolean
+    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary): Boolean
     var
         PageServices: Dictionary of [Integer, Text];
     begin

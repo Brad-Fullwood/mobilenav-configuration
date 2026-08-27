@@ -20,50 +20,32 @@ page 77780 "BJF Custom MN Config"
             {
                 field(Name; Rec.Name)
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the provider name.';
                 }
                 field(Description; Rec.Description)
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Describes the configuration owned by this provider.';
                 }
                 field(State; Rec.State)
                 {
-                    ApplicationArea = All;
                     StyleExpr = StateStyle;
-                    ToolTip = 'Specifies whether the provider has never been applied, is current, or is outdated.';
                 }
                 field("Applied Previously"; Rec."Applied Previously")
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies whether this provider has been applied successfully before.';
                 }
                 field("Defined Version"; Rec."Defined Version")
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the version currently declared by the provider.';
                 }
                 field("Applied Version"; Rec."Applied Version")
                 {
-                    ApplicationArea = All;
                     BlankZero = true;
-                    ToolTip = 'Specifies the last successfully applied provider version.';
                 }
                 field("Applied At"; Rec."Applied At")
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies when the provider was last applied successfully.';
                 }
                 field("Applied By"; Rec."Applied By")
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies who last applied the provider.';
                 }
                 field("Provider ID"; Rec."Provider ID")
                 {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies the stable identifier used for application tracking.';
                 }
             }
         }
@@ -117,11 +99,11 @@ page 77780 "BJF Custom MN Config"
     begin
         case Rec.State of
             Enum::"BJF MN Config State"::Applied:
-                StateStyle := 'Favorable';
+                StateStyle := Format(PageStyle::Favorable);
             Enum::"BJF MN Config State"::Outdated:
-                StateStyle := 'Ambiguous';
+                StateStyle := Format(PageStyle::Ambiguous);
             else
-                StateStyle := 'Attention';
+                StateStyle := Format(PageStyle::Attention);
         end;
     end;
 

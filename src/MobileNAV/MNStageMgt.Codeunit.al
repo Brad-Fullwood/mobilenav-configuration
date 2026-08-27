@@ -11,8 +11,8 @@ namespace BradFullwood.MobileNAV.Configuration;
 codeunit 77790 "BJF MN Stage Mgt."
 {
     Access = Internal;
-    Permissions = tabledata "MobileNAV Service Setup" = rimd,
-        tabledata "MobileNAV Master Data" = rim;
+    Permissions = tabledata "MobileNAV Master Data" = rim,
+        tabledata "MobileNAV Service Setup" = rimd;
 
     procedure ApplyPageStaging(ServiceName: Text[100]; var ConfigurationLine: Record "BJF MN Config Line" temporary; PageId: Integer)
     var
@@ -22,7 +22,8 @@ codeunit 77790 "BJF MN Stage Mgt."
         ConfigurationLine.Reset();
         ConfigurationLine.SetRange("Page ID", PageId);
         ConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Staging);
-        ConfigurationLine.FindFirst();
+        if not ConfigurationLine.FindFirst() then
+            exit;
         PageManagement.SetStaging(
             ServiceName, ConfigurationLine."Auto Next Stage", ConfigurationLine."Back-Next Visible",
             ConfigurationLine."Staging Behavior");
@@ -57,7 +58,7 @@ codeunit 77790 "BJF MN Stage Mgt."
     begin
         StageRow.SetRange("Service Name", ServiceName);
         StageRow.SetRange("Line Type", StageRow."Line Type"::Stage);
-        StageRow.DeleteAll();
+        StageRow.DeleteAll(false);
 
         // Mirrors ImportPageStages: stage rows carry only the primary key, the stage id, and
         // the restart-from flag ('Restart From Here' — the stage the device re-enters the
@@ -65,13 +66,13 @@ codeunit 77790 "BJF MN Stage Mgt."
         foreach StageId in StageIds do begin
             PageLineNo += 10000;
             StageRow.Init();
-            StageRow."Service Name" := ServiceName;
-            StageRow."Line Type" := StageRow."Line Type"::Stage;
-            StageRow."Page Line No." := PageLineNo;
-            StageRow."Relation No." := 0;
-            StageRow."Line No." := 0;
-            StageRow.Stage := CopyStr(StageId, 1, MaxStrLen(StageRow.Stage));
-            StageRow."Staging Restart From" := (RestartFromStageId <> '') and (StageId = RestartFromStageId);
+            StageRow.Validate("Service Name", ServiceName);
+            StageRow.Validate("Line Type", StageRow."Line Type"::Stage);
+            StageRow.Validate("Page Line No.", PageLineNo);
+            StageRow.Validate("Relation No.", 0);
+            StageRow.Validate("Line No.", 0);
+            StageRow.Validate(Stage, CopyStr(StageId, 1, MaxStrLen(StageRow.Stage)));
+            StageRow.Validate("Staging Restart From", (RestartFromStageId <> '') and (StageId = RestartFromStageId));
             StageRow.Insert(false);
         end;
     end;
@@ -117,7 +118,7 @@ codeunit 77790 "BJF MN Stage Mgt."
                 NewMask += Tokens.Get(TokenIndex);
         end;
 
-        FieldRow.Stage := CopyStr(NewMask, 1, MaxStrLen(FieldRow.Stage));
+        FieldRow.Validate(Stage, CopyStr(NewMask, 1, MaxStrLen(FieldRow.Stage)));
         FieldRow.Modify(false);
     end;
 
@@ -136,22 +137,24 @@ codeunit 77790 "BJF MN Stage Mgt."
     /// Stage ids double as MobileNAV category codes, whose descriptions caption the wizard
     /// steps on the device. Categories live in MobileNAV Master Data under Type::Category.
     /// </summary>
+    /// <param name="StageId">The stage id, used as the MobileNAV Master Data category code.</param>
+    /// <param name="Description">The category description shown as the wizard step caption on the device.</param>
     local procedure EnsureStageCategory(StageId: Code[100]; Description: Text[250])
     var
         MasterData: Record "MobileNAV Master Data";
     begin
         if MasterData.Get(MasterData.Type::Category, CopyStr(StageId, 1, MaxStrLen(MasterData.Code)), 0, '', MasterData.Area::Normal) then begin
             if (Description <> '') and (MasterData.Description <> Description) then begin
-                MasterData.Description := CopyStr(Description, 1, MaxStrLen(MasterData.Description));
+                MasterData.Validate(Description, CopyStr(Description, 1, MaxStrLen(MasterData.Description)));
                 MasterData.Modify(false);
             end;
             exit;
         end;
 
         MasterData.Init();
-        MasterData.Type := MasterData.Type::Category;
-        MasterData.Code := CopyStr(StageId, 1, MaxStrLen(MasterData.Code));
-        MasterData.Description := CopyStr(Description, 1, MaxStrLen(MasterData.Description));
+        MasterData.Validate(Type, MasterData.Type::Category);
+        MasterData.Validate(Code, CopyStr(StageId, 1, MaxStrLen(MasterData.Code)));
+        MasterData.Validate(Description, CopyStr(Description, 1, MaxStrLen(MasterData.Description)));
         MasterData.Insert(false);
     end;
 

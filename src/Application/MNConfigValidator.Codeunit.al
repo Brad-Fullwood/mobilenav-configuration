@@ -28,96 +28,145 @@ codeunit 77785 "BJF MN Config Validator"
 
         case ConfigurationLine.Operation of
             Enum::"BJF MN Config Operation"::"Published Page":
-                begin
-                    this.RequireValue(ConfigurationLine."Service Name", ServiceNameRequiredErr, ConfigurationLine."Entry No.");
-                    this.EnsureUnique(DefinedOperations, StrSubstNo(PageOperationKeyTok, ConfigurationLine."Page ID"));
-                end;
+                this.ValidatePublishedPageLine(ConfigurationLine, DefinedOperations);
             Enum::"BJF MN Config Operation"::Field:
-                begin
-                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
-                    // The builder always emits an importance, so an empty one means the line
-                    // did not come from the builder rather than "leave MobileNAV's default".
-                    this.RequireValue(ConfigurationLine.Importance, ImportanceRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireImportanceValue(ConfigurationLine);
-                    this.EnsureUnique(
-                        DefinedOperations,
-                        StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
-                end;
+                this.ValidateFieldLine(ConfigurationLine, DefinedOperations);
             Enum::"BJF MN Config Operation"::"Linked Field":
-                begin
-                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
-                    if ConfigurationLine."Target Page ID" <= 0 then
-                        Error(TargetPageIdRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireValue(ConfigurationLine."Target Filter Field", TargetFieldRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireValue(ConfigurationLine."Source Field", SourceFieldRequiredErr, ConfigurationLine."Entry No.");
-                    this.EnsureUnique(
-                        DefinedOperations,
-                        StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
-                end;
+                this.ValidateLinkedFieldLine(ConfigurationLine, DefinedOperations);
             Enum::"BJF MN Config Operation"::"Function Field":
-                begin
-                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireValue(ConfigurationLine."Mobile Type", MobileTypeRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireValue(ConfigurationLine."Function Name", FunctionNameRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireValue(ConfigurationLine."Function Type", FunctionTypeRequiredErr, ConfigurationLine."Entry No.");
-                    this.EnsureUnique(
-                        DefinedOperations,
-                        StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
-                end;
-            Enum::"BJF MN Config Operation"::"Scan Field":
-                begin
-                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
-                    this.EnsureUnique(
-                        DefinedOperations,
-                        StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
-                end;
-            Enum::"BJF MN Config Operation"::Staging:
-                begin
-                    this.RequireStagingBehaviorValue(ConfigurationLine);
-                    this.EnsureUnique(DefinedOperations, StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID"));
-                end;
-            Enum::"BJF MN Config Operation"::Stage:
-                begin
-                    this.RequireValue(ConfigurationLine."Stage Id", StageIdRequiredErr, ConfigurationLine."Entry No.");
-                    // Stage ids double as MobileNAV category codes (Code[20]); a longer id
-                    // passes the apply but fails on the device during configuration sync.
-                    if StrLen(ConfigurationLine."Stage Id") > MaxStageIdLength() then
-                        Error(StageIdTooLongErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id", MaxStageIdLength());
-                    if not DefinedOperations.ContainsKey(StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID")) then
-                        Error(StagingNotDeclaredErr, ConfigurationLine."Entry No.");
-                    if ConfigurationLine."Stage Restart From" then begin
-                        // Restarting from the first stage is what MobileNAV does anyway, so a
-                        // flag there means the provider marked the wrong stage.
-                        if not DefinedOperations.ContainsKey(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID")) then
-                            Error(RestartFromFirstStageErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
-                        // MobileNAV's stage configurator keeps a single restart-from stage per
-                        // page (it clears the flag from every other stage), so two flagged
-                        // stages cannot both survive an apply.
-                        if DefinedOperations.ContainsKey(StrSubstNo(RestartFromKeyTok, ConfigurationLine."Page ID")) then
-                            Error(RestartFromDuplicateErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
-                        DefinedOperations.Add(StrSubstNo(RestartFromKeyTok, ConfigurationLine."Page ID"), true);
-                    end;
-                    if not DefinedOperations.ContainsKey(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID")) then
-                        DefinedOperations.Add(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID"), true);
-                    this.EnsureUnique(
-                        DefinedOperations,
-                        StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")));
-                end;
-            Enum::"BJF MN Config Operation"::"Stage Field":
-                begin
-                    this.RequireValue(ConfigurationLine."Stage Id", StageIdRequiredErr, ConfigurationLine."Entry No.");
-                    this.RequireValue(ConfigurationLine."Control Name", ControlNameRequiredErr, ConfigurationLine."Entry No.");
-                    if not DefinedOperations.ContainsKey(
-                        StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")))
-                    then
-                        Error(StageNotDeclaredErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
-                    this.EnsureUnique(
-                        DefinedOperations,
-                        StrSubstNo(
-                            StageFieldOperationKeyTok, ConfigurationLine."Page ID",
-                            LowerCase(ConfigurationLine."Stage Id"), LowerCase(ConfigurationLine."Control Name")));
-                end;
+                this.ValidateFunctionFieldLine(ConfigurationLine, DefinedOperations);
         end;
+        this.ValidateStageGroupLine(ConfigurationLine, DefinedOperations);
+    end;
+
+    local procedure ValidatePublishedPageLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Service Name" = '' then
+            Error(ServiceNameRequiredErr, ConfigurationLine."Entry No.");
+        this.EnsureUnique(DefinedOperations, StrSubstNo(PageOperationKeyTok, ConfigurationLine."Page ID"));
+    end;
+
+    local procedure ValidateFieldLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Control Name" = '' then
+            Error(ControlNameRequiredErr, ConfigurationLine."Entry No.");
+        // The builder always emits an importance, so an empty one means the line
+        // did not come from the builder rather than "leave MobileNAV's default".
+        if ConfigurationLine.Importance = '' then
+            Error(ImportanceRequiredErr, ConfigurationLine."Entry No.");
+        this.RequireImportanceValue(ConfigurationLine);
+        this.EnsureUnique(
+            DefinedOperations,
+            StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+    end;
+
+    local procedure ValidateLinkedFieldLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Control Name" = '' then
+            Error(ControlNameRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Target Page ID" <= 0 then
+            Error(TargetPageIdRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Target Filter Field" = '' then
+            Error(TargetFieldRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Source Field" = '' then
+            Error(SourceFieldRequiredErr, ConfigurationLine."Entry No.");
+        this.EnsureUnique(
+            DefinedOperations,
+            StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+    end;
+
+    local procedure ValidateFunctionFieldLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Control Name" = '' then
+            Error(ControlNameRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Mobile Type" = '' then
+            Error(MobileTypeRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Function Name" = '' then
+            Error(FunctionNameRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Function Type" = '' then
+            Error(FunctionTypeRequiredErr, ConfigurationLine."Entry No.");
+        this.EnsureUnique(
+            DefinedOperations,
+            StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+    end;
+
+    local procedure ValidateStageGroupLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        case ConfigurationLine.Operation of
+            Enum::"BJF MN Config Operation"::"Scan Field":
+                this.ValidateScanFieldLine(ConfigurationLine, DefinedOperations);
+            Enum::"BJF MN Config Operation"::Staging:
+                this.ValidateStagingLine(ConfigurationLine, DefinedOperations);
+            Enum::"BJF MN Config Operation"::Stage:
+                this.ValidateStageLine(ConfigurationLine, DefinedOperations);
+            Enum::"BJF MN Config Operation"::"Stage Field":
+                this.ValidateStageFieldLine(ConfigurationLine, DefinedOperations);
+        end;
+    end;
+
+    local procedure ValidateScanFieldLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Control Name" = '' then
+            Error(ControlNameRequiredErr, ConfigurationLine."Entry No.");
+        this.EnsureUnique(
+            DefinedOperations,
+            StrSubstNo(FieldOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+    end;
+
+    local procedure ValidateStagingLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        this.RequireStagingBehaviorValue(ConfigurationLine);
+        this.EnsureUnique(DefinedOperations, StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID"));
+    end;
+
+    local procedure ValidateStageLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Stage Id" = '' then
+            Error(StageIdRequiredErr, ConfigurationLine."Entry No.");
+        // Stage ids double as MobileNAV category codes (Code[20]); a longer id
+        // passes the apply but fails on the device during configuration sync.
+        if StrLen(ConfigurationLine."Stage Id") > MaxStageIdLength() then
+            Error(StageIdTooLongErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id", MaxStageIdLength());
+        if not DefinedOperations.ContainsKey(StrSubstNo(StagingOperationKeyTok, ConfigurationLine."Page ID")) then
+            Error(StagingNotDeclaredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Stage Restart From" then
+            this.ValidateStageRestartFrom(ConfigurationLine, DefinedOperations);
+        if not DefinedOperations.ContainsKey(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID")) then
+            DefinedOperations.Add(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID"), true);
+        this.EnsureUnique(
+            DefinedOperations,
+            StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")));
+    end;
+
+    local procedure ValidateStageRestartFrom(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        // Restarting from the first stage is what MobileNAV does anyway, so a
+        // flag there means the provider marked the wrong stage.
+        if not DefinedOperations.ContainsKey(StrSubstNo(FirstStageKeyTok, ConfigurationLine."Page ID")) then
+            Error(RestartFromFirstStageErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
+        // MobileNAV's stage configurator keeps a single restart-from stage per
+        // page (it clears the flag from every other stage), so two flagged
+        // stages cannot both survive an apply.
+        if DefinedOperations.ContainsKey(StrSubstNo(RestartFromKeyTok, ConfigurationLine."Page ID")) then
+            Error(RestartFromDuplicateErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
+        DefinedOperations.Add(StrSubstNo(RestartFromKeyTok, ConfigurationLine."Page ID"), true);
+    end;
+
+    local procedure ValidateStageFieldLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedOperations: Dictionary of [Text, Boolean])
+    begin
+        if ConfigurationLine."Stage Id" = '' then
+            Error(StageIdRequiredErr, ConfigurationLine."Entry No.");
+        if ConfigurationLine."Control Name" = '' then
+            Error(ControlNameRequiredErr, ConfigurationLine."Entry No.");
+        if not DefinedOperations.ContainsKey(
+            StrSubstNo(StageOperationKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")))
+        then
+            Error(StageNotDeclaredErr, ConfigurationLine."Entry No.", ConfigurationLine."Stage Id");
+        this.EnsureUnique(
+            DefinedOperations,
+            StrSubstNo(
+                StageFieldOperationKeyTok, ConfigurationLine."Page ID",
+                LowerCase(ConfigurationLine."Stage Id"), LowerCase(ConfigurationLine."Control Name")));
     end;
 
     local procedure MaxStageIdLength(): Integer
@@ -148,12 +197,6 @@ codeunit 77785 "BJF MN Config Validator"
                 exit;
         end;
         Error(ImportanceInvalidErr, ConfigurationLine."Entry No.", ConfigurationLine.Importance, SupportedImportanceTok);
-    end;
-
-    local procedure RequireValue(Value: Text; ErrorMessage: Text; EntryNo: Integer)
-    begin
-        if Value = '' then
-            Error(ErrorMessage, EntryNo);
     end;
 
     local procedure EnsureUnique(var DefinedOperations: Dictionary of [Text, Boolean]; OperationKey: Text)

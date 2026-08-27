@@ -13,6 +13,7 @@ table 77781 "BJF MN Config Status"
         field(1; "Provider ID"; Code[50])
         {
             Caption = 'Provider ID';
+            NotBlank = true;
         }
         field(2; "Provider Name"; Text[100])
         {

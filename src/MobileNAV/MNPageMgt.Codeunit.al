@@ -7,8 +7,8 @@ using System.Integration;
 codeunit 77788 "BJF MN Page Mgt."
 {
     Access = Internal;
-    Permissions = tabledata "MobileNAV Service Setup" = rim,
-        tabledata "MobileNAV Master Data" = rm,
+    Permissions = tabledata "MobileNAV Master Data" = rm,
+        tabledata "MobileNAV Service Setup" = rim,
         tabledata "Tenant Web Service" = rim;
 
     procedure PublishPage(PageId: Integer; ServiceName: Text[100])
@@ -17,10 +17,14 @@ codeunit 77788 "BJF MN Page Mgt."
     begin
         if not TenantWebService.Get(TenantWebService."Object Type"::Page, ServiceName) then begin
             TenantWebService.Init();
+            // Tenant Web Service is a platform table whose triggers could not be inspected; the
+            // record is built with Init + Insert(true), which already runs them.
+#pragma warning disable PC0037
             TenantWebService."Object Type" := TenantWebService."Object Type"::Page;
             TenantWebService."Object ID" := PageId;
             TenantWebService."Service Name" := ServiceName;
             TenantWebService.Published := true;
+#pragma warning restore PC0037
             TenantWebService.Insert(true);
             exit;
         end;
@@ -28,8 +32,11 @@ codeunit 77788 "BJF MN Page Mgt."
         if (TenantWebService."Object ID" = PageId) and TenantWebService.Published then
             exit;
 
+        // Tenant Web Service is a platform table whose triggers could not be inspected.
+#pragma warning disable PC0037
         TenantWebService."Object ID" := PageId;
         TenantWebService.Published := true;
+#pragma warning restore PC0037
         TenantWebService.Modify(true);
     end;
 
@@ -42,16 +49,23 @@ codeunit 77788 "BJF MN Page Mgt."
     /// has one does not survive the refresh — to reshape a stock page, target its existing
     /// service name.
     /// </summary>
+    /// <param name="PageId">The id of the page object to register.</param>
+    /// <param name="PreferredServiceName">The service name to register the page under if it is not already registered.</param>
+    /// <param name="ServiceName">Returns the service name the page is registered under.</param>
     procedure EnsurePage(PageId: Integer; PreferredServiceName: Text[100]; var ServiceName: Text[100])
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
         if not FindMainPageByService(PageId, PreferredServiceName, ServiceSetup) then begin
             ServiceSetup.Init();
-            ServiceSetup."Object Type" := ServiceSetup."Object Type"::Page;
+            ServiceSetup.Validate("Object Type", ServiceSetup."Object Type"::Page);
+            // Object ID (MobileNAV Service Setup): OnValidate TestFields "Object Type", can Error, and
+            // calls RefreshPage(true) which rebuilds the page's whole field metadata.
+#pragma warning disable PC0037
             ServiceSetup."Object ID" := PageId;
-            ServiceSetup."Service Name" := PreferredServiceName;
-            ServiceSetup."Line Type" := ServiceSetup."Line Type"::Main;
+#pragma warning restore PC0037
+            ServiceSetup.Validate("Service Name", PreferredServiceName);
+            ServiceSetup.Validate("Line Type", ServiceSetup."Line Type"::Main);
             ServiceSetup.Insert(true);
         end;
 
@@ -106,6 +120,8 @@ codeunit 77788 "BJF MN Page Mgt."
     end;
 
     /// <summary>Sets the page's main menu action ('Create' or 'Open', MobileNAV vocabulary).</summary>
+    /// <param name="ServiceName">The MobileNAV service to update.</param>
+    /// <param name="ActionName">The main menu action to set ('Create' or 'Open').</param>
     procedure SetMainMenuAction(ServiceName: Text[100]; ActionName: Text[30])
     var
         ServiceSetup: Record "MobileNAV Service Setup";
@@ -116,20 +132,15 @@ codeunit 77788 "BJF MN Page Mgt."
     end;
 
     /// <summary>
-    /// Turns the page into a staged wizard with staging behavior 'Always from scratch', which
-    /// restarts the wizard on every record.
-    /// </summary>
-    procedure SetStaging(ServiceName: Text[100]; AutoNext: Boolean; BackNextVisible: Boolean)
-    begin
-        this.SetStaging(ServiceName, AutoNext, BackNextVisible, '');
-    end;
-
-    /// <summary>
     /// Turns the page into a staged wizard. Enable Staging is validated (not assigned) so
     /// MobileNAV propagates the flag to existing profile rows. StagingBehavior is resolved
     /// against MobileNAV's own option members ('Always', 'CreationOnly', 'PersistState');
     /// empty keeps 'Always from scratch', which restarts the wizard on every record.
     /// </summary>
+    /// <param name="ServiceName">The MobileNAV service to turn into a staged wizard.</param>
+    /// <param name="AutoNext">Whether the wizard advances to the next stage automatically.</param>
+    /// <param name="BackNextVisible">Whether the Back/Next actions are visible on the wizard.</param>
+    /// <param name="StagingBehavior">The MobileNAV staging behavior option member ('Always', 'CreationOnly', 'PersistState'); empty keeps 'Always from scratch'.</param>
     procedure SetStaging(ServiceName: Text[100]; AutoNext: Boolean; BackNextVisible: Boolean; StagingBehavior: Text[30])
     var
         ServiceSetup: Record "MobileNAV Service Setup";
@@ -137,11 +148,11 @@ codeunit 77788 "BJF MN Page Mgt."
         this.GetMainPageByService(ServiceName, ServiceSetup);
         ServiceSetup.Validate("Enable Staging", true);
         if StagingBehavior = '' then
-            ServiceSetup."Staging Behavior" := ServiceSetup."Staging Behavior"::Always
+            ServiceSetup.Validate("Staging Behavior", ServiceSetup."Staging Behavior"::Always)
         else
             FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Staging Behavior"), StagingBehavior);
-        ServiceSetup."Auto Next Stage" := AutoNext;
-        ServiceSetup."Back-Next Visible" := BackNextVisible;
+        ServiceSetup.Validate("Auto Next Stage", AutoNext);
+        ServiceSetup.Validate("Back-Next Visible", BackNextVisible);
         ServiceSetup.Modify(true);
     end;
 
@@ -172,7 +183,12 @@ codeunit 77788 "BJF MN Page Mgt."
         if MasterData."Under Construction" then
             exit;
 
+        // Under Construction: OnValidate starts/stops a MobileNAV background job and, when set to
+        // false, clears "Page Hierarchy Changed" and "Enforced Major Config Change" — which this
+        // code sets deliberately and explicitly.
+#pragma warning disable PC0037
         MasterData."Under Construction" := true;
+#pragma warning restore PC0037
         MasterData.Modify(false);
     end;
 
@@ -209,11 +225,17 @@ codeunit 77788 "BJF MN Page Mgt."
 
         // Close the window and clear the flags it consumed, as MobileNAV does when an
         // administrator turns construction off by hand.
-        MasterData.Get(MasterData.Type::General, '', 0, '', MasterData.Area::Normal);
-        MasterData."Under Construction" := false;
-        MasterData."Page Hierarchy Changed" := false;
-        MasterData."Enforced Major Config Change" := false;
-        MasterData.Modify(false);
+        if MasterData.Get(MasterData.Type::General, '', 0, '', MasterData.Area::Normal) then begin
+            // Under Construction: OnValidate starts/stops a MobileNAV background job and, when set
+            // to false, clears "Page Hierarchy Changed" and "Enforced Major Config Change" — which
+            // this code sets deliberately and explicitly.
+#pragma warning disable PC0037
+            MasterData."Under Construction" := false;
+#pragma warning restore PC0037
+            MasterData.Validate("Page Hierarchy Changed", false);
+            MasterData.Validate("Enforced Major Config Change", false);
+            MasterData.Modify(false);
+        end;
         exit(true);
     end;
 
