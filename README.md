@@ -17,9 +17,16 @@ The builder supports only these operations:
 
 - `AddPublishedPage`;
 - `AddField` / `AddVisibleField` / `AddFilterableField`;
-- `AddLinkedField`.
+- `AddLinkedField`;
+- `AddToProfile`.
 
 `AddField` and `AddVisibleField` place a field in MobileNAV's standard section and leave it out of the device filter pane. MobileNAV itself defaults a new field to *Additional* importance, which hides it behind the card's additional fields section, so the framework always writes importance explicitly. The `AddField` overload taking `Importance` and `Filterable` accepts MobileNAV's own importance vocabulary (`None`, `RequiredForInsert`, `Mandatory`, `Additional`) and offers the field in the filter pane; `AddFilterableField` is the visible, standard, filterable shorthand. Filter Scope is left at MobileNAV's default.
+
+`AddFunctionField` and `AddScanField` place their control in the standard section for the same reason: a function control is a button, and a button left at MobileNAV's *Additional* default is one the device user never finds. `AddFunctionField` has an `Importance` overload for deliberate placement elsewhere.
+
+Publishing a page with `AddPublishedPage` also makes it usable: MobileNAV collects a user's pages from the profile rows of type Page, so a published page with no such row is not collected — it has no tile, *and* any control whose only job is to open it is force-hidden, because a relation button is only drawn once its target page is reachable. The framework therefore creates the page row (and, from each `AddLinkedField`, the Parent Page row that makes the target reachable from the page the control sits on), using MobileNAV's own routines as the model.
+
+`AddToProfile` declares a control for MobileNAV's *profiles*. MobileNAV resolves visibility in two layers: the service-level field configuration is the default, but a row for the control in the device user's profile overrides it outright. MobileNAV writes those profile rows itself when it rebuilds a profile's page hierarchy, and a control it has not been told about is not visible there — so a field can be configured correctly at service level and still be missing from the device screen. Calling `AddToProfile(PageId, ControlName)` covers every defined profile; the overloads take a named profile, and explicit `Visible`/`Editable`. Re-declaring is safe.
 
 There is deliberately no `ApplySetup()` method. Providers describe desired state; the framework validates and applies it. Empty definitions, incomplete operations, duplicate targets, duplicate provider IDs, empty metadata, and non-positive versions are rejected.
 

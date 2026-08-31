@@ -24,7 +24,7 @@ codeunit 77790 "BJF MN Stage Mgt."
         ConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Staging);
         if not ConfigurationLine.FindFirst() then
             exit;
-        PageManagement.SetStaging(
+        this.PageManagement.SetStaging(
             ServiceName, ConfigurationLine."Auto Next Stage", ConfigurationLine."Back-Next Visible",
             ConfigurationLine."Staging Behavior");
 
@@ -101,7 +101,7 @@ codeunit 77790 "BJF MN Stage Mgt."
         FieldRow.SetRange("Line Type", FieldRow."Line Type"::Field);
         FieldRow.SetRange(FieldName, this.ConvertFieldName(ControlName));
         if not FieldRow.FindFirst() then
-            Error(StageFieldMissingErr, ControlName, ServiceName);
+            Error(this.StageFieldMissingErr, ControlName, ServiceName);
 
         MaskText := FieldRow.Stage;
         if MaskText = '' then
@@ -160,7 +160,7 @@ codeunit 77790 "BJF MN Stage Mgt."
 
     local procedure ConvertFieldName(OriginalName: Text): Text[75]
     begin
-        exit(CopyStr(WebServiceHandling.ConvertFieldName(OriginalName), 1, 75));
+        exit(CopyStr(this.WebServiceHandling.ConvertFieldName(OriginalName), 1, 75));
     end;
 
     var

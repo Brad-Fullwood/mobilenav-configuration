@@ -7,6 +7,7 @@ table 77781 "BJF MN Config Status"
     Access = Internal;
     Caption = 'MobileNAV Configuration Status';
     DataClassification = SystemMetadata;
+    Permissions = tabledata "BJF MN Config Status" = rim;
 
     fields
     {
@@ -60,7 +61,7 @@ table 77781 "BJF MN Config Status"
     procedure PopulateState(var TempProviderBuffer: Record "BJF MN Provider Buffer" temporary)
     begin
         TempProviderBuffer.State := Enum::"BJF MN Config State"::"Not Applied";
-        if not Get(TempProviderBuffer."Provider ID") then
+        if not this.Get(TempProviderBuffer."Provider ID") then
             exit;
 
         TempProviderBuffer."Applied Previously" := true;
@@ -79,10 +80,10 @@ table 77781 "BJF MN Config Status"
 
     procedure RecordApplied(ProviderId: Code[50]; ProviderName: Text[100]; ProviderVersion: Integer; DeviceHandoverPending: Boolean)
     begin
-        if not Get(ProviderId) then begin
-            Init();
+        if not this.Get(ProviderId) then begin
+            this.Init();
             "Provider ID" := ProviderId;
-            Insert();
+            this.Insert();
         end;
 
         "Provider Name" := ProviderName;
@@ -93,18 +94,18 @@ table 77781 "BJF MN Config Status"
         "Device Handover Pending" := DeviceHandoverPending;
         Clear("Outdated At");
         Clear("Outdated By");
-        Modify();
+        this.Modify();
     end;
 
     procedure MarkOutdated(ProviderId: Code[50])
     begin
-        if not Get(ProviderId) then
-            Error(NotAppliedErr, ProviderId);
+        if not this.Get(ProviderId) then
+            Error(this.NotAppliedErr, ProviderId);
 
         "Manually Outdated" := true;
         "Outdated At" := CurrentDateTime();
         "Outdated By" := CopyStr(UserId(), 1, MaxStrLen("Outdated By"));
-        Modify();
+        this.Modify();
     end;
 
     var

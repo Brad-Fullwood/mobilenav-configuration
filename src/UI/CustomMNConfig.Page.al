@@ -26,7 +26,7 @@ page 77780 "BJF Custom MN Config"
                 }
                 field(State; Rec.State)
                 {
-                    StyleExpr = StateStyle;
+                    StyleExpr = this.StateStyle;
                 }
                 field("Applied Previously"; Rec."Applied Previously")
                 {
@@ -64,7 +64,7 @@ page 77780 "BJF Custom MN Config"
 
                 trigger OnAction()
                 begin
-                    ApplySelectedProviders();
+                    this.ApplySelectedProviders();
                 end;
             }
             action(MarkSelectedOutdated)
@@ -76,7 +76,7 @@ page 77780 "BJF Custom MN Config"
 
                 trigger OnAction()
                 begin
-                    MarkSelectedProvidersOutdated();
+                    this.MarkSelectedProvidersOutdated();
                 end;
             }
         }
@@ -99,17 +99,17 @@ page 77780 "BJF Custom MN Config"
     begin
         case Rec.State of
             Enum::"BJF MN Config State"::Applied:
-                StateStyle := Format(PageStyle::Favorable);
+                this.StateStyle := Format(PageStyle::Favorable);
             Enum::"BJF MN Config State"::Outdated:
-                StateStyle := Format(PageStyle::Ambiguous);
+                this.StateStyle := Format(PageStyle::Ambiguous);
             else
-                StateStyle := Format(PageStyle::Attention);
+                this.StateStyle := Format(PageStyle::Attention);
         end;
     end;
 
     trigger OnOpenPage()
     begin
-        ReloadProviders();
+        this.ReloadProviders();
     end;
 
     local procedure ApplySelectedProviders()
@@ -117,36 +117,36 @@ page 77780 "BJF Custom MN Config"
         TempSelectedProvider: Record "BJF MN Provider Buffer" temporary;
         AppliedCount: Integer;
     begin
-        GetSelectedProviders(TempSelectedProvider);
+        this.GetSelectedProviders(TempSelectedProvider);
         if TempSelectedProvider.IsEmpty() then
-            Error(SelectionRequiredErr);
+            Error(this.SelectionRequiredErr);
 
         if TempSelectedProvider.FindSet() then
             repeat
-                ConfigurationApplication.ApplyProvider(TempSelectedProvider.Provider);
+                this.ConfigurationApplication.ApplyProvider(TempSelectedProvider.Provider);
                 AppliedCount += 1;
             until TempSelectedProvider.Next() = 0;
 
-        ReloadProviders();
+        this.ReloadProviders();
         CurrPage.Update(false);
-        Message(AppliedMsg, AppliedCount);
+        Message(this.AppliedMsg, AppliedCount);
     end;
 
     local procedure MarkSelectedProvidersOutdated()
     var
         TempSelectedProvider: Record "BJF MN Provider Buffer" temporary;
     begin
-        GetSelectedProviders(TempSelectedProvider);
+        this.GetSelectedProviders(TempSelectedProvider);
         TempSelectedProvider.SetRange("Applied Previously", true);
         if TempSelectedProvider.IsEmpty() then
-            Error(AppliedSelectionRequiredErr);
+            Error(this.AppliedSelectionRequiredErr);
 
         if TempSelectedProvider.FindSet() then
             repeat
-                ConfigurationStatus.MarkOutdated(TempSelectedProvider."Provider ID");
+                this.ConfigurationStatus.MarkOutdated(TempSelectedProvider."Provider ID");
             until TempSelectedProvider.Next() = 0;
 
-        ReloadProviders();
+        this.ReloadProviders();
         CurrPage.Update(false);
     end;
 
@@ -158,7 +158,7 @@ page 77780 "BJF Custom MN Config"
 
     local procedure ReloadProviders()
     begin
-        ProviderCatalog.Populate(Rec);
+        this.ProviderCatalog.Populate(Rec);
     end;
 
     var

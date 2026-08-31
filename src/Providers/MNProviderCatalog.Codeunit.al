@@ -26,7 +26,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         Provider: Interface "BJF MN Config Provider";
     begin
         if ProviderType = Enum::"BJF MN Config Provider"::None then
-            Error(NoneProviderErr);
+            Error(this.NoneProviderErr);
 
         Provider := ProviderType;
         ProviderId := Provider.GetId();
@@ -52,7 +52,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         ProviderBuffer.Name := ProviderName;
         ProviderBuffer.Description := ProviderDescription;
         ProviderBuffer."Defined Version" := ProviderVersion;
-        ConfigurationStatus.PopulateState(ProviderBuffer);
+        this.ConfigurationStatus.PopulateState(ProviderBuffer);
         ProviderBuffer.Insert(false);
     end;
 
@@ -60,20 +60,20 @@ codeunit 77782 "BJF MN Provider Catalog"
     begin
         ProviderBuffer.SetRange("Provider ID", ProviderId);
         if not ProviderBuffer.IsEmpty() then
-            Error(DuplicateIdErr, ProviderId);
+            Error(this.DuplicateIdErr, ProviderId);
         ProviderBuffer.Reset();
     end;
 
     local procedure ValidateMetadata(ProviderId: Code[50]; ProviderName: Text[100]; ProviderDescription: Text[250]; ProviderVersion: Integer)
     begin
         if ProviderId = '' then
-            Error(IdRequiredErr);
+            Error(this.IdRequiredErr);
         if ProviderName = '' then
-            Error(NameRequiredErr, ProviderId);
+            Error(this.NameRequiredErr, ProviderId);
         if ProviderDescription = '' then
-            Error(DescriptionRequiredErr, ProviderId);
+            Error(this.DescriptionRequiredErr, ProviderId);
         if ProviderVersion <= 0 then
-            Error(VersionRequiredErr, ProviderId);
+            Error(this.VersionRequiredErr, ProviderId);
     end;
 
     var

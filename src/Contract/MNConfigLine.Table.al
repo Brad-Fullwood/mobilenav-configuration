@@ -111,6 +111,18 @@ table 77780 "BJF MN Config Line"
         {
             Caption = 'Stage Restart From';
         }
+        field(27; "Page Type"; Text[30])
+        {
+            Caption = 'Page Type';
+            // Empty keeps MobileNAV's default for the page object; see "BJF MN Page Mgt.".SetPageType.
+            DataClassification = SystemMetadata;
+        }
+        field(26; Profile; Code[30])
+        {
+            Caption = 'Profile';
+            // Empty means every defined profile; see "BJF MN Profile Mgt.".
+            DataClassification = SystemMetadata;
+        }
     }
 
     keys

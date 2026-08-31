@@ -40,6 +40,8 @@ codeunit 77789 "BJF MN Field Mgt."
         ServiceSetup.DisplayInMenu := DisplayInMenu;
 #pragma warning restore PC0037
         this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(Mandatory), Importance);
+        if Editable then
+            this.EnsurePageUpdatable(ServiceName);
         // Visible as Filter: OnValidate raises a Confirm() dialog and can DeleteAll the page's flow
         // filters and sibling setup rows.
 #pragma warning disable PC0037
@@ -49,17 +51,21 @@ codeunit 77789 "BJF MN Field Mgt."
         exit(true);
     end;
 
-    procedure ConfigureLinkedField(ServiceName: Text[100]; ControlName: Text[100]; TargetServiceName: Text[75]; TargetFilterField: Text[100]; SourceField: Text[100]): Boolean
+    procedure ConfigureLinkedField(ServiceName: Text[100]; ControlName: Text[100]; TargetServiceName: Text[75]; TargetFilterField: Text[100]; SourceField: Text[100]; Importance: Text[30]): Boolean
     var
         FieldSetup: Record "MobileNAV Service Setup";
         RelatedTableNo: Integer;
     begin
         if not this.FindField(ServiceName, ControlName, FieldSetup) then
             exit(false);
-        if not PageManagement.GetServiceTableNo(TargetServiceName, RelatedTableNo) then
-            Error(TargetServiceMissingErr, TargetServiceName);
+        if not this.PageManagement.GetServiceTableNo(TargetServiceName, RelatedTableNo) then
+            Error(this.TargetServiceMissingErr, TargetServiceName);
 
         FieldSetup.Validate(Visible, true);
+        // A linked field renders as the button that opens the target page, so MobileNAV's
+        // Additional default hides the only way in to that page. See ConfigureFunctionField.
+        if Importance <> '' then
+            this.SetOptionField(FieldSetup, FieldSetup.FieldNo(Mandatory), Importance);
         // DisplayInMenu: OnValidate branches on "Line Type"/"Page Type" and writes "Quick Edit/Action"
         // or clears Category/Order.
 #pragma warning disable PC0037
@@ -86,8 +92,9 @@ codeunit 77789 "BJF MN Field Mgt."
     /// <param name="FunctionName">Page function name, validated through MobileNAV's own table procedure.</param>
     /// <param name="FunctionType">MobileNAV Function Type option member name.</param>
     /// <param name="ValidationBehavior">MobileNAV Validation Behavior option member name; empty keeps the default.</param>
+    /// <param name="Importance">MobileNAV Mandatory option member name; empty keeps MobileNAV's default.</param>
     /// <returns>True when the field was found and configured; false when it does not exist.</returns>
-    procedure ConfigureFunctionField(ServiceName: Text[100]; ControlName: Text[100]; Editable: Boolean; MobileType: Text[30]; FunctionName: Text[50]; FunctionType: Text[30]; ValidationBehavior: Text[50]): Boolean
+    procedure ConfigureFunctionField(ServiceName: Text[100]; ControlName: Text[100]; Editable: Boolean; MobileType: Text[30]; FunctionName: Text[50]; FunctionType: Text[30]; ValidationBehavior: Text[50]; Importance: Text[30]): Boolean
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
@@ -95,6 +102,12 @@ codeunit 77789 "BJF MN Field Mgt."
             exit(false);
 
         ServiceSetup.Validate(Visible, true);
+        // Importance has to be written here for the same reason ConfigureField writes it:
+        // MobileNAV initializes a new field to Additional, which hides the control behind the
+        // card's additional fields section. A function control hidden there is a button the
+        // device user cannot find, so the button silently does nothing for them.
+        if Importance <> '' then
+            this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(Mandatory), Importance);
         // Editable: OnValidate silently reverts the value and shows a Message() when the underlying
         // field is not editable on the page or is a NoSeries field.
         // DisplayInMenu: OnValidate branches on "Line Type"/"Page Type" and writes "Quick Edit/Action"
@@ -106,6 +119,8 @@ codeunit 77789 "BJF MN Field Mgt."
         this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(MobileType), MobileType);
         this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Function Type"), FunctionType);
         ServiceSetup.ValidateFunctionName(FunctionName, false);
+        if Editable then
+            this.EnsurePageUpdatable(ServiceName);
         if ValidationBehavior <> '' then
             this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Validation Behavior"), ValidationBehavior);
         ServiceSetup.Modify(true);
@@ -122,8 +137,9 @@ codeunit 77789 "BJF MN Field Mgt."
     /// <param name="ControlName">Field's control name on the page.</param>
     /// <param name="MobileType">MobileNAV mobile control type option member name.</param>
     /// <param name="ValidationBehavior">MobileNAV Validation Behavior option member name; empty keeps the default.</param>
+    /// <param name="Importance">MobileNAV Mandatory option member name; empty keeps MobileNAV's default.</param>
     /// <returns>True when the field was found and configured; false when it does not exist.</returns>
-    procedure ConfigureScanField(ServiceName: Text[100]; ControlName: Text[100]; MobileType: Text[30]; ValidationBehavior: Text[50]): Boolean
+    procedure ConfigureScanField(ServiceName: Text[100]; ControlName: Text[100]; MobileType: Text[30]; ValidationBehavior: Text[50]; Importance: Text[30]): Boolean
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
@@ -131,6 +147,9 @@ codeunit 77789 "BJF MN Field Mgt."
             exit(false);
 
         ServiceSetup.Validate(Visible, true);
+        // See ConfigureFunctionField: MobileNAV's Additional default would hide the scan control.
+        if Importance <> '' then
+            this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(Mandatory), Importance);
         // Editable: OnValidate silently reverts the value and shows a Message() when the underlying
         // field is not editable on the page or is a NoSeries field.
 #pragma warning disable PC0037
@@ -165,7 +184,89 @@ codeunit 77789 "BJF MN Field Mgt."
                 SetupRecordRef.SetTable(ServiceSetup);
                 exit;
             end;
-        Error(UnknownOptionValueErr, ValueName, OptionFieldRef.Caption());
+        Error(this.UnknownOptionValueErr, ValueName, OptionFieldRef.Caption());
+    end;
+
+    /// <summary>
+    /// Scopes a page to the signed-in device user through MobileNAV's own "Mine" mechanism.
+    ///
+    /// The control is marked as the page's user identity (MobileType UserID) and a page-level
+    /// filter with comparison Own is written over it. At config build time MobileNAV replaces
+    /// Own with an equality against the MobileNAV user, so every device sees only its own
+    /// rows. This is how a shared parameter table — one row per user — presents exactly one
+    /// row on each device, which is also what makes a card over it uniquely resolvable.
+    /// </summary>
+    /// <param name="ServiceName">MobileNAV service the page is registered under.</param>
+    /// <param name="ControlName">Control on the page carrying the user id.</param>
+    /// <returns>True when the control exists and the scope was written.</returns>
+    procedure ConfigureUserScope(ServiceName: Text[100]; ControlName: Text[100]): Boolean
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+        FilterSetup: Record "MobileNAV Service Setup";
+        IsNew: Boolean;
+    begin
+        if not this.FindField(ServiceName, ControlName, ServiceSetup) then
+            exit(false);
+
+        // The Own comparison only validates against a field whose MobileType names a per-user
+        // value, so the identity mark goes on first.
+        this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(MobileType), 'UserID');
+        ServiceSetup.Modify(true);
+
+        FilterSetup.SetRange("Object Type", ServiceSetup."Object Type");
+        FilterSetup.SetRange("Service Name", ServiceSetup."Service Name");
+        FilterSetup.SetRange("Line Type", FilterSetup."Line Type"::Filter);
+        FilterSetup.SetRange("Page Line No.", 0);
+        FilterSetup.SetRange("Relation No.", 0);
+        FilterSetup.SetRange(SourceFieldName, ServiceSetup.FieldName);
+        IsNew := not FilterSetup.FindFirst();
+
+        if IsNew then begin
+            FilterSetup.Init();
+            FilterSetup.Validate("Object Type", ServiceSetup."Object Type");
+            FilterSetup.Validate("Service Name", ServiceSetup."Service Name");
+            FilterSetup.Validate("Line Type", FilterSetup."Line Type"::Filter);
+            FilterSetup.Validate("Page Line No.", 0);
+            FilterSetup.Validate("Relation No.", 0);
+            FilterSetup.Validate("Line No.", 10000);
+        end;
+
+        // Object ID: OnValidate TestFields "Object Type" and calls RefreshPage(true).
+        // FilterType: OnValidate clears the field names. "Filter Comparsion Type": OnValidate
+        // silently reverts when the sibling field row's MobileType does not qualify — which the
+        // UserID mark above guarantees it does, so direct assignment keeps this apply-safe.
+#pragma warning disable PC0037
+        FilterSetup."Object ID" := ServiceSetup."Object ID";
+        FilterSetup.FilterType := FilterSetup.FilterType::FIELD;
+        FilterSetup."Filter Comparsion Type" := FilterSetup."Filter Comparsion Type"::Own;
+        FilterSetup.SourceFieldName := ServiceSetup.FieldName;
+        FilterSetup.DestFieldName := ServiceSetup.FieldName;
+        FilterSetup.FilterValue := '';
+#pragma warning restore PC0037
+
+        if IsNew then
+            FilterSetup.Insert(true)
+        else
+            FilterSetup.Modify(true);
+        exit(true);
+    end;
+
+    /// <summary>
+    /// Ensures the page's Main row allows record updates. A field's Editable flag only takes
+    /// effect on a page the device may write back to; with "Page Update" off the device draws
+    /// every field read-only regardless of the field configuration, which silently undoes an
+    /// editable declaration. Called whenever a field is configured editable.
+    /// </summary>
+    local procedure EnsurePageUpdatable(ServiceName: Text[100])
+    var
+        MainRow: Record "MobileNAV Service Setup";
+    begin
+        if not MainRow.Get(ServiceName, MainRow."Line Type"::Main) then
+            exit;
+        if MainRow."Page Update" then
+            exit;
+        MainRow.Validate("Page Update", true);
+        MainRow.Modify(true);
     end;
 
     local procedure FindField(ServiceName: Text[100]; ControlName: Text[100]; var ServiceSetup: Record "MobileNAV Service Setup"): Boolean
@@ -206,14 +307,19 @@ codeunit 77789 "BJF MN Field Mgt."
 #pragma warning restore PC0037
         RelationSetup.Validate(ControlID, FieldSetup.ControlID);
         RelationSetup.Validate(FieldName, FieldSetup.FieldName);
-        // RelatedPageName / RelatedPgCodeFldName: OnValidate can Error, and DeleteAlls child filter
-        // and propagated-field rows when the value changes.
-        // "Related Table No.": OnValidate clears related-page fields on every sibling field row of
-        // the service.
+        // RelatedPageName: OnValidate can Error, and DeleteAlls child filter and propagated-field
+        // rows when the value changes. "Related Table No.": OnValidate clears related-page fields
+        // on every sibling field row of the service.
+        //
+        // RelatedPgCodeFldName is deliberately NOT set. It turns the relation from an action
+        // button into a lookup binding — the control then renders as a code field showing the
+        // related record's value, and an empty read-only lookup is not drawn at all, so the
+        // device shows nothing where the button should be. Every one of MobileNAV's own
+        // action-style relations leaves it blank; the filter rows alone carry the binding.
 #pragma warning disable PC0037
         RelationSetup.RelatedPageName := TargetServiceName;
         RelationSetup."Related Table No." := RelatedTableNo;
-        RelationSetup.RelatedPgCodeFldName := this.ConvertFieldName(TargetFilterField);
+        RelationSetup.RelatedPgCodeFldName := '';
 #pragma warning restore PC0037
 
         if IsNew then
@@ -278,7 +384,7 @@ codeunit 77789 "BJF MN Field Mgt."
 
     local procedure ConvertFieldName(OriginalName: Text): Text[75]
     begin
-        exit(CopyStr(WebServiceHandling.ConvertFieldName(OriginalName), 1, 75));
+        exit(CopyStr(this.WebServiceHandling.ConvertFieldName(OriginalName), 1, 75));
     end;
 
     var

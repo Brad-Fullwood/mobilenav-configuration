@@ -41,6 +41,41 @@ codeunit 77788 "BJF MN Page Mgt."
     end;
 
     /// <summary>
+    /// Registers the companion codeunit web service a device needs before it may call
+    /// functions on a page.
+    ///
+    /// A function control's configured name is only metadata; over MobileNAV's SOAP transport
+    /// the call itself travels through a codeunit web service registered under the SAME name
+    /// as the page's service, resolving to MobileNAV's "Page Functions" codeunit, whose
+    /// record-typed ExtFunc procedures raise the events providers subscribe to. MobileNAV's
+    /// own configuration import creates this registration for every page whose export carried
+    /// one, and its config generator only marks a page's functions callable when the
+    /// registration exists (ExportPageGeneral resolves it into the page's CuId attribute). A
+    /// page published without it renders its function buttons perfectly, but the device
+    /// refuses the tap client-side — 'Method "…" is invalid!' — before any request is made.
+    ///
+    /// The registration is deliberately unpublished, mirroring MobileNAV's own import
+    /// (RegisterWS creates it with Published = false); existence is what the generator checks.
+    /// </summary>
+    /// <param name="ServiceName">MobileNAV page service whose functions devices must be able to call.</param>
+    procedure PublishFunctionCompanion(ServiceName: Text[100])
+    var
+        TenantWebService: Record "Tenant Web Service";
+    begin
+        if TenantWebService.Get(TenantWebService."Object Type"::Codeunit, ServiceName) then
+            exit;
+        TenantWebService.Init();
+        // Tenant Web Service is a platform table whose triggers could not be inspected.
+#pragma warning disable PC0037
+        TenantWebService."Object Type" := TenantWebService."Object Type"::Codeunit;
+        TenantWebService."Object ID" := Codeunit::"MobileNAV Page Functions";
+        TenantWebService."Service Name" := ServiceName;
+        TenantWebService.Published := false;
+#pragma warning restore PC0037
+        TenantWebService.Insert(true);
+    end;
+
+    /// <summary>
     /// Registers the page under the preferred service name and refreshes its metadata. The
     /// lookup is keyed on page id AND service name so a mismatch is caught here rather than
     /// silently adopting an existing row. Note that MobileNAV allows only ONE service per
@@ -56,7 +91,7 @@ codeunit 77788 "BJF MN Page Mgt."
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
-        if not FindMainPageByService(PageId, PreferredServiceName, ServiceSetup) then begin
+        if not this.FindMainPageByService(PageId, PreferredServiceName, ServiceSetup) then begin
             ServiceSetup.Init();
             ServiceSetup.Validate("Object Type", ServiceSetup."Object Type"::Page);
             // Object ID (MobileNAV Service Setup): OnValidate TestFields "Object Type", can Error, and
@@ -73,11 +108,35 @@ codeunit 77788 "BJF MN Page Mgt."
         ServiceName := ServiceSetup."Service Name";
     end;
 
+    /// <summary>
+    /// Sets the MobileNAV page type on a registered page's Main row.
+    ///
+    /// The type decides how the device treats the whole page. In particular, a control that
+    /// links to a page renders as a toolbar action only when the target is a Report-type page
+    /// (MobileNAV's action-dialog pattern: parameter fields plus an execute button); a link to
+    /// a List page renders as a lookup binding instead, which an empty read-only card simply
+    /// does not draw. The value arrives as text and is resolved against the option members of
+    /// the Page Type field, so this codeunit never has to track MobileNAV's option list.
+    /// </summary>
+    /// <param name="ServiceName">MobileNAV service whose Main row to change.</param>
+    /// <param name="PageType">MobileNAV Page Type option member name, for example 'Report'.</param>
+    /// <returns>True when the Main row was found and the type set.</returns>
+    procedure SetPageType(ServiceName: Text[100]; PageType: Text[30]): Boolean
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        if not ServiceSetup.Get(ServiceName, ServiceSetup."Line Type"::Main) then
+            exit(false);
+        this.FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Page Type"), PageType);
+        ServiceSetup.Modify(true);
+        exit(true);
+    end;
+
     procedure RefreshConfiguredPage(PageId: Integer; var ServiceName: Text[100]): Boolean
     var
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
-        if not FindMainPage(PageId, ServiceSetup) then
+        if not this.FindMainPage(PageId, ServiceSetup) then
             exit(false);
 
         this.RefreshMetadata(ServiceSetup);
@@ -127,7 +186,7 @@ codeunit 77788 "BJF MN Page Mgt."
         ServiceSetup: Record "MobileNAV Service Setup";
     begin
         this.GetMainPageByService(ServiceName, ServiceSetup);
-        FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Main Menu Action"), ActionName);
+        this.FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Main Menu Action"), ActionName);
         ServiceSetup.Modify(true);
     end;
 
@@ -150,7 +209,7 @@ codeunit 77788 "BJF MN Page Mgt."
         if StagingBehavior = '' then
             ServiceSetup.Validate("Staging Behavior", ServiceSetup."Staging Behavior"::Always)
         else
-            FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Staging Behavior"), StagingBehavior);
+            this.FieldManagement.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Staging Behavior"), StagingBehavior);
         ServiceSetup.Validate("Auto Next Stage", AutoNext);
         ServiceSetup.Validate("Back-Next Visible", BackNextVisible);
         ServiceSetup.Modify(true);
@@ -163,7 +222,7 @@ codeunit 77788 "BJF MN Page Mgt."
         ServiceSetup.SetRange("Service Name", ServiceName);
         ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
         if not ServiceSetup.FindFirst() then
-            Error(ServiceMissingErr, ServiceName);
+            Error(this.ServiceMissingErr, ServiceName);
     end;
 
     /// <summary>
@@ -219,9 +278,9 @@ codeunit 77788 "BJF MN Page Mgt."
         // still open. It rebuilds the profile hierarchy so the new fields reach the profiles
         // users log in against, and regenerates the page templates devices render from —
         // without that regeneration a device keeps drawing its previous version of the page.
-        CoreFunctions.SetPageHierarchyChanged();
-        CoreFunctions.SetEnforcedMajorConfigChanged();
-        CoreFunctions.RunPostConfigurationProcess();
+        this.CoreFunctions.SetPageHierarchyChanged();
+        this.CoreFunctions.SetEnforcedMajorConfigChanged();
+        this.CoreFunctions.RunPostConfigurationProcess();
 
         // Close the window and clear the flags it consumed, as MobileNAV does when an
         // administrator turns construction off by hand.
@@ -241,9 +300,9 @@ codeunit 77788 "BJF MN Page Mgt."
 
     local procedure RefreshMetadata(var ServiceSetup: Record "MobileNAV Service Setup")
     begin
-        MetadataProcessing.RefreshPageByMetadata(ServiceSetup, true, '');
-        CoreFunctions.AddMissingFlowFilters(ServiceSetup."Service Name");
-        CoreFunctions.SetZeroFieldOrder(ServiceSetup."Service Name");
+        this.MetadataProcessing.RefreshPageByMetadata(ServiceSetup, true, '');
+        this.CoreFunctions.AddMissingFlowFilters(ServiceSetup."Service Name");
+        this.CoreFunctions.SetZeroFieldOrder(ServiceSetup."Service Name");
         ServiceSetup.Modify(true);
     end;
 

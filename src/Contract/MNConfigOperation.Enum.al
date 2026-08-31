@@ -44,4 +44,12 @@ enum 77781 "BJF MN Config Operation"
     {
         Caption = 'Stage Field';
     }
+    value(8; "Profile Field")
+    {
+        Caption = 'Profile Field';
+    }
+    value(9; "User Scope")
+    {
+        Caption = 'User Scope';
+    }
 }
