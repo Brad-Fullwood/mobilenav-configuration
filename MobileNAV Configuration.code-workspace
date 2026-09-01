@@ -1,0 +1,11 @@
+{
+    "folders": [
+        { "name": "MobileNAV Configuration", "path": "MobileNAV Configuration" },
+        { "name": "MobileNAV Configuration WMS", "path": "MobileNAV Configuration WMS" }
+    ],
+    "settings": {
+        "al.enableCodeAnalysis": true,
+        "al.codeAnalyzers": ["${CodeCop}", "${UICop}", "${PerTenantExtensionCop}"],
+        "files.exclude": { "**/.alpackages": true, "**/.alcache": true, "**/.snapshots": true }
+    }
+}

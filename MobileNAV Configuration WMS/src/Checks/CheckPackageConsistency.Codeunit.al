@@ -1,4 +1,4 @@
-namespace BradFullwood.MobileNAV.Diagnostics.WMS;
+namespace BradFullwood.MobileNAV.Configuration.WMS;
 
 using BradFullwood.MobileNAV.Configuration;
 

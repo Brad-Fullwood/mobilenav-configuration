@@ -1,14 +1,14 @@
 {
   "id": "a7e0d38d-9896-45a5-b337-dc130656dd5f",
-  "name": "MobileNAV Diagnostics WMS",
+  "name": "MobileNAV Configuration WMS",
   "publisher": "Brad Fullwood",
-  "version": "1.3.0.0",
-  "brief": "WMS MobileNAV checks for the MobileNAV Diagnostics toolbox.",
-  "description": "Contributes the checks that need WMS MobileNAV - inventory setup for package tracking, and package record consistency - to the MobileNAV Diagnostics toolbox. Kept separate so the toolbox installs in environments without WMS MobileNAV.",
+  "version": "2.0.0.0",
+  "brief": "WMS MobileNAV checks for the MobileNAV Configuration doctor.",
+  "description": "Contributes the checks that need WMS MobileNAV - inventory setup for package tracking, package record consistency and split packages with an automatic consolidation fix - to the MobileNAV Doctor in MobileNAV Configuration. Kept as a separate app so the framework installs in environments without WMS MobileNAV.",
   "privacyStatement": "",
   "EULA": "",
   "help": "",
-  "url": "https://github.com/Brad-Fullwood/MobileNAV-Diagnostics",
+  "url": "https://github.com/Brad-Fullwood/mobilenav-configuration",
   "dependencies": [
     {
       "id": "8943817b-00dd-4a15-b70a-209b96da80e2",

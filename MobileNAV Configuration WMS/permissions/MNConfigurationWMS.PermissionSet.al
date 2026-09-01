@@ -1,11 +1,11 @@
-namespace BradFullwood.MobileNAV.Diagnostics.WMS;
+namespace BradFullwood.MobileNAV.Configuration.WMS;
 
 using BradFullwood.MobileNAV.Configuration;
 using Microsoft.Inventory.Setup;
 
-permissionset 77740 "BJF Diagnostics WMS"
+permissionset 77740 "BJF MN Config WMS"
 {
-    Caption = 'MobileNAV Diagnostics WMS';
+    Caption = 'MobileNAV Config WMS', MaxLength = 30;
     Assignable = true;
     IncludedPermissionSets = "BJF MN Configuration";
     Permissions = codeunit "BJF Check Inventory Setup" = X,
