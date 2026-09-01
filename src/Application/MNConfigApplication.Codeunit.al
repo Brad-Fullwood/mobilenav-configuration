@@ -2,34 +2,31 @@ namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
 /// Validates and applies one provider definition in deterministic dependency order,
-/// then records success in the same transaction.
+/// then records success — with the definition's fingerprint — in the same transaction.
 /// </summary>
 codeunit 77784 "BJF MN Config Application"
 {
+    Access = Public;
+
     /// <summary>Validates the given provider's declared configuration, applies it, and records that it was applied.</summary>
     /// <param name="ProviderType">The configuration provider to validate and apply.</param>
     procedure ApplyProvider(ProviderType: Enum "BJF MN Config Provider")
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
-        ConfigurationBuilder: Codeunit "BJF MN Config Builder";
-        Provider: Interface "BJF MN Config Provider";
         ProviderId: Code[50];
         ProviderName: Text[100];
         ProviderDescription: Text[250];
-        ProviderVersion: Integer;
+        ContentHash: Text[64];
         DeviceHandoverCompleted: Boolean;
     begin
-        this.ProviderCatalog.GetMetadata(
-            ProviderType, ProviderId, ProviderName, ProviderDescription, ProviderVersion);
-
-        Provider := ProviderType;
-        Provider.DefineConfiguration(ConfigurationBuilder);
-        ConfigurationBuilder.GetLines(TempConfigurationLine);
+        this.ProviderCatalog.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription);
+        this.ProviderCatalog.BuildDefinition(ProviderType, TempConfigurationLine);
+        ContentHash := this.ConfigurationHash.Compute(TempConfigurationLine);
 
         this.ConfigurationValidator.Validate(TempConfigurationLine);
         DeviceHandoverCompleted := this.Execute(TempConfigurationLine);
         this.ConfigurationStatus.RecordApplied(
-            ProviderId, ProviderName, ProviderVersion, not DeviceHandoverCompleted);
+            ProviderId, ProviderName, ContentHash, not DeviceHandoverCompleted);
     end;
 
     local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary): Boolean
@@ -114,15 +111,17 @@ codeunit 77784 "BJF MN Config Application"
     local procedure ApplyFunctionFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
     var
         ServiceName: Text;
+        FunctionName: Text[50];
     begin
         TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Function Field");
         if TempConfigurationLine.FindSet() then
             repeat
                 PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
+                FunctionName := this.ResolveFunctionName(TempConfigurationLine, CopyStr(ServiceName, 1, 100));
                 if not this.FieldManagement.ConfigureFunctionField(
                     CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
                     TempConfigurationLine.Editable,
-                    TempConfigurationLine."Mobile Type", TempConfigurationLine."Function Name",
+                    TempConfigurationLine."Mobile Type", FunctionName,
                     TempConfigurationLine."Function Type", TempConfigurationLine."Validation Behavior",
                     TempConfigurationLine.Importance)
                 then
@@ -275,6 +274,25 @@ codeunit 77784 "BJF MN Config Application"
         TempConfigurationLine.Reset();
     end;
 
+    /// <summary>
+    /// A button declared without FunctionName() is served by whichever of MobileNAV's page
+    /// functions handles the page's source table; the table is only known once the service
+    /// exists, so the name is resolved here rather than in the builder.
+    /// </summary>
+    local procedure ResolveFunctionName(ConfigurationLine: Record "BJF MN Config Line" temporary; ServiceName: Text[100]): Text[50]
+    var
+        TableNo: Integer;
+        DispatcherName: Text[50];
+    begin
+        if ConfigurationLine."Function Name" <> '' then
+            exit(ConfigurationLine."Function Name");
+        if not this.PageManagement.GetServiceTableNo(ServiceName, TableNo) then
+            Error(this.PageMissingErr, ConfigurationLine."Page ID");
+        if not this.FunctionMap.TryGetDispatcher(TableNo, DispatcherName) then
+            Error(this.NoDispatcherErr, ConfigurationLine."Control Name", ServiceName, TableNo);
+        exit(DispatcherName);
+    end;
+
     local procedure ResolvePage(PageId: Integer; var PageServices: Dictionary of [Integer, Text])
     var
         ServiceName: Text[100];
@@ -290,10 +308,13 @@ codeunit 77784 "BJF MN Config Application"
         ConfigurationStatus: Record "BJF MN Config Status";
         ProviderCatalog: Codeunit "BJF MN Provider Catalog";
         ConfigurationValidator: Codeunit "BJF MN Config Validator";
+        ConfigurationHash: Codeunit "BJF MN Config Hash";
+        FunctionMap: Codeunit "BJF MN Function Map";
         PageManagement: Codeunit "BJF MN Page Mgt.";
         FieldManagement: Codeunit "BJF MN Field Mgt.";
         ProfileManagement: Codeunit "BJF MN Profile Mgt.";
         StageManagement: Codeunit "BJF MN Stage Mgt.";
         PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
         FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';
+        NoDispatcherErr: Label 'Button %1 on MobileNAV service %2 cannot be served automatically: MobileNAV has no page function for table %3. Name the function to call with FunctionName().', Comment = '%1 = control name, %2 = MobileNAV service name, %3 = table number';
 }

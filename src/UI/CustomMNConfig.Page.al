@@ -31,13 +31,6 @@ page 77780 "BJF Custom MN Config"
                 field("Applied Previously"; Rec."Applied Previously")
                 {
                 }
-                field("Defined Version"; Rec."Defined Version")
-                {
-                }
-                field("Applied Version"; Rec."Applied Version")
-                {
-                    BlankZero = true;
-                }
                 field("Applied At"; Rec."Applied At")
                 {
                 }
@@ -67,6 +60,26 @@ page 77780 "BJF Custom MN Config"
                     this.ApplySelectedProviders();
                 end;
             }
+            action(OpenDoctor)
+            {
+                ApplicationArea = All;
+                Caption = 'Doctor';
+                Image = Troubleshoot;
+                RunObject = page "BJF MN Doctor";
+                ToolTip = 'Opens the MobileNAV Doctor, which checks every provider''s configuration against MobileNAV''s live data and fixes what it can.';
+            }
+            action(ExportSnapshot)
+            {
+                ApplicationArea = All;
+                Caption = 'Export live snapshot';
+                Image = Export;
+                ToolTip = 'Downloads every MobileNAV row the selected provider''s configuration touches, for diffing against another environment or version.';
+
+                trigger OnAction()
+                begin
+                    this.ExportSnapshotForCurrentProvider();
+                end;
+            }
             action(MarkSelectedOutdated)
             {
                 ApplicationArea = All;
@@ -89,6 +102,12 @@ page 77780 "BJF Custom MN Config"
                 {
                 }
                 actionref(MarkSelectedOutdated_Promoted; MarkSelectedOutdated)
+                {
+                }
+                actionref(ExportSnapshot_Promoted; ExportSnapshot)
+                {
+                }
+                actionref(OpenDoctor_Promoted; OpenDoctor)
                 {
                 }
             }
@@ -150,6 +169,15 @@ page 77780 "BJF Custom MN Config"
         CurrPage.Update(false);
     end;
 
+    local procedure ExportSnapshotForCurrentProvider()
+    var
+        TempConfigurationLine: Record "BJF MN Config Line" temporary;
+        ConfigurationSnapshot: Codeunit "BJF MN Config Snapshot";
+    begin
+        this.ProviderCatalog.BuildDefinition(Rec.Provider, TempConfigurationLine);
+        ConfigurationSnapshot.Download(StrSubstNo(this.SnapshotFileNameTok, Rec."Provider ID"), TempConfigurationLine);
+    end;
+
     local procedure GetSelectedProviders(var TempSelectedProvider: Record "BJF MN Provider Buffer" temporary)
     begin
         TempSelectedProvider.Copy(Rec, true);
@@ -169,4 +197,5 @@ page 77780 "BJF Custom MN Config"
         SelectionRequiredErr: Label 'Select at least one configuration provider.';
         AppliedSelectionRequiredErr: Label 'Select at least one provider that has been applied previously.';
         AppliedMsg: Label '%1 MobileNAV configuration provider(s) were applied.', Comment = '%1 = number of providers';
+        SnapshotFileNameTok: Label '%1-mobilenav-snapshot.txt', Locked = true;
 }

@@ -23,6 +23,9 @@ table 77781 "BJF MN Config Status"
         field(3; "Applied Version"; Integer)
         {
             Caption = 'Applied Version';
+            ObsoleteState = Pending;
+            ObsoleteReason = 'Providers are fingerprinted by content; see Content Hash.';
+            ObsoleteTag = '3.0.0.0';
         }
         field(4; "Applied At"; DateTime)
         {
@@ -48,6 +51,10 @@ table 77781 "BJF MN Config Status"
         {
             Caption = 'Device Handover Pending';
         }
+        field(10; "Content Hash"; Text[64])
+        {
+            Caption = 'Content Hash';
+        }
     }
 
     keys
@@ -65,20 +72,20 @@ table 77781 "BJF MN Config Status"
             exit;
 
         TempProviderBuffer."Applied Previously" := true;
-        TempProviderBuffer."Applied Version" := "Applied Version";
+        TempProviderBuffer."Applied Hash" := "Content Hash";
         TempProviderBuffer."Applied At" := "Applied At";
         TempProviderBuffer."Applied By" := "Applied By";
 
         // A pending device handover counts as outdated: the configuration is in the setup
         // tables but has not reached the devices, and only applying again from this page
         // can finish the job.
-        if "Manually Outdated" or "Device Handover Pending" or ("Applied Version" <> TempProviderBuffer."Defined Version") then
+        if "Manually Outdated" or "Device Handover Pending" or ("Content Hash" <> TempProviderBuffer."Defined Hash") then
             TempProviderBuffer.State := Enum::"BJF MN Config State"::Outdated
         else
             TempProviderBuffer.State := Enum::"BJF MN Config State"::Applied;
     end;
 
-    procedure RecordApplied(ProviderId: Code[50]; ProviderName: Text[100]; ProviderVersion: Integer; DeviceHandoverPending: Boolean)
+    procedure RecordApplied(ProviderId: Code[50]; ProviderName: Text[100]; ContentHash: Text[64]; DeviceHandoverPending: Boolean)
     begin
         if not this.Get(ProviderId) then begin
             this.Init();
@@ -87,7 +94,7 @@ table 77781 "BJF MN Config Status"
         end;
 
         "Provider Name" := ProviderName;
-        "Applied Version" := ProviderVersion;
+        "Content Hash" := ContentHash;
         "Applied At" := CurrentDateTime();
         "Applied By" := CopyStr(UserId(), 1, MaxStrLen("Applied By"));
         "Manually Outdated" := false;

@@ -2,9 +2,9 @@
     "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
     "name": "MobileNAV Configuration",
     "publisher": "Brad Fullwood",
-    "version": "2.15.0.0",
-    "brief": "Declarative configuration framework for MobileNAV pages and fields.",
-    "description": "Provides a validated provider contract, application tracking, and an administration page for defining and applying custom MobileNAV configuration from AL.",
+    "version": "3.0.0.2",
+    "brief": "Declarative configuration, diagnostics and repair framework for MobileNAV.",
+    "description": "Lets a Business Central developer declare what a MobileNAV device shows in a few fluent lines, applies it correctly across MobileNAV's services and profiles, routes device button taps to one framework event, and diagnoses and repairs MobileNAV configuration and posting problems from one doctor page.",
     "privacyStatement": "",
     "EULA": "",
     "help": "",
@@ -18,20 +18,17 @@
         }
     ],
     "platform": "1.0.0.0",
-    "application": "25.0.0.0",
-    "runtime": "14.3",
+    "application": "26.0.0.0",
+    "runtime": "16.0",
     "target": "Cloud",
     "idRanges": [
         {
-            "from": 77780,
+            "from": 77760,
             "to": 77799
         }
     ],
     "features": [
         "NoImplicitWith"
-    ],
-    "preprocessorSymbols": [
-        "BJF_MN_CONFIG_SOURCE"
     ],
     "resourceExposurePolicy": {
         "allowDebugging": true,

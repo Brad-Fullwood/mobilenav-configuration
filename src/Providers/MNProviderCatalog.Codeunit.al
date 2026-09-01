@@ -1,7 +1,9 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
-/// <summary>Discovers registered providers and validates their required metadata contract.</summary>
+/// <summary>
+/// Discovers registered providers, validates their metadata, and fingerprints each definition so
+/// the admin page can show whether what is applied still matches what is declared.
+/// </summary>
 codeunit 77782 "BJF MN Provider Catalog"
 {
     Access = Internal;
@@ -21,7 +23,7 @@ codeunit 77782 "BJF MN Provider Catalog"
             end;
     end;
 
-    procedure GetMetadata(ProviderType: Enum "BJF MN Config Provider"; var ProviderId: Code[50]; var ProviderName: Text[100]; var ProviderDescription: Text[250]; var ProviderVersion: Integer)
+    procedure GetMetadata(ProviderType: Enum "BJF MN Config Provider"; var ProviderId: Code[50]; var ProviderName: Text[100]; var ProviderDescription: Text[250])
     var
         Provider: Interface "BJF MN Config Provider";
     begin
@@ -32,26 +34,37 @@ codeunit 77782 "BJF MN Provider Catalog"
         ProviderId := Provider.GetId();
         ProviderName := Provider.GetName();
         ProviderDescription := Provider.GetDescription();
-        ProviderVersion := Provider.GetVersion();
-        this.ValidateMetadata(ProviderId, ProviderName, ProviderDescription, ProviderVersion);
+        this.ValidateMetadata(ProviderId, ProviderName, ProviderDescription);
+    end;
+
+    /// <summary>Builds the provider's definition and returns its lines with the profile rows expanded.</summary>
+    procedure BuildDefinition(ProviderType: Enum "BJF MN Config Provider"; var TempConfigurationLine: Record "BJF MN Config Line" temporary)
+    var
+        ConfigurationBuilder: Codeunit "BJF MN Config Builder";
+        Provider: Interface "BJF MN Config Provider";
+    begin
+        Provider := ProviderType;
+        Provider.DefineConfiguration(ConfigurationBuilder);
+        ConfigurationBuilder.GetLines(TempConfigurationLine);
     end;
 
     local procedure AddProvider(var ProviderBuffer: Record "BJF MN Provider Buffer" temporary; ProviderType: Enum "BJF MN Config Provider")
     var
+        TempConfigurationLine: Record "BJF MN Config Line" temporary;
         ProviderId: Code[50];
         ProviderName: Text[100];
         ProviderDescription: Text[250];
-        ProviderVersion: Integer;
     begin
-        this.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription, ProviderVersion);
+        this.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription);
         this.EnsureUniqueId(ProviderBuffer, ProviderId);
+        this.BuildDefinition(ProviderType, TempConfigurationLine);
 
         ProviderBuffer.Init();
         ProviderBuffer.Provider := ProviderType;
         ProviderBuffer."Provider ID" := ProviderId;
         ProviderBuffer.Name := ProviderName;
         ProviderBuffer.Description := ProviderDescription;
-        ProviderBuffer."Defined Version" := ProviderVersion;
+        ProviderBuffer."Defined Hash" := this.ConfigurationHash.Compute(TempConfigurationLine);
         this.ConfigurationStatus.PopulateState(ProviderBuffer);
         ProviderBuffer.Insert(false);
     end;
@@ -64,7 +77,7 @@ codeunit 77782 "BJF MN Provider Catalog"
         ProviderBuffer.Reset();
     end;
 
-    local procedure ValidateMetadata(ProviderId: Code[50]; ProviderName: Text[100]; ProviderDescription: Text[250]; ProviderVersion: Integer)
+    local procedure ValidateMetadata(ProviderId: Code[50]; ProviderName: Text[100]; ProviderDescription: Text[250])
     begin
         if ProviderId = '' then
             Error(this.IdRequiredErr);
@@ -72,16 +85,14 @@ codeunit 77782 "BJF MN Provider Catalog"
             Error(this.NameRequiredErr, ProviderId);
         if ProviderDescription = '' then
             Error(this.DescriptionRequiredErr, ProviderId);
-        if ProviderVersion <= 0 then
-            Error(this.VersionRequiredErr, ProviderId);
     end;
 
     var
         ConfigurationStatus: Record "BJF MN Config Status";
+        ConfigurationHash: Codeunit "BJF MN Config Hash";
         NoneProviderErr: Label 'The None value is not a configuration provider.';
         IdRequiredErr: Label 'A MobileNAV configuration provider returned an empty provider ID.';
         NameRequiredErr: Label 'MobileNAV configuration provider %1 returned an empty name.', Comment = '%1 = provider id';
         DescriptionRequiredErr: Label 'MobileNAV configuration provider %1 returned an empty description.', Comment = '%1 = provider id';
-        VersionRequiredErr: Label 'MobileNAV configuration provider %1 must return a positive version.', Comment = '%1 = provider id';
         DuplicateIdErr: Label 'More than one MobileNAV configuration provider uses the ID %1.', Comment = '%1 = provider id';
 }

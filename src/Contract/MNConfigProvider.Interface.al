@@ -1,8 +1,11 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
-/// Declarative contract for one independently versioned MobileNAV configuration provider.
-/// The framework validates the provider metadata and complete definition before applying it.
+/// The contract a configuration provider implements. A provider names itself and declares what
+/// MobileNAV devices should show through the fluent builder; the framework validates the
+/// definition, applies it, and tracks — by fingerprinting the definition — whether what is
+/// applied still matches what is declared. Register the implementation with an enumextension
+/// of "BJF MN Config Provider".
 /// </summary>
 interface "BJF MN Config Provider"
 {
@@ -19,16 +22,10 @@ interface "BJF MN Config Provider"
     procedure GetDescription(): Text[250]
 
     /// <summary>
-    /// Returns a positive schema version. Increment it whenever the declared configuration
-    /// changes; previously applied versions then become outdated automatically.
+    /// Declares the provider's desired state through the fluent builder. Declare only; the
+    /// framework applies. The definition is rebuilt whenever its state is inspected, so it must
+    /// be deterministic and free of side effects.
     /// </summary>
-    /// <returns>The positive schema version currently declared by the provider.</returns>
-    procedure GetVersion(): Integer
-
-    /// <summary>
-    /// Describes the provider's desired state through the constrained configuration builder.
-    /// Providers do not execute MobileNAV configuration themselves.
-    /// </summary>
-    /// <param name="Configuration">The configuration builder that records the provider's desired state.</param>
+    /// <param name="Configuration">The builder that records the provider's desired state.</param>
     procedure DefineConfiguration(var Configuration: Codeunit "BJF MN Config Builder")
 }

@@ -1,394 +1,528 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
-/// Constrained builder used by providers to declare supported MobileNAV configuration.
-/// It records intent only; it cannot apply configuration.
+/// The fluent surface a provider declares its MobileNAV configuration through. Every method
+/// returns the builder, so a page reads as one sentence:
+///
+///   Configuration.Page(Page::"MobileNAV WhseShipment")
+///       .Field('AUKPackingInstructions')
+///       .Field('Shipment Date').Filterable()
+///       .Button('AUKPrintDespatch');
+///
+/// A declared control is visible, in the card's standard section, and present in every
+/// MobileNAV profile — the framework writes the profile rows, the page's Page Update flag, the
+/// companion function service and the rest of what MobileNAV needs; the provider only says what
+/// the device should show. Modifiers refine the control declared last; Wizard, Stage and Show
+/// build a staged page the same way.
+///
+/// The builder records intent only. It cannot apply anything, and a misuse (a modifier with no
+/// control to modify, Filterable on a button) fails immediately with a message naming the fix.
 /// </summary>
 codeunit 77781 "BJF MN Config Builder"
 {
-    /// <summary>Registers, refreshes, and publishes a MobileNAV page web service.</summary>
-    /// <param name="PageId">ID of the page to publish as a MobileNAV web service.</param>
-    /// <param name="PreferredServiceName">Preferred name for the published web service.</param>
-    procedure AddPublishedPage(PageId: Integer; PreferredServiceName: Text[100])
+    Access = Public;
+
+    // ---- Page context -------------------------------------------------------------------
+
+    /// <summary>
+    /// Makes a page the context for the declarations that follow. Calling it again for the same
+    /// page continues that page. A page that MobileNAV already knows (any of its own pages)
+    /// needs nothing more; a page of your own must be published with Publish or PublishAsDialog.
+    /// </summary>
+    /// <param name="PageId">Object id of the page, for example Page::"MobileNAV WhseShipment".</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Page(PageId: Integer): Codeunit "BJF MN Config Builder"
     begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"Published Page", PageId);
+        if PageId <= 0 then
+            Error(this.PageIdRequiredErr);
+        this.CurrentPageId := PageId;
+        this.CurrentControlEntryNo := 0;
+        this.CurrentStageEntryNo := 0;
+        this.CurrentStageId := '';
+        exit(this);
+    end;
+
+    /// <summary>
+    /// Publishes the current page as a MobileNAV web service so devices can open it. The page
+    /// is added to every profile's menu and gets its own tile. If MobileNAV already has a service
+    /// for the page object, that service is reused under its existing name.
+    /// </summary>
+    /// <param name="PreferredServiceName">Web service name to register the page under.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Publish(PreferredServiceName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequirePage();
+        if PreferredServiceName = '' then
+            Error(this.ServiceNameRequiredErr);
+        this.AddLine(Enum::"BJF MN Config Operation"::"Published Page", this.CurrentPageId);
         this.TempConfigurationLine."Service Name" := PreferredServiceName;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Publishes a page as a MobileNAV Report page — the action-dialog pattern: parameter
-    /// fields plus an execute control. This is the only page type for which a control linking
-    /// to the page from another card renders as a toolbar action; a linked field targeting a
-    /// List page renders as a lookup binding instead, which an empty read-only card does not
-    /// draw at all. Use for pages that exist to collect inputs and run something, like a
-    /// serial-number generator.
+    /// Publishes the current page as an action dialog: a few inputs and a button that runs
+    /// something, like a serial-number generator. Use this instead of Publish when the page
+    /// exists to collect parameters rather than to browse records.
     /// </summary>
-    /// <param name="PageId">ID of the page to publish as a MobileNAV web service.</param>
-    /// <param name="PreferredServiceName">Preferred name for the published web service.</param>
-    procedure AddPublishedReportPage(PageId: Integer; PreferredServiceName: Text[100])
+    /// <param name="PreferredServiceName">Web service name to register the page under.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure PublishAsDialog(PreferredServiceName: Text[100]): Codeunit "BJF MN Config Builder"
     begin
-        this.AddPublishedPage(PageId, PreferredServiceName);
-        this.TempConfigurationLine."Page Type" := this.ReportPageTypeTok;
+        this.Publish(PreferredServiceName);
+        this.TempConfigurationLine."Page Type" := this.Vocabulary.ReportPageTypeName();
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
-    /// <summary>
-    /// Adds an explicit field configuration for an existing MobileNAV page, placing the field
-    /// in MobileNAV's standard section and leaving it out of the device filter pane. Use the
-    /// Importance/Filterable overload to place a field elsewhere or make it filterable.
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Visible">Whether the field is shown on the page.</param>
-    /// <param name="Editable">Whether the field can be edited.</param>
-    /// <param name="DisplayInMenu">Whether the field is shown as a menu entry rather than a card value.</param>
-    procedure AddField(PageId: Integer; ControlName: Text[100]; Visible: Boolean; Editable: Boolean; DisplayInMenu: Boolean)
+    /// <summary>Sets what the published page's home tile does when tapped.</summary>
+    /// <param name="Action">Create opens a new record; Open opens the single existing one.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure MainMenuAction(Action: Enum "BJF MN Main Menu Action"): Codeunit "BJF MN Config Builder"
     begin
-        this.AddField(PageId, ControlName, Visible, Editable, DisplayInMenu, this.StandardImportanceTok, false);
-    end;
-
-    /// <summary>
-    /// Adds an explicit field configuration for an existing MobileNAV page and controls where
-    /// the device draws it and whether it can be filtered on. Importance follows MobileNAV's
-    /// vocabulary: 'None' places the field in the standard section, 'RequiredForInsert' and
-    /// 'Mandatory' mark it as required, and 'Additional' hides it behind the card's additional
-    /// fields section (MobileNAV's own default for a new field). Filterable true also offers
-    /// the field in the device's filter pane. Filter Scope is left at MobileNAV's default.
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Visible">Whether the field is shown on the page.</param>
-    /// <param name="Editable">Whether the field can be edited.</param>
-    /// <param name="DisplayInMenu">Whether the field is shown as a menu entry rather than a card value.</param>
-    /// <param name="Importance">MobileNAV importance vocabulary controlling where the field is drawn.</param>
-    /// <param name="Filterable">Whether the field is offered in the device's filter pane.</param>
-    procedure AddField(PageId: Integer; ControlName: Text[100]; Visible: Boolean; Editable: Boolean; DisplayInMenu: Boolean; Importance: Text[30]; Filterable: Boolean)
-    begin
-        this.AddLine(Enum::"BJF MN Config Operation"::Field, PageId);
-        this.TempConfigurationLine."Control Name" := ControlName;
-        this.TempConfigurationLine.Visible := Visible;
-        this.TempConfigurationLine.Editable := Editable;
-        this.TempConfigurationLine."Display In Menu" := DisplayInMenu;
-        this.TempConfigurationLine.Importance := Importance;
-        this.TempConfigurationLine.Filterable := Filterable;
+        this.RequirePublishedPageLine();
+        this.TempConfigurationLine."Main Menu Action" := this.Vocabulary.MainMenuActionName(Action);
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Makes a field visible on the page in MobileNAV's standard section and sets its
-    /// editability.
-    ///
-    /// Display in Menu is deliberately not set. In MobileNAV that flag marks a field as an
-    /// entry in the page's menu — which is what a drill-down button is — rather than a value
-    /// drawn on the card, so setting it on an ordinary field keeps that field off the card.
-    /// Use AddLinkedField for drill-downs, or AddField if a caller genuinely needs the flag.
+    /// Shows each device user only their own rows. Use it on a page over a per-user table (one
+    /// parameter row per user): without it every device lists every user's rows and a card over
+    /// the page cannot resolve a record at all. The named control carries the user id and can
+    /// stay hidden; it exists for the filter.
     /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Editable">Whether the field can be edited.</param>
-    procedure AddVisibleField(PageId: Integer; ControlName: Text[100]; Editable: Boolean)
+    /// <param name="UserIdControlName">Control on the page bound to the row's user id.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure MineOnly(UserIdControlName: Text[100]): Codeunit "BJF MN Config Builder"
     begin
-        this.AddField(PageId, ControlName, true, Editable, false, this.StandardImportanceTok, false);
+        this.RequirePage();
+        this.RequireControlName(UserIdControlName);
+        this.AddLine(Enum::"BJF MN Config Operation"::"User Scope", this.CurrentPageId);
+        this.TempConfigurationLine."Control Name" := UserIdControlName;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    // ---- Controls -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Shows a field on the current page: visible, read-only, in the standard section, in every
+    /// profile. Chain Editable, Filterable, Hidden, Importance or a profile modifier to refine it.
+    /// </summary>
+    /// <param name="ControlName">Name of the page control (the name after `field(`).</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Field(ControlName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.BeginControl(Enum::"BJF MN Config Operation"::Field, ControlName);
+        this.TempConfigurationLine.Visible := true;
+        this.TempConfigurationLine.Editable := false;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Makes a field visible in MobileNAV's standard section, sets its editability, and offers
-    /// it in the device's filter pane. Filter Scope is left at MobileNAV's default, so the
-    /// filter applies wherever that default allows.
+    /// Shows a button on the current page that runs code in Business Central when tapped. The
+    /// framework works out which MobileNAV function serves the page's table and registers what
+    /// the device needs to call it; handle the tap by subscribing to
+    /// "BJF MN Function Router".OnPageFunction. A page of your own also needs the one-line
+    /// web-service wrapper described in the README.
     /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Editable">Whether the field can be edited.</param>
-    procedure AddFilterableField(PageId: Integer; ControlName: Text[100]; Editable: Boolean)
+    /// <param name="ControlName">Name of the page control (typically a `field(Name; '')` placeholder).</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Button(ControlName: Text[100]): Codeunit "BJF MN Config Builder"
     begin
-        this.AddField(PageId, ControlName, true, Editable, false, this.StandardImportanceTok, true);
+        this.BeginControl(Enum::"BJF MN Config Operation"::"Function Field", ControlName);
+        this.TempConfigurationLine.Visible := true;
+        this.TempConfigurationLine.Editable := true;
+        this.TempConfigurationLine."Mobile Type" := this.Vocabulary.MobileTypeName(Enum::"BJF MN Mobile Type"::Normal);
+        this.TempConfigurationLine."Function Type" := this.Vocabulary.FunctionTypeName(Enum::"BJF MN Function Type"::Normal);
+        // Empty means "derive from the page's table at apply time"; see FunctionName.
+        this.TempConfigurationLine."Function Name" := '';
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Makes a field visible and binds it to a target MobileNAV page using one FIELD filter.
-    /// The target page can be declared with AddPublishedPage or already exist in MobileNAV.
+    /// Shows a button that opens another page filtered to the current record. The target is
+    /// made reachable from this page in every profile, so the button is drawn. A page of your
+    /// own as the target must be published on its own Page(...) declaration.
     /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="TargetPageId">ID of the MobileNAV page the field links to.</param>
-    /// <param name="TargetFilterField">Field on the target page to filter on.</param>
-    /// <param name="SourceField">Field on this page supplying the filter value.</param>
-    procedure AddLinkedField(PageId: Integer; ControlName: Text[100]; TargetPageId: Integer; TargetFilterField: Text[100]; SourceField: Text[100])
+    /// <param name="ControlName">Name of the page control the button renders as.</param>
+    /// <param name="TargetPageId">Object id of the page to open.</param>
+    /// <param name="TargetFilterField">Field on the target page to filter.</param>
+    /// <param name="SourceField">Field on this page whose value becomes the filter.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Link(ControlName: Text[100]; TargetPageId: Integer; TargetFilterField: Text[100]; SourceField: Text[100]): Codeunit "BJF MN Config Builder"
     begin
-        // Standard placement: the linked field is the button that opens the target page, and
-        // MobileNAV's Additional default would hide the only route to it.
-        this.AddLinkedField(
-            PageId, ControlName, TargetPageId, TargetFilterField, SourceField, this.StandardImportanceTok);
-    end;
-
-    /// <summary>
-    /// Adds a linked field and places it explicitly. Importance follows MobileNAV's vocabulary:
-    /// 'None' places the control in the standard section, 'Additional' hides it behind the
-    /// card's additional fields section (MobileNAV's own default for a new field).
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="TargetPageId">ID of the MobileNAV page the field links to.</param>
-    /// <param name="TargetFilterField">Field on the target page to filter on.</param>
-    /// <param name="SourceField">Field on this page supplying the filter value.</param>
-    /// <param name="Importance">MobileNAV Importance option member name, for example 'None'.</param>
-    procedure AddLinkedField(PageId: Integer; ControlName: Text[100]; TargetPageId: Integer; TargetFilterField: Text[100]; SourceField: Text[100]; Importance: Text[30])
-    begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"Linked Field", PageId);
-        this.TempConfigurationLine."Control Name" := ControlName;
+        this.BeginControl(Enum::"BJF MN Config Operation"::"Linked Field", ControlName);
+        if TargetPageId <= 0 then
+            Error(this.TargetPageRequiredErr, ControlName);
+        if (TargetFilterField = '') or (SourceField = '') then
+            Error(this.LinkFilterRequiredErr, ControlName);
+        this.TempConfigurationLine.Visible := true;
+        this.TempConfigurationLine.Editable := false;
         this.TempConfigurationLine."Target Page ID" := TargetPageId;
         this.TempConfigurationLine."Target Filter Field" := TargetFilterField;
         this.TempConfigurationLine."Source Field" := SourceField;
-        this.TempConfigurationLine.Importance := Importance;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
-    /// <summary>
-    /// Makes a field visible and binds it to a MobileNAV page function so the device renders
-    /// it as a special control (for example a Signature pad bound to a BLOB function).
-    /// Editable false shows the control read-only, for example a captured signature on a
-    /// posted document. Names are matched against MobileNAV's own option members at apply
-    /// time, so they follow MobileNAV's vocabulary: MobileType (for example 'Signature',
-    /// 'Image'), FunctionType (for example 'BLOB', 'BLOB with GPS'), and ValidationBehavior
-    /// (for example 'Mandatory'; empty leaves the field optional).
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Editable">Whether the field can be edited.</param>
-    /// <param name="MobileType">MobileNAV control type to render, for example 'Signature' or 'Image'.</param>
-    /// <param name="FunctionName">Name of the page function the control is bound to.</param>
-    /// <param name="FunctionType">MobileNAV function type, for example 'BLOB' or 'BLOB with GPS'.</param>
-    /// <param name="ValidationBehavior">MobileNAV validation behavior, for example 'Mandatory'.</param>
-    procedure AddFunctionField(PageId: Integer; ControlName: Text[100]; Editable: Boolean; MobileType: Text[30]; FunctionName: Text[50]; FunctionType: Text[30]; ValidationBehavior: Text[50])
+    /// <summary>Shows an editable input the device fills from its barcode scanner.</summary>
+    /// <param name="ControlName">Name of the page control.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Scan(ControlName: Text[100]): Codeunit "BJF MN Config Builder"
     begin
-        // Standard placement, not MobileNAV's Additional default: a function control is a button,
-        // and a button behind the card's additional fields section is one the device user never
-        // finds. Use the Importance overload to place it elsewhere deliberately.
-        this.AddFunctionField(
-            PageId, ControlName, Editable, MobileType, FunctionName, FunctionType,
-            ValidationBehavior, this.StandardImportanceTok);
-    end;
-
-    /// <summary>
-    /// Adds a function-bound control and places it explicitly. Importance follows MobileNAV's
-    /// vocabulary: 'None' places the control in the standard section, 'Additional' hides it
-    /// behind the card's additional fields section (MobileNAV's own default for a new field).
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Editable">Whether the field can be edited.</param>
-    /// <param name="MobileType">MobileNAV control type to render, for example 'Signature' or 'Image'.</param>
-    /// <param name="FunctionName">Name of the page function the control is bound to.</param>
-    /// <param name="FunctionType">MobileNAV function type, for example 'BLOB' or 'BLOB with GPS'.</param>
-    /// <param name="ValidationBehavior">MobileNAV validation behavior, for example 'Mandatory'.</param>
-    /// <param name="Importance">MobileNAV Importance option member name, for example 'None'.</param>
-    procedure AddFunctionField(PageId: Integer; ControlName: Text[100]; Editable: Boolean; MobileType: Text[30]; FunctionName: Text[50]; FunctionType: Text[30]; ValidationBehavior: Text[50]; Importance: Text[30])
-    begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"Function Field", PageId);
-        this.TempConfigurationLine."Control Name" := ControlName;
-        this.TempConfigurationLine.Editable := Editable;
-        this.TempConfigurationLine."Mobile Type" := MobileType;
-        this.TempConfigurationLine."Function Name" := FunctionName;
-        this.TempConfigurationLine."Function Type" := FunctionType;
-        this.TempConfigurationLine."Validation Behavior" := ValidationBehavior;
-        this.TempConfigurationLine.Importance := Importance;
+        this.BeginControl(Enum::"BJF MN Config Operation"::"Scan Field", ControlName);
+        this.TempConfigurationLine.Visible := true;
+        this.TempConfigurationLine.Editable := true;
+        this.TempConfigurationLine."Mobile Type" := this.Vocabulary.BarcodeMobileTypeName();
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
-    /// <summary>
-    /// Registers, refreshes, and publishes a MobileNAV page web service and sets its main menu
-    /// action. MainMenuAction follows MobileNAV's vocabulary ('Create' opens the page straight
-    /// onto a new record from the home tile, 'Open' opens the single existing record). When a
-    /// Main row for the page already exists under a different service name, a second,
-    /// independently configured service is created for this one.
-    /// </summary>
-    /// <param name="PageId">ID of the page to publish as a MobileNAV web service.</param>
-    /// <param name="PreferredServiceName">Preferred name for the published web service.</param>
-    /// <param name="MainMenuAction">MobileNAV main menu action, for example 'Create' or 'Open'.</param>
-    procedure AddPublishedPage(PageId: Integer; PreferredServiceName: Text[100]; MainMenuAction: Text[30])
+    // ---- Modifiers ----------------------------------------------------------------------
+
+    /// <summary>Lets the device user change the control declared last. The page becomes updatable as a whole.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Editable(): Codeunit "BJF MN Config Builder"
     begin
-        this.AddPublishedPage(PageId, PreferredServiceName);
-        this.TempConfigurationLine."Main Menu Action" := MainMenuAction;
+        this.RequireControl(this.EditableTok, this.FieldKinds());
+        this.TempConfigurationLine.Editable := true;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
-    /// <summary>
-    /// Makes a field visible and editable and renders it as a barcode-scannable control.
-    /// ValidationBehavior follows MobileNAV's vocabulary (for example 'ScanOrManualEntry';
-    /// empty leaves the default behavior).
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="ValidationBehavior">MobileNAV validation behavior, for example 'ScanOrManualEntry'.</param>
-    procedure AddScanField(PageId: Integer; ControlName: Text[100]; ValidationBehavior: Text[50])
+    /// <summary>Shows the control declared last read-only (the default for fields).</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ReadOnly(): Codeunit "BJF MN Config Builder"
     begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"Scan Field", PageId);
-        this.TempConfigurationLine."Control Name" := ControlName;
-        this.TempConfigurationLine."Mobile Type" := 'Barcode';
-        this.TempConfigurationLine."Validation Behavior" := ValidationBehavior;
-        // See AddFunctionField: a scan control left at MobileNAV's Additional default is hidden.
-        this.TempConfigurationLine.Importance := this.StandardImportanceTok;
+        this.RequireControl(this.ReadOnlyTok, this.FieldKinds());
+        this.TempConfigurationLine.Editable := false;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
-    /// <summary>
-    /// Scopes a page to the signed-in device user through MobileNAV's "Mine" filter.
-    ///
-    /// For a page over a shared per-user table — one parameter row per user — every device
-    /// would otherwise see every user's rows, and a card over such a page cannot resolve a
-    /// unique record at all ("More than one item found"). The named control is marked as the
-    /// page's user identity and a page-level Own filter is written over it, so each device
-    /// sees exactly its own row. The control can stay hidden; it exists for the filter.
-    /// </summary>
-    /// <param name="PageId">ID of the page to scope.</param>
-    /// <param name="UserIdControlName">Control on the page carrying the user id.</param>
-    procedure AddUserScope(PageId: Integer; UserIdControlName: Text[100])
+    /// <summary>Keeps the field declared last off the device, at service level and in every profile.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Hidden(): Codeunit "BJF MN Config Builder"
     begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"User Scope", PageId);
-        this.TempConfigurationLine."Control Name" := UserIdControlName;
+        this.RequireControl(this.HiddenTok, this.PlainFieldKind());
+        this.TempConfigurationLine.Visible := false;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
-    /// <summary>
-    /// Ensures a control is shown for MobileNAV's profiles, not just at service level.
-    ///
-    /// MobileNAV resolves visibility in two layers: the service-level field configuration is
-    /// the default, but a row for the control in the device user's profile overrides it. Those
-    /// profile rows are written by MobileNAV itself when it rebuilds a profile's page
-    /// hierarchy, and a control it has not been told about is not visible there — so a field
-    /// can be configured correctly and still be absent from the device screen. Declaring the
-    /// field for the profile closes that gap, and re-declaring it is safe.
-    ///
-    /// Prefer the no-profile overload: it covers every profile, so the field does not depend on
-    /// which profile an administrator happens to put a device user on.
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    procedure AddToProfile(PageId: Integer; ControlName: Text[100])
+    /// <summary>Offers the field declared last in the device's filter pane.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Filterable(): Codeunit "BJF MN Config Builder"
     begin
-        this.AddToProfile(PageId, ControlName, '', true, false);
-    end;
-
-    /// <summary>
-    /// Ensures a control is shown for one named MobileNAV profile. See the single-argument
-    /// overload for why a profile declaration is needed at all.
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Profile">Profile to configure; empty configures every defined profile.</param>
-    procedure AddToProfile(PageId: Integer; ControlName: Text[100]; Profile: Code[30])
-    begin
-        this.AddToProfile(PageId, ControlName, Profile, true, false);
-    end;
-
-    /// <summary>
-    /// Sets a control's visibility and editability for a MobileNAV profile, or for every
-    /// defined profile when no profile is named. See the single-argument overload for why a
-    /// profile declaration is needed at all.
-    /// </summary>
-    /// <param name="PageId">ID of the page the field belongs to.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="Profile">Profile to configure; empty configures every defined profile.</param>
-    /// <param name="Visible">Whether the field is shown for the profile.</param>
-    /// <param name="Editable">Whether the field can be edited for the profile.</param>
-    procedure AddToProfile(PageId: Integer; ControlName: Text[100]; Profile: Code[30]; Visible: Boolean; Editable: Boolean)
-    begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"Profile Field", PageId);
-        this.TempConfigurationLine."Control Name" := ControlName;
-        this.TempConfigurationLine.Profile := Profile;
-        this.TempConfigurationLine.Visible := Visible;
-        this.TempConfigurationLine.Editable := Editable;
+        this.RequireControl(this.FilterableTok, this.PlainFieldKind());
+        this.TempConfigurationLine.Filterable := true;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Turns the page into a staged wizard (staging behavior 'Always from scratch'). Declare
-    /// this before any AddStage or AddStageField call for the same page; stages render in the
-    /// order they are added.
+    /// Draws the field declared last as an entry in the page's menu rather than a value on the
+    /// card. Rarely needed: Button and Link already produce menu entries.
     /// </summary>
-    /// <param name="PageId">ID of the page to turn into a staged wizard.</param>
-    /// <param name="AutoNext">Whether the wizard advances to the next stage automatically.</param>
-    /// <param name="BackNextVisible">Whether the Back/Next navigation controls are shown.</param>
-    procedure EnableStaging(PageId: Integer; AutoNext: Boolean; BackNextVisible: Boolean)
+    /// <returns>The builder, for chaining.</returns>
+    procedure InMenu(): Codeunit "BJF MN Config Builder"
     begin
-        this.EnableStaging(PageId, AutoNext, BackNextVisible, '');
-    end;
-
-    /// <summary>
-    /// Turns the page into a staged wizard with an explicit staging behavior. StagingBehavior
-    /// follows MobileNAV's vocabulary ('Always' restarts the wizard on every record,
-    /// 'CreationOnly' stages only while a record is being created, 'PersistState' resumes a
-    /// part-finished wizard; empty keeps 'Always'). Declare this before any AddStage or
-    /// AddStageField call for the same page; stages render in the order they are added.
-    /// </summary>
-    /// <param name="PageId">ID of the page to turn into a staged wizard.</param>
-    /// <param name="AutoNext">Whether the wizard advances to the next stage automatically.</param>
-    /// <param name="BackNextVisible">Whether the Back/Next navigation controls are shown.</param>
-    /// <param name="StagingBehavior">MobileNAV staging behavior vocabulary, for example 'PersistState'.</param>
-    procedure EnableStaging(PageId: Integer; AutoNext: Boolean; BackNextVisible: Boolean; StagingBehavior: Text[30])
-    begin
-        this.AddLine(Enum::"BJF MN Config Operation"::Staging, PageId);
-        this.TempConfigurationLine."Auto Next Stage" := AutoNext;
-        this.TempConfigurationLine."Back-Next Visible" := BackNextVisible;
-        this.TempConfigurationLine."Staging Behavior" := StagingBehavior;
+        this.RequireControl(this.InMenuTok, this.PlainFieldKind());
+        this.TempConfigurationLine."Display In Menu" := true;
         this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Places the control declared last somewhere other than the card's standard section.</summary>
+    /// <param name="Level">Where the device draws the control.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Importance(Level: Enum "BJF MN Importance"): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.ImportanceTok, this.AllControlKinds());
+        this.TempConfigurationLine.Importance := this.Vocabulary.ImportanceName(Level);
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Sets how the device validates the button or scan declared last.</summary>
+    /// <param name="Behavior">Validation behavior; Default keeps MobileNAV's own.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Validation(Behavior: Enum "BJF MN Validation Behavior"): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.ValidationTok, this.ButtonAndScanKinds());
+        this.TempConfigurationLine."Validation Behavior" := this.Vocabulary.ValidationBehaviorName(Behavior);
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Renders the button declared last as a special control, for example a signature pad or image capture.</summary>
+    /// <param name="ControlType">How the device renders the button.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure MobileType(ControlType: Enum "BJF MN Mobile Type"): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.MobileTypeTok, this.ButtonKind());
+        this.TempConfigurationLine."Mobile Type" := this.Vocabulary.MobileTypeName(ControlType);
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Sets what the button declared last returns — a field-control result, a file, with or without the device position.</summary>
+    /// <param name="FunctionKind">Result shape of the function behind the button.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure FunctionType(FunctionKind: Enum "BJF MN Function Type"): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.FunctionTypeTok, this.ButtonKind());
+        this.TempConfigurationLine."Function Type" := this.Vocabulary.FunctionTypeName(FunctionKind);
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Adds a wizard stage to a page declared with EnableStaging. The description becomes the
-    /// stage's caption (a MobileNAV category record); fields not assigned to a stage via
-    /// AddStageField stay hidden while that stage is active.
+    /// Names the MobileNAV web-service function the button declared last calls, overriding the
+    /// one the framework derives from the page's table. Only needed for a table MobileNAV's page
+    /// functions do not cover, or for a function of your own.
     /// </summary>
-    /// <param name="PageId">ID of the page the stage belongs to.</param>
-    /// <param name="StageId">Code identifying the stage.</param>
-    /// <param name="Description">Caption shown for the stage.</param>
-    procedure AddStage(PageId: Integer; StageId: Code[100]; Description: Text[250])
+    /// <param name="DispatcherName">Function name as MobileNAV's Page Functions expose it, for example 'WhseShpmtHdrExtFunc'.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure FunctionName(DispatcherName: Text[50]): Codeunit "BJF MN Config Builder"
     begin
-        this.AddStage(PageId, StageId, Description, false);
+        this.RequireControl(this.FunctionNameTok, this.ButtonKind());
+        if DispatcherName = '' then
+            Error(this.FunctionNameRequiredErr, this.TempConfigurationLine."Control Name");
+        this.TempConfigurationLine."Function Name" := DispatcherName;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
     end;
 
     /// <summary>
-    /// Adds a wizard stage and optionally marks it as the stage the wizard restarts from
-    /// (MobileNAV's 'Restart From Here'). When a later record starts the wizard again, the
-    /// device re-enters at this stage and keeps what the earlier stages captured — for
-    /// example a scanned bin retained while items in that bin are counted one after another.
-    /// MobileNAV allows one restart-from stage per page, and it cannot be the first stage.
+    /// Limits the control declared last to one MobileNAV profile instead of every profile.
+    /// Repeat for several profiles.
     /// </summary>
-    /// <param name="PageId">ID of the page the stage belongs to.</param>
-    /// <param name="StageId">Code identifying the stage.</param>
-    /// <param name="Description">Caption shown for the stage.</param>
-    /// <param name="RestartFrom">Whether the wizard restarts from this stage on a later record.</param>
-    procedure AddStage(PageId: Integer; StageId: Code[100]; Description: Text[250]; RestartFrom: Boolean)
+    /// <param name="Profile">MobileNAV profile code.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure OnlyInProfile(Profile: Code[30]): Codeunit "BJF MN Config Builder"
     begin
-        this.AddLine(Enum::"BJF MN Config Operation"::Stage, PageId);
+        this.RequireControl(this.OnlyInProfileTok, this.AllControlKinds());
+        this.RequireProfile(Profile);
+        this.AddProfileScope(this.OnlyProfiles, Profile);
+        exit(this);
+    end;
+
+    /// <summary>Keeps the control declared last out of one MobileNAV profile while showing it in every other. Repeat for several profiles.</summary>
+    /// <param name="Profile">MobileNAV profile code.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ExceptInProfile(Profile: Code[30]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.ExceptInProfileTok, this.AllControlKinds());
+        this.RequireProfile(Profile);
+        this.AddProfileScope(this.ExceptProfiles, Profile);
+        exit(this);
+    end;
+
+    /// <summary>
+    /// Writes no profile rows for the control declared last, leaving profile visibility to
+    /// whatever MobileNAV's administrator has configured. The advanced escape hatch; a control
+    /// declared this way is not drawn until a profile row exists for it.
+    /// </summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure NotInProfiles(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.NotInProfilesTok, this.AllControlKinds());
+        if not this.UnprofiledControls.Contains(this.CurrentControlEntryNo) then
+            this.UnprofiledControls.Add(this.CurrentControlEntryNo);
+        exit(this);
+    end;
+
+    // ---- Wizard -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Turns the current page into a staged wizard. Declare the stages with Stage and the
+    /// fields each stage shows with Show or ShowReadOnly; fields not shown by a stage stay
+    /// hidden while that stage is active. Back/Next navigation is shown and the wizard restarts
+    /// on every record unless AutoNext, ShowBackNext or Behavior say otherwise.
+    /// </summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Wizard(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequirePage();
+        this.AddLine(Enum::"BJF MN Config Operation"::Staging, this.CurrentPageId);
+        this.TempConfigurationLine."Back-Next Visible" := true;
+        this.TempConfigurationLine."Staging Behavior" := this.Vocabulary.StagingBehaviorName(Enum::"BJF MN Staging Behavior"::Always);
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Advances the wizard to the next stage automatically once a stage is complete.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure AutoNext(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireStagingLine(this.AutoNextTok);
+        this.TempConfigurationLine."Auto Next Stage" := true;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Hides the wizard's Back/Next controls; use with AutoNext for a scan-driven flow.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure HideBackNext(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireStagingLine(this.HideBackNextTok);
+        this.TempConfigurationLine."Back-Next Visible" := false;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Sets how the wizard restarts between records.</summary>
+    /// <param name="StagingBehavior">Always, CreationOnly or PersistState.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Behavior(StagingBehavior: Enum "BJF MN Staging Behavior"): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireStagingLine(this.BehaviorTok);
+        this.TempConfigurationLine."Staging Behavior" := this.Vocabulary.StagingBehaviorName(StagingBehavior);
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Adds the next wizard stage. Stages render in the order they are declared.</summary>
+    /// <param name="StageId">Short code identifying the stage (at most 20 characters).</param>
+    /// <param name="Description">Caption the device shows for the stage.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Stage(StageId: Code[100]; Description: Text[250]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequirePage();
+        if not this.HasLine(Enum::"BJF MN Config Operation"::Staging, this.CurrentPageId) then
+            Error(this.WizardRequiredErr, StageId);
+        if StageId = '' then
+            Error(this.StageIdRequiredErr);
+        this.AddLine(Enum::"BJF MN Config Operation"::Stage, this.CurrentPageId);
         this.TempConfigurationLine."Stage Id" := StageId;
         this.TempConfigurationLine."Stage Description" := Description;
-        this.TempConfigurationLine."Stage Restart From" := RestartFrom;
         this.TempConfigurationLine.Modify(false);
+        this.CurrentStageEntryNo := this.TempConfigurationLine."Entry No.";
+        this.CurrentStageId := StageId;
+        exit(this);
     end;
 
     /// <summary>
-    /// Shows a field while the given stage is active. FieldEnabled=true lets the user edit or
-    /// tap it; false shows it read-only for context. Declare the stage with AddStage first.
+    /// Makes the stage declared last the one the wizard re-enters on a later record, keeping
+    /// what earlier stages captured — a scanned bin retained while its items are counted one
+    /// after another. One stage per page, and never the first.
     /// </summary>
-    /// <param name="PageId">ID of the page the stage belongs to.</param>
-    /// <param name="StageId">Code identifying the stage the field is shown for.</param>
-    /// <param name="ControlName">Name of the control on the page to configure.</param>
-    /// <param name="FieldEnabled">Whether the field is editable while the stage is active.</param>
-    procedure AddStageField(PageId: Integer; StageId: Code[100]; ControlName: Text[100]; FieldEnabled: Boolean)
+    /// <returns>The builder, for chaining.</returns>
+    procedure RestartsHere(): Codeunit "BJF MN Config Builder"
     begin
-        this.AddLine(Enum::"BJF MN Config Operation"::"Stage Field", PageId);
-        this.TempConfigurationLine."Stage Id" := StageId;
+        this.RequireStageLine(this.RestartsHereTok);
+        this.TempConfigurationLine."Stage Restart From" := true;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
+    /// <summary>Shows a field, editable, while the stage declared last is active.</summary>
+    /// <param name="ControlName">Name of the page control.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Show(ControlName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddStageField(ControlName, true);
+        exit(this);
+    end;
+
+    /// <summary>Shows a field read-only, for context, while the stage declared last is active.</summary>
+    /// <param name="ControlName">Name of the page control.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ShowReadOnly(ControlName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddStageField(ControlName, false);
+        exit(this);
+    end;
+
+    // ---- Framework side -----------------------------------------------------------------
+
+    /// <summary>
+    /// Returns the declared lines with the profile rows the declarations imply appended: one
+    /// all-profiles row per control carrying the control's own visibility and editability,
+    /// reshaped by OnlyInProfile, ExceptInProfile and NotInProfiles.
+    /// </summary>
+    internal procedure GetLines(var Target: Record "BJF MN Config Line" temporary)
+    begin
+        Target.Reset();
+        Target.DeleteAll(false);
+        this.TempConfigurationLine.Reset();
+        if this.TempConfigurationLine.FindSet() then
+            repeat
+                Target := this.TempConfigurationLine;
+                Target.Insert(false);
+            until this.TempConfigurationLine.Next() = 0;
+        this.ExpandProfileLines(Target);
+        Target.Reset();
+    end;
+
+    local procedure ExpandProfileLines(var Target: Record "BJF MN Config Line" temporary)
+    var
+        NextEntryNo: Integer;
+        Profile: Code[30];
+    begin
+        NextEntryNo := this.NextEntryNo;
+        this.TempConfigurationLine.SetFilter(Operation, '%1|%2|%3|%4',
+            Enum::"BJF MN Config Operation"::Field, Enum::"BJF MN Config Operation"::"Function Field",
+            Enum::"BJF MN Config Operation"::"Linked Field", Enum::"BJF MN Config Operation"::"Scan Field");
+        if this.TempConfigurationLine.FindSet() then
+            repeat
+                if not this.UnprofiledControls.Contains(this.TempConfigurationLine."Entry No.") then
+                    if this.OnlyProfiles.ContainsKey(this.TempConfigurationLine."Entry No.") then begin
+                        foreach Profile in this.OnlyProfiles.Get(this.TempConfigurationLine."Entry No.") do
+                            this.AddProfileLine(Target, this.TempConfigurationLine, NextEntryNo, Profile, this.TempConfigurationLine.Visible);
+                    end else begin
+                        this.AddProfileLine(Target, this.TempConfigurationLine, NextEntryNo, '', this.TempConfigurationLine.Visible);
+                        // The specific row after the general one: profile rows are written in
+                        // entry order, so the hidden row for the excluded profile wins.
+                        if this.ExceptProfiles.ContainsKey(this.TempConfigurationLine."Entry No.") then
+                            foreach Profile in this.ExceptProfiles.Get(this.TempConfigurationLine."Entry No.") do
+                                this.AddProfileLine(Target, this.TempConfigurationLine, NextEntryNo, Profile, false);
+                    end;
+            until this.TempConfigurationLine.Next() = 0;
+        this.TempConfigurationLine.Reset();
+    end;
+
+    local procedure AddProfileLine(var Target: Record "BJF MN Config Line" temporary; ControlLine: Record "BJF MN Config Line" temporary; var NextEntryNo: Integer; Profile: Code[30]; Visible: Boolean)
+    begin
+        NextEntryNo += 1;
+        Target.Init();
+        Target."Entry No." := NextEntryNo;
+        Target.Operation := Enum::"BJF MN Config Operation"::"Profile Field";
+        Target."Page ID" := ControlLine."Page ID";
+        Target."Control Name" := ControlLine."Control Name";
+        Target.Profile := Profile;
+        Target.Visible := Visible;
+        Target.Editable := ControlLine.Editable and Visible;
+        Target.Insert(false);
+    end;
+
+    local procedure BeginControl(Operation: Enum "BJF MN Config Operation"; ControlName: Text[100])
+    begin
+        this.RequirePage();
+        this.RequireControlName(ControlName);
+        this.AddLine(Operation, this.CurrentPageId);
+        this.TempConfigurationLine."Control Name" := ControlName;
+        // Standard placement: MobileNAV's own default is Additional, which hides the control
+        // behind the card's "show more" section — for a button, somewhere nobody looks.
+        this.TempConfigurationLine.Importance := this.Vocabulary.ImportanceName(Enum::"BJF MN Importance"::Standard);
+        this.TempConfigurationLine.Modify(false);
+        this.CurrentControlEntryNo := this.TempConfigurationLine."Entry No.";
+    end;
+
+    local procedure AddStageField(ControlName: Text[100]; FieldEnabled: Boolean)
+    begin
+        this.RequireStageLine(this.ShowTok);
+        this.RequireControlName(ControlName);
+        this.AddLine(Enum::"BJF MN Config Operation"::"Stage Field", this.CurrentPageId);
+        this.TempConfigurationLine."Stage Id" := this.CurrentStageId;
         this.TempConfigurationLine."Control Name" := ControlName;
         this.TempConfigurationLine."Stage Enabled" := FieldEnabled;
         this.TempConfigurationLine.Modify(false);
-    end;
-
-    internal procedure GetLines(var Target: Record "BJF MN Config Line" temporary)
-    begin
-        Target.Copy(this.TempConfigurationLine, true);
     end;
 
     local procedure AddLine(Operation: Enum "BJF MN Config Operation"; PageId: Integer)
@@ -401,13 +535,178 @@ codeunit 77781 "BJF MN Config Builder"
         this.TempConfigurationLine.Insert(false);
     end;
 
+    local procedure AddProfileScope(var Scopes: Dictionary of [Integer, List of [Code[30]]]; Profile: Code[30])
+    var
+        Profiles: List of [Code[30]];
+    begin
+        if Scopes.ContainsKey(this.CurrentControlEntryNo) then
+            Profiles := Scopes.Get(this.CurrentControlEntryNo);
+        if not Profiles.Contains(Profile) then
+            Profiles.Add(Profile);
+        Scopes.Set(this.CurrentControlEntryNo, Profiles);
+    end;
+
+    local procedure HasLine(Operation: Enum "BJF MN Config Operation"; PageId: Integer): Boolean
+    var
+        TempLine: Record "BJF MN Config Line" temporary;
+    begin
+        TempLine.Copy(this.TempConfigurationLine, true);
+        TempLine.SetRange(Operation, Operation);
+        TempLine.SetRange("Page ID", PageId);
+        exit(not TempLine.IsEmpty());
+    end;
+
+    local procedure RequirePage()
+    begin
+        if this.CurrentPageId = 0 then
+            Error(this.PageRequiredErr);
+    end;
+
+    local procedure RequireControlName(ControlName: Text[100])
+    begin
+        if ControlName = '' then
+            Error(this.ControlNameRequiredErr);
+    end;
+
+    local procedure RequireProfile(Profile: Code[30])
+    begin
+        if Profile = '' then
+            Error(this.ProfileRequiredErr, this.TempConfigurationLine."Control Name");
+    end;
+
+    /// <summary>Positions the shared record on the control declared last, or errors naming the modifier and what it applies to.</summary>
+    local procedure RequireControl(Modifier: Text; ApplicableKinds: List of [Enum "BJF MN Config Operation"])
+    begin
+        if this.CurrentControlEntryNo = 0 then
+            Error(this.NoControlErr, Modifier);
+        this.TempConfigurationLine.Get(this.CurrentControlEntryNo);
+        if not ApplicableKinds.Contains(this.TempConfigurationLine.Operation) then
+            Error(this.ModifierNotApplicableErr, Modifier, this.TempConfigurationLine."Control Name", this.KindName(this.TempConfigurationLine.Operation));
+    end;
+
+    local procedure RequirePublishedPageLine()
+    begin
+        this.RequirePage();
+        this.TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Published Page");
+        this.TempConfigurationLine.SetRange("Page ID", this.CurrentPageId);
+        if not this.TempConfigurationLine.FindFirst() then begin
+            this.TempConfigurationLine.Reset();
+            Error(this.PublishRequiredErr, this.CurrentPageId);
+        end;
+        this.TempConfigurationLine.Reset();
+    end;
+
+    local procedure RequireStagingLine(Modifier: Text)
+    begin
+        this.RequirePage();
+        this.TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Staging);
+        this.TempConfigurationLine.SetRange("Page ID", this.CurrentPageId);
+        if not this.TempConfigurationLine.FindFirst() then begin
+            this.TempConfigurationLine.Reset();
+            Error(this.WizardRequiredForModifierErr, Modifier);
+        end;
+        this.TempConfigurationLine.Reset();
+    end;
+
+    local procedure RequireStageLine(Modifier: Text)
+    begin
+        if this.CurrentStageEntryNo = 0 then
+            Error(this.NoStageErr, Modifier);
+        this.TempConfigurationLine.Get(this.CurrentStageEntryNo);
+    end;
+
+    local procedure KindName(Operation: Enum "BJF MN Config Operation"): Text
+    begin
+        case Operation of
+            Enum::"BJF MN Config Operation"::Field:
+                exit(this.FieldKindTok);
+            Enum::"BJF MN Config Operation"::"Function Field":
+                exit(this.ButtonKindTok);
+            Enum::"BJF MN Config Operation"::"Linked Field":
+                exit(this.LinkKindTok);
+            Enum::"BJF MN Config Operation"::"Scan Field":
+                exit(this.ScanKindTok);
+        end;
+        exit(Format(Operation));
+    end;
+
+    local procedure AllControlKinds() Kinds: List of [Enum "BJF MN Config Operation"]
+    begin
+        Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Linked Field");
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+    end;
+
+    local procedure FieldKinds() Kinds: List of [Enum "BJF MN Config Operation"]
+    begin
+        Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+    end;
+
+    local procedure PlainFieldKind() Kinds: List of [Enum "BJF MN Config Operation"]
+    begin
+        Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+    end;
+
+    local procedure ButtonKind() Kinds: List of [Enum "BJF MN Config Operation"]
+    begin
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
+    end;
+
+    local procedure ButtonAndScanKinds() Kinds: List of [Enum "BJF MN Config Operation"]
+    begin
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+    end;
+
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
+        Vocabulary: Codeunit "BJF MN Vocabulary";
+        OnlyProfiles: Dictionary of [Integer, List of [Code[30]]];
+        ExceptProfiles: Dictionary of [Integer, List of [Code[30]]];
+        UnprofiledControls: List of [Integer];
         NextEntryNo: Integer;
-        // 'None' is MobileNAV's own Importance option member (the standard card section),
-        // not a Business Central page style, so PageStyle::None does not apply here.
-#pragma warning disable LC0086
-        StandardImportanceTok: Label 'None', Locked = true;
-        ReportPageTypeTok: Label 'Report', Locked = true;
-#pragma warning restore LC0086
+        CurrentPageId: Integer;
+        CurrentControlEntryNo: Integer;
+        CurrentStageEntryNo: Integer;
+        CurrentStageId: Code[100];
+        PageIdRequiredErr: Label 'Page() needs a page object id, for example Page::"MobileNAV WhseShipment".';
+        PageRequiredErr: Label 'Declare the page first: Configuration.Page(Page::"...") before Field, Button, Link, Scan, Publish, MineOnly or Wizard.';
+        ServiceNameRequiredErr: Label 'Publish() needs the web service name to register the page under.';
+        ControlNameRequiredErr: Label 'A control declaration needs the name of the page control.';
+        ProfileRequiredErr: Label 'OnlyInProfile/ExceptInProfile on %1 needs a MobileNAV profile code.', Comment = '%1 = control name';
+        TargetPageRequiredErr: Label 'Link %1 needs the object id of the page it opens.', Comment = '%1 = control name';
+        LinkFilterRequiredErr: Label 'Link %1 needs both the target filter field and the source field.', Comment = '%1 = control name';
+        FunctionNameRequiredErr: Label 'FunctionName() on button %1 needs a MobileNAV function name.', Comment = '%1 = control name';
+        NoControlErr: Label '%1() modifies the control declared last, but no Field, Button, Link or Scan has been declared yet.', Comment = '%1 = modifier name';
+        ModifierNotApplicableErr: Label '%1() does not apply to %2, which is a %3.', Comment = '%1 = modifier name, %2 = control name, %3 = control kind';
+        PublishRequiredErr: Label 'MainMenuAction() needs the page (%1) to be published first with Publish or PublishAsDialog.', Comment = '%1 = page id';
+        WizardRequiredErr: Label 'Stage %1 needs Wizard() on the page first.', Comment = '%1 = stage id';
+        WizardRequiredForModifierErr: Label '%1() needs Wizard() on the page first.', Comment = '%1 = modifier name';
+        StageIdRequiredErr: Label 'Stage() needs a stage id.';
+        NoStageErr: Label '%1() applies to the stage declared last, but no Stage has been declared yet.', Comment = '%1 = modifier name';
+        EditableTok: Label 'Editable', Locked = true;
+        ReadOnlyTok: Label 'ReadOnly', Locked = true;
+        HiddenTok: Label 'Hidden', Locked = true;
+        FilterableTok: Label 'Filterable', Locked = true;
+        InMenuTok: Label 'InMenu', Locked = true;
+        ImportanceTok: Label 'Importance', Locked = true;
+        ValidationTok: Label 'Validation', Locked = true;
+        MobileTypeTok: Label 'MobileType', Locked = true;
+        FunctionTypeTok: Label 'FunctionType', Locked = true;
+        FunctionNameTok: Label 'FunctionName', Locked = true;
+        OnlyInProfileTok: Label 'OnlyInProfile', Locked = true;
+        ExceptInProfileTok: Label 'ExceptInProfile', Locked = true;
+        NotInProfilesTok: Label 'NotInProfiles', Locked = true;
+        AutoNextTok: Label 'AutoNext', Locked = true;
+        HideBackNextTok: Label 'HideBackNext', Locked = true;
+        BehaviorTok: Label 'Behavior', Locked = true;
+        RestartsHereTok: Label 'RestartsHere', Locked = true;
+        ShowTok: Label 'Show', Locked = true;
+        FieldKindTok: Label 'field', Locked = true;
+        ButtonKindTok: Label 'button', Locked = true;
+        LinkKindTok: Label 'link', Locked = true;
+        ScanKindTok: Label 'scan', Locked = true;
 }

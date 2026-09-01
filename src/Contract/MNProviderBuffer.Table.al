@@ -32,10 +32,10 @@ table 77782 "BJF MN Provider Buffer"
             Caption = 'Description';
             ToolTip = 'Specifies the configuration owned by this provider.';
         }
-        field(5; "Defined Version"; Integer)
+        field(5; "Defined Hash"; Text[64])
         {
-            Caption = 'Defined Version';
-            ToolTip = 'Specifies the version currently declared by the provider.';
+            Caption = 'Defined Hash';
+            ToolTip = 'Specifies the fingerprint of the configuration the provider currently declares.';
         }
         field(6; "Applied Previously"; Boolean)
         {
@@ -47,10 +47,10 @@ table 77782 "BJF MN Provider Buffer"
             Caption = 'State';
             ToolTip = 'Specifies whether the provider has never been applied, is current, or is outdated.';
         }
-        field(8; "Applied Version"; Integer)
+        field(8; "Applied Hash"; Text[64])
         {
-            Caption = 'Applied Version';
-            ToolTip = 'Specifies the last successfully applied provider version.';
+            Caption = 'Applied Hash';
+            ToolTip = 'Specifies the fingerprint of the configuration that was last applied.';
         }
         field(9; "Applied At"; DateTime)
         {

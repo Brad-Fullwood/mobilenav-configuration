@@ -1,6 +1,6 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
+/// <summary>Null-object implementation behind the None enum value; never applied.</summary>
 codeunit 77780 "BJF Empty MN Provider" implements "BJF MN Config Provider"
 {
     Access = Internal;
@@ -18,11 +18,6 @@ codeunit 77780 "BJF Empty MN Provider" implements "BJF MN Config Provider"
     procedure GetDescription(): Text[250]
     begin
         exit('');
-    end;
-
-    procedure GetVersion(): Integer
-    begin
-        exit(0);
     end;
 
     procedure DefineConfiguration(var Configuration: Codeunit "BJF MN Config Builder")
