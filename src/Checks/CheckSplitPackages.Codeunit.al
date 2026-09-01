@@ -1,6 +1,6 @@
 namespace BradFullwood.MobileNAV.Diagnostics.WMS;
 
-using BradFullwood.MobileNAV.Diagnostics;
+using BradFullwood.MobileNAV.Configuration;
 
 using Microsoft.Inventory.Journal;
 using Microsoft.Inventory.Ledger;

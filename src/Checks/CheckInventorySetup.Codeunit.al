@@ -1,6 +1,6 @@
 namespace BradFullwood.MobileNAV.Diagnostics.WMS;
 
-using BradFullwood.MobileNAV.Diagnostics;
+using BradFullwood.MobileNAV.Configuration;
 
 using Microsoft.Inventory.Setup;
 
@@ -22,7 +22,7 @@ codeunit 77740 "BJF Check Inventory Setup" implements "BJF Diagnostic Check"
         if InventorySetup."MUL WMS Undefined Package No." = '' then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Inventory Setup", Enum::"BJF Diagnostic Severity"::Warning,
                 StrSubstNo(MissingSetupMsg, InventorySetup.FieldCaption("MUL WMS Undefined Package No."), InventorySetup.TableCaption()), InventorySetup.RecordId());
-        if InventorySetup."BJF Move Posts Own Lines" then
+        if InventorySetup."BJF MN Move Posts Own Lines" then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Inventory Setup", Enum::"BJF Diagnostic Severity"::Info,
                 MoveWorkaroundActiveMsg, InventorySetup.RecordId());
     end;

@@ -1,6 +1,6 @@
 namespace BradFullwood.MobileNAV.Diagnostics.WMS;
 
-using BradFullwood.MobileNAV.Diagnostics;
+using BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
 /// Registers the checks that need WMS MobileNAV. The diagnostics runner walks the ordinals of
