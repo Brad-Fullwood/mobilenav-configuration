@@ -93,7 +93,7 @@ A modifier refines the control declared last (the one immediately before it in t
 | Method | Default | Notes |
 |---|---|---|
 | `Field(ControlName)` | Visible, read-only, standard section, every profile | |
-| `Button(ControlName)` | Visible, editable, `MobileType` Normal, `FunctionType` Normal, function name auto-derived | Runs Business Central code when tapped. See [Buttons end to end](#buttons-end-to-end). |
+| `Button(ControlName)` | Visible, editable, `MobileType` Normal, `FunctionType` Normal, function name auto-derived, drawn as a menu entry | Runs Business Central code when tapped. See [Buttons end to end](#buttons-end-to-end). |
 | `Link(ControlName, TargetPageId, TargetFilterField, SourceField)` | Visible, read-only | Opens another page filtered to the current record; the target becomes reachable from this page in every profile so the button is actually drawn. A page of your own as the target must have its own `Page(...).Publish(...)`. |
 | `Scan(ControlName)` | Visible, editable, `MobileType` Barcode | An input the device fills from its scanner. |
 
@@ -108,7 +108,7 @@ A modifier refines the control declared last (the one immediately before it in t
 | `InMenu()` | Field | Draws the field as a menu entry instead of a card value. Rarely needed — `Button` and `Link` already produce menu entries. |
 | `Importance(Level)` | Field, Button, Link, Scan | Where the device draws the control — see the `"BJF MN Importance"` values below. |
 | `Validation(Behavior)` | Button, Scan | How the device validates a scanned/typed value before accepting it. |
-| `MobileType(ControlType)` | Button | Renders the button as a special control — image capture, signature pad, etc. |
+| `MobileType(ControlType)` | Button | Renders the button as a special control — image capture, signature pad, etc. `Image`, `Signature` and `File` are drawn on the card itself (with the device's upload/camera menu) rather than as a menu entry: the Android client does not draw a capture control that sits in the menu at all. |
 | `FunctionType(FunctionKind)` | Button | Shape of the function's result — field-control value, file, with/without device position. |
 | `FunctionName(DispatcherName)` | Button | Overrides the MobileNAV dispatcher the framework would otherwise derive from the page's table. See [Buttons end to end](#buttons-end-to-end). |
 | `OnlyInProfile(Profile)` | Field, Button, Link, Scan | Limits the control to one profile instead of every profile. Repeatable. |

@@ -114,7 +114,10 @@ codeunit 77789 "BJF MN Field Mgt."
         // or clears Category/Order.
 #pragma warning disable PC0037
         ServiceSetup.Editable := Editable;
-        ServiceSetup.DisplayInMenu := true;
+        // A capture control (image, signature, file) must stay on the card: the Android client
+        // draws a Display In Menu row of those types nowhere, neither inline nor in the action
+        // bar, so the button silently vanishes. Every other function button is a menu entry.
+        ServiceSetup.DisplayInMenu := not this.RendersInline(MobileType);
 #pragma warning restore PC0037
         this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo(MobileType), MobileType);
         this.SetOptionField(ServiceSetup, ServiceSetup.FieldNo("Function Type"), FunctionType);
@@ -267,6 +270,20 @@ codeunit 77789 "BJF MN Field Mgt."
             exit;
         MainRow.Validate("Page Update", true);
         MainRow.Modify(true);
+    end;
+
+    /// <summary>
+    /// Whether a function button of this mobile type is drawn on the card itself. Image, Signature
+    /// and File are capture controls the device renders inline with their own upload/camera menu.
+    /// </summary>
+    procedure RendersInline(MobileType: Text): Boolean
+    var
+        Vocabulary: Codeunit "BJF MN Vocabulary";
+    begin
+        exit(UpperCase(MobileType) in [
+            UpperCase(Vocabulary.MobileTypeName(Enum::"BJF MN Mobile Type"::Image)),
+            UpperCase(Vocabulary.MobileTypeName(Enum::"BJF MN Mobile Type"::Signature)),
+            UpperCase(Vocabulary.MobileTypeName(Enum::"BJF MN Mobile Type"::File))]);
     end;
 
     local procedure FindField(ServiceName: Text[100]; ControlName: Text[100]; var ServiceSetup: Record "MobileNAV Service Setup"): Boolean

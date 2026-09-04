@@ -51,6 +51,7 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
         FieldRow: Record "MobileNAV Service Setup";
         ServiceName: Text[100];
         LiveImportance: Text;
+        ExpectedInMenu: Boolean;
     begin
         ServiceName := this.Support.GetServiceName(Line."Page ID");
         if ServiceName = '' then
@@ -67,6 +68,11 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
             this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.EditableTok, Format(Line.Editable), Format(FieldRow.Editable));
         if (Line.Operation = Enum::"BJF MN Config Operation"::Field) and (FieldRow."Visible as Filter" <> Line.Filterable) then
             this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.FilterableTok, Format(Line.Filterable), Format(FieldRow."Visible as Filter"));
+        if Line.Operation = Enum::"BJF MN Config Operation"::"Function Field" then begin
+            ExpectedInMenu := not this.FieldManagement.RendersInline(Line."Mobile Type");
+            if FieldRow.DisplayInMenu <> ExpectedInMenu then
+                this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.DisplayInMenuTok, Format(ExpectedInMenu), Format(FieldRow.DisplayInMenu));
+        end;
 
         LiveImportance := this.Support.OptionName(FieldRow, FieldRow.FieldNo(Mandatory));
         if UpperCase(LiveImportance) <> UpperCase(Line.Importance) then
@@ -112,4 +118,6 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
         VisibleTok: Label 'Visible', Locked = true;
         EditableTok: Label 'Editable', Locked = true;
         FilterableTok: Label 'Filterable', Locked = true;
+        DisplayInMenuTok: Label 'Display In Menu', Locked = true;
+        FieldManagement: Codeunit "BJF MN Field Mgt.";
 }
