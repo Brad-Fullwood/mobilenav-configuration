@@ -75,6 +75,33 @@ codeunit 77781 "BJF MN Config Builder"
         exit(this);
     end;
 
+    /// <summary>
+    /// Gives a dialog page its own function codeunit. MobileNAV runs a dialog's buttons through
+    /// a codeunit web service rather than through the page's functions, and by default that is
+    /// MobileNAV's own report-function codeunit, which knows nothing of your buttons: a tap then
+    /// fails on the device with 'Method "..." is invalid!'. Declare the codeunit here and name
+    /// each Button's procedure with FunctionName. The codeunit is published as a web service
+    /// under ServiceName; its procedure parameters are filled from the dialog's controls of the
+    /// same name and it returns MobileNAV's function result text.
+    /// </summary>
+    /// <param name="CodeunitId">Object id of the codeunit holding the button procedures.</param>
+    /// <param name="ServiceName">Web service name to publish the codeunit under.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Functions(CodeunitId: Integer; ServiceName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequirePublishedPageLine();
+        if this.TempConfigurationLine."Page Type" <> this.Vocabulary.ReportPageTypeName() then
+            Error(this.FunctionsRequiresDialogErr, this.CurrentPageId);
+        if CodeunitId <= 0 then
+            Error(this.FunctionCodeunitRequiredErr, this.CurrentPageId);
+        if ServiceName = '' then
+            Error(this.FunctionServiceRequiredErr, this.CurrentPageId);
+        this.TempConfigurationLine."Function Codeunit ID" := CodeunitId;
+        this.TempConfigurationLine."Report Service Name" := ServiceName;
+        this.TempConfigurationLine.Modify(false);
+        exit(this);
+    end;
+
     /// <summary>Sets what the published page's home tile does when tapped.</summary>
     /// <param name="Action">Create opens a new record; Open opens the single existing one.</param>
     /// <returns>The builder, for chaining.</returns>
@@ -683,6 +710,9 @@ codeunit 77781 "BJF MN Config Builder"
         NoControlErr: Label '%1() modifies the control declared last, but no Field, Button, Link or Scan has been declared yet.', Comment = '%1 = modifier name';
         ModifierNotApplicableErr: Label '%1() does not apply to %2, which is a %3.', Comment = '%1 = modifier name, %2 = control name, %3 = control kind';
         PublishRequiredErr: Label 'MainMenuAction() needs the page (%1) to be published first with Publish or PublishAsDialog.', Comment = '%1 = page id';
+        FunctionsRequiresDialogErr: Label 'Functions() needs the page (%1) to be published with PublishAsDialog: only a dialog page runs its buttons through a function codeunit.', Comment = '%1 = page id';
+        FunctionCodeunitRequiredErr: Label 'Functions() on page %1 needs the object id of the codeunit holding the button procedures.', Comment = '%1 = page id';
+        FunctionServiceRequiredErr: Label 'Functions() on page %1 needs the web service name to publish the codeunit under.', Comment = '%1 = page id';
         WizardRequiredErr: Label 'Stage %1 needs Wizard() on the page first.', Comment = '%1 = stage id';
         WizardRequiredForModifierErr: Label '%1() needs Wizard() on the page first.', Comment = '%1 = modifier name';
         StageIdRequiredErr: Label 'Stage() needs a stage id.';

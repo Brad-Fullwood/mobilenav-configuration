@@ -117,6 +117,18 @@ table 77780 "BJF MN Config Line"
             // Empty keeps MobileNAV's default for the page object; see "BJF MN Page Mgt.".SetPageType.
             DataClassification = SystemMetadata;
         }
+        field(28; "Function Codeunit ID"; Integer)
+        {
+            Caption = 'Function Codeunit ID';
+            // Dialog pages only: the codeunit whose procedures the page's buttons run. Zero means
+            // the buttons go through MobileNAV's page functions. See the builder's Functions().
+        }
+        field(29; "Report Service Name"; Text[100])
+        {
+            Caption = 'Report Service Name';
+            // The web service name the function codeunit is published under; MobileNAV calls
+            // the page's buttons as <name>_<procedure> on it.
+        }
         field(26; Profile; Code[30])
         {
             Caption = 'Profile';

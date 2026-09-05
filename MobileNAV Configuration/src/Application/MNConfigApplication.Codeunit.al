@@ -72,6 +72,11 @@ codeunit 77784 "BJF MN Config Application"
                     this.PageManagement.SetPageType(ServiceName, CopyStr(TempConfigurationLine."Page Type", 1, 30));
                 if TempConfigurationLine."Main Menu Action" <> '' then
                     this.PageManagement.SetMainMenuAction(ServiceName, TempConfigurationLine."Main Menu Action");
+                if TempConfigurationLine."Function Codeunit ID" <> 0 then begin
+                    this.PageManagement.PublishFunctionService(
+                        TempConfigurationLine."Function Codeunit ID", TempConfigurationLine."Report Service Name");
+                    this.PageManagement.SetReportService(ServiceName, TempConfigurationLine."Report Service Name");
+                end;
                 PageServices.Add(TempConfigurationLine."Page ID", ServiceName);
             until TempConfigurationLine.Next() = 0;
         TempConfigurationLine.Reset();
@@ -112,12 +117,22 @@ codeunit 77784 "BJF MN Config Application"
     var
         ServiceName: Text;
         FunctionName: Text[50];
+        UsesFunctionCodeunit: Boolean;
     begin
         TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Function Field");
         if TempConfigurationLine.FindSet() then
             repeat
                 PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
-                FunctionName := this.ResolveFunctionName(TempConfigurationLine, CopyStr(ServiceName, 1, 100));
+                // A dialog page with its own function codeunit runs the button as a procedure of
+                // that codeunit, so the name is the procedure's and cannot be derived; and the
+                // page-function companion is not what the device calls, so it is not registered.
+                UsesFunctionCodeunit := this.HasFunctionCodeunit(TempConfigurationLine, TempConfigurationLine."Page ID");
+                if UsesFunctionCodeunit then begin
+                    if TempConfigurationLine."Function Name" = '' then
+                        Error(this.ProcedureNameRequiredErr, TempConfigurationLine."Control Name", ServiceName);
+                    FunctionName := TempConfigurationLine."Function Name";
+                end else
+                    FunctionName := this.ResolveFunctionName(TempConfigurationLine, CopyStr(ServiceName, 1, 100));
                 if not this.FieldManagement.ConfigureFunctionField(
                     CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
                     TempConfigurationLine.Editable,
@@ -128,7 +143,8 @@ codeunit 77784 "BJF MN Config Application"
                     Error(this.FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
                 // Without the companion registration the button renders but every tap dies
                 // client-side as 'Method "…" is invalid!'. See PublishFunctionCompanion.
-                this.PageManagement.PublishFunctionCompanion(CopyStr(ServiceName, 1, 100));
+                if not UsesFunctionCodeunit then
+                    this.PageManagement.PublishFunctionCompanion(CopyStr(ServiceName, 1, 100));
             until TempConfigurationLine.Next() = 0;
         TempConfigurationLine.Reset();
     end;
@@ -293,6 +309,19 @@ codeunit 77784 "BJF MN Config Application"
         exit(DispatcherName);
     end;
 
+    /// <summary>Whether the page was published with a function codeunit (Functions() in the builder).</summary>
+    local procedure HasFunctionCodeunit(var TempConfigurationLine: Record "BJF MN Config Line" temporary; PageId: Integer): Boolean
+    var
+        TempPublishedLine: Record "BJF MN Config Line" temporary;
+    begin
+        TempPublishedLine.Copy(TempConfigurationLine, true);
+        TempPublishedLine.Reset();
+        TempPublishedLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Published Page");
+        TempPublishedLine.SetRange("Page ID", PageId);
+        TempPublishedLine.SetFilter("Function Codeunit ID", '<>%1', 0);
+        exit(not TempPublishedLine.IsEmpty());
+    end;
+
     local procedure ResolvePage(PageId: Integer; var PageServices: Dictionary of [Integer, Text])
     var
         ServiceName: Text[100];
@@ -316,5 +345,6 @@ codeunit 77784 "BJF MN Config Application"
         StageManagement: Codeunit "BJF MN Stage Mgt.";
         PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
         FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';
+        ProcedureNameRequiredErr: Label 'Button %1 on %2 needs FunctionName(): the page runs its buttons through a function codeunit, so the procedure name cannot be derived.', Comment = '%1 = control name, %2 = service name';
         NoDispatcherErr: Label 'Button %1 on MobileNAV service %2 cannot be served automatically: MobileNAV has no page function for table %3. Name the function to call with FunctionName().', Comment = '%1 = control name, %2 = MobileNAV service name, %3 = table number';
 }

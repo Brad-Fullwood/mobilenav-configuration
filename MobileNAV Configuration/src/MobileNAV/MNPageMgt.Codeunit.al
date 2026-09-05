@@ -76,6 +76,63 @@ codeunit 77788 "BJF MN Page Mgt."
     end;
 
     /// <summary>
+    /// Publishes a codeunit as the web service a dialog page's buttons are run through. Unlike
+    /// the page-function companion this one must be published: the device calls its procedures
+    /// directly over OData as ServiceName_Procedure.
+    /// </summary>
+    /// <param name="CodeunitId">The codeunit holding the button procedures.</param>
+    /// <param name="ServiceName">The web service name to publish it under.</param>
+    procedure PublishFunctionService(CodeunitId: Integer; ServiceName: Text[100])
+    var
+        TenantWebService: Record "Tenant Web Service";
+    begin
+        if not TenantWebService.Get(TenantWebService."Object Type"::Codeunit, ServiceName) then begin
+            TenantWebService.Init();
+            // Tenant Web Service is a platform table whose triggers could not be inspected.
+#pragma warning disable PC0037
+            TenantWebService."Object Type" := TenantWebService."Object Type"::Codeunit;
+            TenantWebService."Object ID" := CodeunitId;
+            TenantWebService."Service Name" := ServiceName;
+            TenantWebService.Published := true;
+#pragma warning restore PC0037
+            TenantWebService.Insert(true);
+            exit;
+        end;
+
+        if (TenantWebService."Object ID" = CodeunitId) and TenantWebService.Published then
+            exit;
+
+        // Tenant Web Service is a platform table whose triggers could not be inspected.
+#pragma warning disable PC0037
+        TenantWebService."Object ID" := CodeunitId;
+        TenantWebService.Published := true;
+#pragma warning restore PC0037
+        TenantWebService.Modify(true);
+    end;
+
+    /// <summary>
+    /// Points a dialog page at the codeunit web service its buttons run through. MobileNAV
+    /// keeps that name in the Main row's OptionValues2 (its "Report Service Name"); empty means
+    /// MobileNAV's own report-function codeunit.
+    /// </summary>
+    /// <param name="ServiceName">MobileNAV service whose Main row to change.</param>
+    /// <param name="ReportServiceName">Web service name of the function codeunit.</param>
+    /// <returns>True when the Main row was found and the name set.</returns>
+    procedure SetReportService(ServiceName: Text[100]; ReportServiceName: Text[100]): Boolean
+    var
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        if not ServiceSetup.Get(ServiceName, ServiceSetup."Line Type"::Main) then
+            exit(false);
+        // OptionValues2 has no trigger of its own; it is MobileNAV's storage for the name.
+#pragma warning disable PC0037
+        ServiceSetup.OptionValues2 := CopyStr(ReportServiceName, 1, MaxStrLen(ServiceSetup.OptionValues2));
+#pragma warning restore PC0037
+        ServiceSetup.Modify(true);
+        exit(true);
+    end;
+
+    /// <summary>
     /// Registers the page under the preferred service name and refreshes its metadata. The
     /// lookup is keyed on page id AND service name so a mismatch is caught here rather than
     /// silently adopting an existing row. Note that MobileNAV allows only ONE service per
