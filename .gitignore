@@ -1,11 +1,12 @@
 ## AL build artifacts
 .alpackages/
 .alcache/
+build/
 *.app
 
-## Local launch and RAD settings
-.vscode/launch.json
-.vscode/rad.json
+## Local launch and RAD settings (any app folder)
+**/.vscode/launch.json
+**/.vscode/rad.json
 
 ## Editor and OS files
 .vs/
