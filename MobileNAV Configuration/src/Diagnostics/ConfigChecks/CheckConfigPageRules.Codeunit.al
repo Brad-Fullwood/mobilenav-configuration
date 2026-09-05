@@ -73,12 +73,17 @@ codeunit 77797 "BJF Check Config Page Rules" implements "BJF Diagnostic Check"
                     Enum::"BJF MN Config Operation"::Field,
                     Enum::"BJF MN Config Operation"::"Function Field",
                     Enum::"BJF MN Config Operation"::"Scan Field":
-                        if TempLine.Editable and not EditablePages.Contains(TempLine."Page ID") then
-                            EditablePages.Add(TempLine."Page ID");
+                        this.CollectEditablePage(EditablePages, TempLine);
                 end;
             until TempLine.Next() = 0;
         foreach PageId in EditablePages do
             this.CheckPageUpdate(Finding, TempProvider, PageId);
+    end;
+
+    local procedure CollectEditablePage(var EditablePages: List of [Integer]; Line: Record "BJF MN Config Line" temporary)
+    begin
+        if Line.Editable and not EditablePages.Contains(Line."Page ID") then
+            EditablePages.Add(Line."Page ID");
     end;
 
     local procedure CheckRelation(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; Line: Record "BJF MN Config Line" temporary)

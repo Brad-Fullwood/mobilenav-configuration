@@ -34,15 +34,24 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
 
     procedure RunCheck(var Finding: Record "BJF Diagnostic Finding")
     var
-        WMSPackage: Record "MUL WMS Package";
         BinPlacements: Dictionary of [Text, List of [Text]];
         LocationPlacements: Dictionary of [Text, List of [Text]];
-        PackageNo: Text;
         FindingCount: Integer;
     begin
         this.CollectLocationPlacements(LocationPlacements);
         this.CollectBinPlacements(BinPlacements);
+        this.ReportLocationSplits(Finding, LocationPlacements, FindingCount);
+        this.ReportBinSplits(Finding, BinPlacements, LocationPlacements, FindingCount);
+        if FindingCount > this.MaxFindings() then
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.MoreFindingsMsg, FindingCount - this.MaxFindings()));
+    end;
 
+    /// <summary>Location splits need a transfer order, so they are reported without a fix.</summary>
+    local procedure ReportLocationSplits(var Finding: Record "BJF Diagnostic Finding"; LocationPlacements: Dictionary of [Text, List of [Text]]; var FindingCount: Integer)
+    var
+        PackageNo: Text;
+    begin
         foreach PackageNo in LocationPlacements.Keys() do
             if LocationPlacements.Get(PackageNo).Count() > 1 then begin
                 FindingCount += 1;
@@ -50,14 +59,21 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
                     Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
                         StrSubstNo(this.SplitLocationMsg, PackageNo, this.JoinPlacements(LocationPlacements.Get(PackageNo))));
             end;
+    end;
 
+    /// <summary>
+    /// The package number rides in Fix Context; the Related Record ID is only for navigation
+    /// and may be blank, since the fix creates a missing MUL WMS Package record itself.
+    /// </summary>
+    local procedure ReportBinSplits(var Finding: Record "BJF Diagnostic Finding"; BinPlacements: Dictionary of [Text, List of [Text]]; LocationPlacements: Dictionary of [Text, List of [Text]]; var FindingCount: Integer)
+    var
+        WMSPackage: Record "MUL WMS Package";
+        PackageNo: Text;
+    begin
         foreach PackageNo in BinPlacements.Keys() do
             if (BinPlacements.Get(PackageNo).Count() > 1) and not this.IsMultiLocation(LocationPlacements, PackageNo) then begin
                 FindingCount += 1;
                 if FindingCount <= this.MaxFindings() then begin
-                    // The package number rides in Fix Context; the Related Record ID is only
-                    // for navigation and may legitimately be blank - the fix creates a
-                    // missing MUL WMS Package record itself.
                     Clear(WMSPackage);
                     if WMSPackage.Get(CopyStr(PackageNo, 1, MaxStrLen(WMSPackage."Package No."))) then;
                     Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
@@ -67,10 +83,6 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
                         PackageNo);
                 end;
             end;
-
-        if FindingCount > this.MaxFindings() then
-            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
-                StrSubstNo(this.MoreFindingsMsg, FindingCount - this.MaxFindings()));
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
@@ -145,17 +157,14 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         ItemJnlPostBatch: Codeunit "Item Jnl.-Post Batch";
         GroupQty: Dictionary of [Text, Decimal];
         BinQty: Dictionary of [Text, Decimal];
-        GroupKey: Text;
-        GroupParts: List of [Text];
         TargetBin: Text;
-        LineNo: Integer;
     begin
         this.CollectPackageGroups(PackageNo, GroupQty, BinQty);
         TargetBin := this.FindTargetBin(BinQty);
         if TargetBin = '' then
             Error(this.NothingToConsolidateErr, PackageNo);
 
-        // The vendor integrity check hard-Gets this record after the posting below; create
+        // The vendor integrity check hard-gets this record after the posting below; create
         // it when missing (validating Package No. computes location, bin and hierarchy).
         if not WMSPackage.Get(PackageNo) then begin
             WMSPackage.Init();
@@ -164,26 +173,32 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         end;
 
         this.PrepareFixBatch(ItemJournalBatch);
-
-        foreach GroupKey in GroupQty.Keys() do begin
-            GroupParts := GroupKey.Split(this.Separator());
-            if GroupParts.Get(2) <> TargetBin then begin
-                if GroupQty.Get(GroupKey) < 0 then
-                    Error(this.NegativeStockErr, PackageNo, GroupParts.Get(2));
-                if GroupQty.Get(GroupKey) > 0 then begin
-                    LineNo += 10000;
-                    this.InsertReclassLine(ItemJournalLine, ItemJournalBatch, LineNo, PackageNo, GroupParts, TargetBin, GroupQty.Get(GroupKey));
-                end;
-            end;
-        end;
-
-        if LineNo = 0 then
+        if this.InsertReclassLines(ItemJournalLine, ItemJournalBatch, PackageNo, GroupQty, TargetBin) = 0 then
             Error(this.NothingToConsolidateErr, PackageNo);
 
         // Posting re-runs the vendor package integrity check, which now passes and rewrites
         // the MUL WMS Package and Package No. Information bin fields to the target bin.
         ItemJnlPostBatch.SetSuppressCommit(true);
         ItemJnlPostBatch.Run(ItemJournalLine);
+    end;
+
+    /// <summary>One reclassification line per group outside the target bin; returns how many were inserted.</summary>
+    local procedure InsertReclassLines(var ItemJournalLine: Record "Item Journal Line"; ItemJournalBatch: Record "Item Journal Batch"; PackageNo: Code[50]; GroupQty: Dictionary of [Text, Decimal]; TargetBin: Text) LineCount: Integer
+    var
+        GroupParts: List of [Text];
+        GroupKey: Text;
+    begin
+        foreach GroupKey in GroupQty.Keys() do begin
+            GroupParts := GroupKey.Split(this.Separator());
+            if GroupParts.Get(2) <> TargetBin then begin
+                if GroupQty.Get(GroupKey) < 0 then
+                    Error(this.NegativeStockErr, PackageNo, GroupParts.Get(2));
+                if GroupQty.Get(GroupKey) > 0 then begin
+                    LineCount += 1;
+                    this.InsertReclassLine(ItemJournalLine, ItemJournalBatch, LineCount * 10000, PackageNo, GroupParts, TargetBin, GroupQty.Get(GroupKey));
+                end;
+            end;
+        end;
     end;
 
     /// <summary>
@@ -245,9 +260,9 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
 
         if not ItemJournalBatch.Get(ItemJournalTemplate.Name, this.FixBatchTok) then begin
             ItemJournalBatch.Init();
-            ItemJournalBatch."Journal Template Name" := ItemJournalTemplate.Name;
-            ItemJournalBatch.Name := this.FixBatchTok;
-            ItemJournalBatch.Description := this.FixBatchDescriptionLbl;
+            ItemJournalBatch.Validate("Journal Template Name", ItemJournalTemplate.Name);
+            ItemJournalBatch.Validate(Name, this.FixBatchTok);
+            ItemJournalBatch.Validate(Description, this.FixBatchDescriptionLbl);
             ItemJournalBatch.Insert(true);
         end;
 
@@ -266,12 +281,12 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
     local procedure InsertReclassLine(var ItemJournalLine: Record "Item Journal Line"; ItemJournalBatch: Record "Item Journal Batch"; LineNo: Integer; PackageNo: Code[50]; GroupParts: List of [Text]; TargetBin: Text; QtyBase: Decimal)
     begin
         ItemJournalLine.Init();
-        ItemJournalLine."Journal Template Name" := ItemJournalBatch."Journal Template Name";
-        ItemJournalLine."Journal Batch Name" := ItemJournalBatch.Name;
-        ItemJournalLine."Line No." := LineNo;
+        ItemJournalLine.Validate("Journal Template Name", ItemJournalBatch."Journal Template Name");
+        ItemJournalLine.Validate("Journal Batch Name", ItemJournalBatch.Name);
+        ItemJournalLine.Validate("Line No.", LineNo);
         ItemJournalLine.Validate("Entry Type", ItemJournalLine."Entry Type"::Transfer);
         ItemJournalLine.Validate("Posting Date", WorkDate());
-        ItemJournalLine."Document No." := this.FixDocumentTok;
+        ItemJournalLine.Validate("Document No.", this.FixDocumentTok);
         ItemJournalLine.Validate("Item No.", CopyStr(GroupParts.Get(3), 1, 20));
         ItemJournalLine.Validate("Variant Code", CopyStr(GroupParts.Get(4), 1, 10));
         ItemJournalLine.Validate("Location Code", CopyStr(GroupParts.Get(1), 1, 10));
@@ -295,22 +310,23 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         CreateReservEntry: Codeunit "Create Reserv. Entry";
         ReservationStatus: Enum "Reservation Status";
     begin
+        // Pass-through buffers for CreateReservEntry: assigned, as the standard codeunits do.
         TempReservationEntry.Init();
         TempReservationEntry."Entry No." := 1;
-        TempReservationEntry.Validate("Lot No.", LotNo);
-        TempReservationEntry.Validate("Serial No.", SerialNo);
-        TempReservationEntry.Validate("Package No.", PackageNo);
-        TempReservationEntry.Validate(Quantity, ItemJournalLine.Quantity);
+        TempReservationEntry."Lot No." := LotNo;
+        TempReservationEntry."Serial No." := SerialNo;
+        TempReservationEntry."Package No." := PackageNo;
+        TempReservationEntry.Quantity := ItemJournalLine.Quantity;
         TempReservationEntry.Insert(false);
 
         TempTrackingSpecification.Init();
-        TempTrackingSpecification.Validate("Serial No.", SerialNo);
-        TempTrackingSpecification.Validate("Lot No.", LotNo);
-        TempTrackingSpecification.Validate("Package No.", PackageNo);
-        TempTrackingSpecification.Validate("New Serial No.", SerialNo);
-        TempTrackingSpecification.Validate("New Lot No.", LotNo);
-        TempTrackingSpecification.Validate("New Package No.", PackageNo);
-        TempTrackingSpecification.Validate("Quantity (Base)", ItemJournalLine."Quantity (Base)");
+        TempTrackingSpecification."Serial No." := SerialNo;
+        TempTrackingSpecification."Lot No." := LotNo;
+        TempTrackingSpecification."Package No." := PackageNo;
+        TempTrackingSpecification."New Serial No." := SerialNo;
+        TempTrackingSpecification."New Lot No." := LotNo;
+        TempTrackingSpecification."New Package No." := PackageNo;
+        TempTrackingSpecification."Quantity (Base)" := ItemJournalLine."Quantity (Base)";
         TempTrackingSpecification.Insert(false);
 
         CreateReservEntry.CreateReservEntryFor(

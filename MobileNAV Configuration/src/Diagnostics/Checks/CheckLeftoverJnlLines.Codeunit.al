@@ -15,29 +15,35 @@ codeunit 77773 "BJF Check Leftover Jnl. Lines" implements "BJF Diagnostic Check"
     procedure RunCheck(var Finding: Record "BJF Diagnostic Finding")
     var
         ItemJournalLine: Record "Item Journal Line";
-        Location: Record Location;
         MovementJournalMgt: Codeunit "BJF Movement Journal Mgt.";
-        BinMissing: Boolean;
-        FixDescription: Text;
     begin
         this.CheckOutputBatchLeftovers(Finding);
 
         MovementJournalMgt.SetMovementLineFilters(ItemJournalLine);
         if ItemJournalLine.FindSet() then
             repeat
-                BinMissing := false;
-                if Location.Get(ItemJournalLine."Location Code") then
-                    BinMissing := Location."Bin Mandatory" and ((ItemJournalLine."New Bin Code" = '') or (ItemJournalLine."Bin Code" = ''));
-                FixDescription := StrSubstNo(this.DeleteLineFixLbl, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.");
-                // MobileNAV WMS Move Package posts the entire batch, so any line left here
-                // is swept into the next Move Package posting and can block it.
-                if BinMissing then
-                    Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(this.BrokenLeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No."), ItemJournalLine.RecordId(), FixDescription)
-                else
-                    Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Warning,
-                        StrSubstNo(this.LeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No.", ItemJournalLine.Quantity), ItemJournalLine.RecordId(), FixDescription);
+                this.CheckMovementLine(Finding, ItemJournalLine);
             until ItemJournalLine.Next() = 0;
+    end;
+
+    // MobileNAV WMS Move Package posts the entire batch, so any line left here
+    // is swept into the next Move Package posting and can block it.
+    local procedure CheckMovementLine(var Finding: Record "BJF Diagnostic Finding"; ItemJournalLine: Record "Item Journal Line")
+    var
+        Location: Record Location;
+        BinMissing: Boolean;
+        FixDescription: Text;
+    begin
+        BinMissing := false;
+        if Location.Get(ItemJournalLine."Location Code") then
+            BinMissing := Location."Bin Mandatory" and ((ItemJournalLine."New Bin Code" = '') or (ItemJournalLine."Bin Code" = ''));
+        FixDescription := StrSubstNo(this.DeleteLineFixLbl, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.");
+        if BinMissing then
+            Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.BrokenLeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No."), ItemJournalLine.RecordId(), FixDescription)
+        else
+            Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Warning,
+                StrSubstNo(this.LeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No.", ItemJournalLine.Quantity), ItemJournalLine.RecordId(), FixDescription);
     end;
 
     /// <summary>

@@ -83,7 +83,7 @@ codeunit 77791 "BJF MN Profile Mgt."
     var
         ProfileSetup: Record "MobileNAV Profile Setup";
     begin
-        if ProfileSetup.Get(ProfileSetup."Profile Type"::Page, ServiceName, Profile) then begin
+        if this.FindPageRow(ServiceName, Profile, ProfileSetup) then begin
             if not ProfileSetup."Exclude from Profile" and ProfileSetup."Display in Menu" then
                 exit;
 #pragma warning disable PC0037
@@ -118,7 +118,7 @@ codeunit 77791 "BJF MN Profile Mgt."
 
         // The parent's Page row supplies the hierarchy properties; IncludePageInProfiles has
         // already written it for every published page.
-        if not ParentRow.Get(ParentRow."Profile Type"::Page, ParentId, Profile) then
+        if not this.FindPageRow(ParentId, Profile, ParentRow) then
             exit;
 
         Link.SetRange("Profile Type", Link."Profile Type"::"Parent Page");
@@ -176,6 +176,17 @@ codeunit 77791 "BJF MN Profile Mgt."
             ProfileSetup.Insert(false)
         else
             ProfileSetup.Modify(false);
+    end;
+
+    /// <summary>Finds a profile's Page row, filtering "Control ID" = 0 (the field left blank on a partial-key Get).</summary>
+    local procedure FindPageRow(ServiceName: Text[100]; Profile: Code[30]; var ProfileSetup: Record "MobileNAV Profile Setup"): Boolean
+    begin
+        ProfileSetup.Reset();
+        ProfileSetup.SetRange("Profile Type", ProfileSetup."Profile Type"::Page);
+        ProfileSetup.SetRange(ID, ServiceName);
+        ProfileSetup.SetRange(Profile, Profile);
+        ProfileSetup.SetRange("Control ID", 0);
+        exit(ProfileSetup.FindFirst());
     end;
 
     var

@@ -68,97 +68,60 @@ codeunit 77786 "BJF MN Function Router"
     /// <summary>
     /// The MobileNAV Page Functions dispatcher that serves a source table, for example
     /// 'SalesHeaderExtFunc' for Sales Header. The names are MobileNAV's own procedure names.
+    /// Looked up from a dictionary built once on first use, to keep this a single branch
+    /// instead of a 40-way case.
     /// </summary>
     /// <returns>False when MobileNAV has no dispatcher for the table.</returns>
     internal procedure TryGetDispatcher(TableNo: Integer; var DispatcherName: Text[50]): Boolean
     begin
-        case TableNo of
-            Database::"Sales Header":
-                DispatcherName := 'SalesHeaderExtFunc';
-            Database::"Sales Line":
-                DispatcherName := 'SalesLineExtFunc';
-            Database::"Service Item Line":
-                DispatcherName := 'ServiceTaskExtFunc';
-            Database::"Service Line":
-                DispatcherName := 'ServiceLineExtFunc';
-            Database::Item:
-                DispatcherName := 'ItemExtFunc';
-            Database::Contact:
-                DispatcherName := 'ContactExtFunc';
-            Database::"Return Receipt Header":
-                DispatcherName := 'SalesReturnReceiptExtFunc';
-            Database::"Sales Shipment Header":
-                DispatcherName := 'SalesShipmentExtFunc';
-            Database::"Sales Invoice Header":
-                DispatcherName := 'SalesInvoiceExtFunc';
-            Database::"Sales Cr.Memo Header":
-                DispatcherName := 'SalesCrMemoExtFunc';
-            Database::Job:
-                DispatcherName := 'JobExtFunc';
-            Database::"Warehouse Activity Header":
-                DispatcherName := 'WhseActHdrExtFunc';
-            Database::"Warehouse Activity Line":
-                DispatcherName := 'WhseActLineExtFunc';
-            Database::"Approval Entry":
-                DispatcherName := 'ApprovalEntryExtFunc';
-            Database::"Job Journal Batch":
-                DispatcherName := 'JobJournalBatchExtFunc';
-            Database::"Job Journal Line":
-                DispatcherName := 'JobJournalLineExtFunc';
-            Database::"Warehouse Receipt Header":
-                DispatcherName := 'WhseReceiptHdrExtFunc';
-            Database::"Warehouse Receipt Line":
-                DispatcherName := 'WhseReceiptLineExtFunc';
-            Database::"Warehouse Shipment Header":
-                DispatcherName := 'WhseShpmtHdrExtFunc';
-            Database::"Warehouse Shipment Line":
-                DispatcherName := 'WhseShpmtLineExtFunc';
-            Database::"Transfer Header":
-                DispatcherName := 'TransferHdrExtFunc';
-            Database::"Transfer Line":
-                DispatcherName := 'TransferLineExtFunc';
-            Database::"Item Journal Batch":
-                DispatcherName := 'ItemJrnlBatchExtFunc';
-            Database::"Item Journal Line":
-                DispatcherName := 'ItemJrnlLineExtFunc';
-            Database::"Production Order":
-                DispatcherName := 'ProdOrderExtFunc';
-            Database::"Prod. Order Line":
-                DispatcherName := 'ProdOrderLineExtFunc';
-            Database::"Purchase Header":
-                DispatcherName := 'PurchHeaderExtFunc';
-            Database::"Purchase Line":
-                DispatcherName := 'PurchLineExtFunc';
-            Database::"Profile Questionnaire Line":
-                DispatcherName := 'ProfQuestLineExtFunc';
-            Database::"Whse. Worksheet Line":
-                DispatcherName := 'WhseWrkshLineExtFunc';
-            Database::"Warehouse Journal Line":
-                DispatcherName := 'WhseJrnlLineExtFunc';
-            Database::"MobileNAV Tracking Spec.":
-                DispatcherName := 'MNTrackSpecExtFunc';
-            Database::"MobileNAV Temporary Data":
-                DispatcherName := 'MNTempDataExtFunc';
-            Database::"Interaction Log Entry":
-                DispatcherName := 'MNInteractionLEExtFunc';
-            Database::"Assembly Header":
-                DispatcherName := 'MNAssemblyOrderExtFunc';
-            Database::"Assembly Line":
-                DispatcherName := 'MNAssemblyLineExtFunc';
-            Database::"Warehouse Request":
-                DispatcherName := 'WhseRequestExtFunc';
-            Database::"Warehouse Journal Batch":
-                DispatcherName := 'WhseJrnlBatchExtFunc';
-            Database::"Posted Whse. Shipment Header":
-                DispatcherName := 'PostedWhseShipmentExtFunc';
-            Database::"Service Item":
-                DispatcherName := 'ServiceItemExtFunc';
-            else begin
-                DispatcherName := '';
-                exit(false);
-            end;
-        end;
-        exit(true);
+        if this.DispatcherNames.Count() = 0 then
+            this.LoadDispatcherNames();
+        exit(this.DispatcherNames.Get(TableNo, DispatcherName));
+    end;
+
+    /// <summary>Table-to-dispatcher-name pairs for TryGetDispatcher, kept out of it so that procedure stays a single branch.</summary>
+    local procedure LoadDispatcherNames()
+    begin
+        this.DispatcherNames.Add(Database::"Sales Header", 'SalesHeaderExtFunc');
+        this.DispatcherNames.Add(Database::"Sales Line", 'SalesLineExtFunc');
+        this.DispatcherNames.Add(Database::"Service Item Line", 'ServiceTaskExtFunc');
+        this.DispatcherNames.Add(Database::"Service Line", 'ServiceLineExtFunc');
+        this.DispatcherNames.Add(Database::Item, 'ItemExtFunc');
+        this.DispatcherNames.Add(Database::Contact, 'ContactExtFunc');
+        this.DispatcherNames.Add(Database::"Return Receipt Header", 'SalesReturnReceiptExtFunc');
+        this.DispatcherNames.Add(Database::"Sales Shipment Header", 'SalesShipmentExtFunc');
+        this.DispatcherNames.Add(Database::"Sales Invoice Header", 'SalesInvoiceExtFunc');
+        this.DispatcherNames.Add(Database::"Sales Cr.Memo Header", 'SalesCrMemoExtFunc');
+        this.DispatcherNames.Add(Database::Job, 'JobExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Activity Header", 'WhseActHdrExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Activity Line", 'WhseActLineExtFunc');
+        this.DispatcherNames.Add(Database::"Approval Entry", 'ApprovalEntryExtFunc');
+        this.DispatcherNames.Add(Database::"Job Journal Batch", 'JobJournalBatchExtFunc');
+        this.DispatcherNames.Add(Database::"Job Journal Line", 'JobJournalLineExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Receipt Header", 'WhseReceiptHdrExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Receipt Line", 'WhseReceiptLineExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Shipment Header", 'WhseShpmtHdrExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Shipment Line", 'WhseShpmtLineExtFunc');
+        this.DispatcherNames.Add(Database::"Transfer Header", 'TransferHdrExtFunc');
+        this.DispatcherNames.Add(Database::"Transfer Line", 'TransferLineExtFunc');
+        this.DispatcherNames.Add(Database::"Item Journal Batch", 'ItemJrnlBatchExtFunc');
+        this.DispatcherNames.Add(Database::"Item Journal Line", 'ItemJrnlLineExtFunc');
+        this.DispatcherNames.Add(Database::"Production Order", 'ProdOrderExtFunc');
+        this.DispatcherNames.Add(Database::"Prod. Order Line", 'ProdOrderLineExtFunc');
+        this.DispatcherNames.Add(Database::"Purchase Header", 'PurchHeaderExtFunc');
+        this.DispatcherNames.Add(Database::"Purchase Line", 'PurchLineExtFunc');
+        this.DispatcherNames.Add(Database::"Profile Questionnaire Line", 'ProfQuestLineExtFunc');
+        this.DispatcherNames.Add(Database::"Whse. Worksheet Line", 'WhseWrkshLineExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Journal Line", 'WhseJrnlLineExtFunc');
+        this.DispatcherNames.Add(Database::"MobileNAV Tracking Spec.", 'MNTrackSpecExtFunc');
+        this.DispatcherNames.Add(Database::"MobileNAV Temporary Data", 'MNTempDataExtFunc');
+        this.DispatcherNames.Add(Database::"Interaction Log Entry", 'MNInteractionLEExtFunc');
+        this.DispatcherNames.Add(Database::"Assembly Header", 'MNAssemblyOrderExtFunc');
+        this.DispatcherNames.Add(Database::"Assembly Line", 'MNAssemblyLineExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Request", 'WhseRequestExtFunc');
+        this.DispatcherNames.Add(Database::"Warehouse Journal Batch", 'WhseJrnlBatchExtFunc');
+        this.DispatcherNames.Add(Database::"Posted Whse. Shipment Header", 'PostedWhseShipmentExtFunc');
+        this.DispatcherNames.Add(Database::"Service Item", 'ServiceItemExtFunc');
     end;
 
     /// <summary>
@@ -172,258 +135,410 @@ codeunit 77786 "BJF MN Function Router"
     /// <returns>The result text devices expect back from a function call.</returns>
     procedure Execute(SourceRecord: Variant; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]): Text
     var
-        SalesHeader: Record "Sales Header";
-        SalesLine: Record "Sales Line";
-        ServiceItemLine: Record "Service Item Line";
-        ServiceLine: Record "Service Line";
-        Item: Record Item;
-        Contact: Record Contact;
-        ReturnReceiptHeader: Record "Return Receipt Header";
-        SalesShipmentHeader: Record "Sales Shipment Header";
-        SalesInvoiceHeader: Record "Sales Invoice Header";
-        SalesCrMemoHeader: Record "Sales Cr.Memo Header";
-        Job: Record Job;
-        WarehouseActivityHeader: Record "Warehouse Activity Header";
-        WarehouseActivityLine: Record "Warehouse Activity Line";
-        ApprovalEntry: Record "Approval Entry";
-        JobJournalBatch: Record "Job Journal Batch";
-        JobJournalLine: Record "Job Journal Line";
-        WarehouseReceiptHeader: Record "Warehouse Receipt Header";
-        WarehouseReceiptLine: Record "Warehouse Receipt Line";
-        WarehouseShipmentHeader: Record "Warehouse Shipment Header";
-        WarehouseShipmentLine: Record "Warehouse Shipment Line";
-        TransferHeader: Record "Transfer Header";
-        TransferLine: Record "Transfer Line";
-        ItemJournalBatch: Record "Item Journal Batch";
-        ItemJournalLine: Record "Item Journal Line";
-        ProductionOrder: Record "Production Order";
-        ProdOrderLine: Record "Prod. Order Line";
-        PurchaseHeader: Record "Purchase Header";
-        PurchaseLine: Record "Purchase Line";
-        ProfileQuestionnaireLine: Record "Profile Questionnaire Line";
-        WhseWorksheetLine: Record "Whse. Worksheet Line";
-        WarehouseJournalLine: Record "Warehouse Journal Line";
-        MobileNAVTrackingSpec: Record "MobileNAV Tracking Spec.";
-        MobileNAVTemporaryData: Record "MobileNAV Temporary Data";
-        InteractionLogEntry: Record "Interaction Log Entry";
-        AssemblyHeader: Record "Assembly Header";
-        AssemblyLine: Record "Assembly Line";
-        WarehouseRequest: Record "Warehouse Request";
-        WarehouseJournalBatch: Record "Warehouse Journal Batch";
-        PostedWhseShipmentHeader: Record "Posted Whse. Shipment Header";
-        ServiceItem: Record "Service Item";
-        PageFunctions: Codeunit "MobileNAV Page Functions";
         ResultHelper: Codeunit "MobileNAV Result Helper";
         Base64Result: BigText;
         RecRef: RecordRef;
         FunctionResult: Text[1024];
     begin
         RecRef.GetTable(SourceRecord);
+        if not this.TryExecute(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            Error(this.UnsupportedTableErr, RecRef.Name());
+        exit(ResultHelper.ConvertReturnValuesToResult(Base64Result, '', FunctionResult));
+    end;
+
+    // The dispatchers are typed, so the call cannot be table-driven: one small case per
+    // business area instead, each handling its tables and reporting whether it did.
+    local procedure TryExecute(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    begin
+        if this.TryExecuteSalesAndPurchase(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteWarehouse(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteInventoryAndProduction(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteServiceProjectsAndCrm(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        exit(false);
+    end;
+
+    local procedure TryExecuteSalesAndPurchase(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    begin
+        if this.TryExecuteSales(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecutePurchaseAndTransfer(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        exit(false);
+    end;
+
+    local procedure TryExecuteWarehouse(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    begin
+        if this.TryExecuteWarehouseDocuments(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteWarehouseJournals(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        exit(false);
+    end;
+
+    local procedure TryExecuteInventoryAndProduction(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    begin
+        if this.TryExecuteItemJournals(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteProduction(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        exit(false);
+    end;
+
+    local procedure TryExecuteServiceProjectsAndCrm(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    begin
+        if this.TryExecuteService(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteProjects(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteCrm(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        if this.TryExecuteApprovalsAndMobileNAV(RecRef, PageName, FieldName, DeviceID, FunctionResult) then
+            exit(true);
+        exit(false);
+    end;
+
+    local procedure TryExecuteSales(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        SalesHeader: Record "Sales Header";
+        SalesLine: Record "Sales Line";
+        SalesShipmentHeader: Record "Sales Shipment Header";
+        SalesInvoiceHeader: Record "Sales Invoice Header";
+        SalesCrMemoHeader: Record "Sales Cr.Memo Header";
+        ReturnReceiptHeader: Record "Return Receipt Header";
+    begin
         case RecRef.Number() of
             Database::"Sales Header":
                 begin
                     RecRef.SetTable(SalesHeader);
-                    FunctionResult := CopyStr(PageFunctions.SalesHeaderExtFunc(SalesHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.SalesHeaderExtFunc(SalesHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Sales Line":
                 begin
                     RecRef.SetTable(SalesLine);
-                    FunctionResult := CopyStr(PageFunctions.SalesLineExtFunc(SalesLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Service Item Line":
-                begin
-                    RecRef.SetTable(ServiceItemLine);
-                    FunctionResult := CopyStr(PageFunctions.ServiceTaskExtFunc(ServiceItemLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Service Line":
-                begin
-                    RecRef.SetTable(ServiceLine);
-                    FunctionResult := CopyStr(PageFunctions.ServiceLineExtFunc(ServiceLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::Item:
-                begin
-                    RecRef.SetTable(Item);
-                    FunctionResult := CopyStr(PageFunctions.ItemExtFunc(Item, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::Contact:
-                begin
-                    RecRef.SetTable(Contact);
-                    FunctionResult := CopyStr(PageFunctions.ContactExtFunc(Contact, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Return Receipt Header":
-                begin
-                    RecRef.SetTable(ReturnReceiptHeader);
-                    FunctionResult := CopyStr(PageFunctions.SalesReturnReceiptExtFunc(ReturnReceiptHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.SalesLineExtFunc(SalesLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Sales Shipment Header":
                 begin
                     RecRef.SetTable(SalesShipmentHeader);
-                    FunctionResult := CopyStr(PageFunctions.SalesShipmentExtFunc(SalesShipmentHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.SalesShipmentExtFunc(SalesShipmentHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Sales Invoice Header":
                 begin
                     RecRef.SetTable(SalesInvoiceHeader);
-                    FunctionResult := CopyStr(PageFunctions.SalesInvoiceExtFunc(SalesInvoiceHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.SalesInvoiceExtFunc(SalesInvoiceHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Sales Cr.Memo Header":
                 begin
                     RecRef.SetTable(SalesCrMemoHeader);
-                    FunctionResult := CopyStr(PageFunctions.SalesCrMemoExtFunc(SalesCrMemoHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.SalesCrMemoExtFunc(SalesCrMemoHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::Job:
+            Database::"Return Receipt Header":
                 begin
-                    RecRef.SetTable(Job);
-                    FunctionResult := CopyStr(PageFunctions.JobExtFunc(Job, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(ReturnReceiptHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.SalesReturnReceiptExtFunc(ReturnReceiptHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Warehouse Activity Header":
-                begin
-                    RecRef.SetTable(WarehouseActivityHeader);
-                    FunctionResult := CopyStr(PageFunctions.WhseActHdrExtFunc(WarehouseActivityHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Warehouse Activity Line":
-                begin
-                    RecRef.SetTable(WarehouseActivityLine);
-                    FunctionResult := CopyStr(PageFunctions.WhseActLineExtFunc(WarehouseActivityLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Approval Entry":
-                begin
-                    RecRef.SetTable(ApprovalEntry);
-                    FunctionResult := CopyStr(PageFunctions.ApprovalEntryExtFunc(ApprovalEntry, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Job Journal Batch":
-                begin
-                    RecRef.SetTable(JobJournalBatch);
-                    FunctionResult := CopyStr(PageFunctions.JobJournalBatchExtFunc(JobJournalBatch, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Job Journal Line":
-                begin
-                    RecRef.SetTable(JobJournalLine);
-                    FunctionResult := CopyStr(PageFunctions.JobJournalLineExtFunc(JobJournalLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Warehouse Receipt Header":
-                begin
-                    RecRef.SetTable(WarehouseReceiptHeader);
-                    FunctionResult := CopyStr(PageFunctions.WhseReceiptHdrExtFunc(WarehouseReceiptHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Warehouse Receipt Line":
-                begin
-                    RecRef.SetTable(WarehouseReceiptLine);
-                    FunctionResult := CopyStr(PageFunctions.WhseReceiptLineExtFunc(WarehouseReceiptLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Warehouse Shipment Header":
-                begin
-                    RecRef.SetTable(WarehouseShipmentHeader);
-                    FunctionResult := CopyStr(PageFunctions.WhseShpmtHdrExtFunc(WarehouseShipmentHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Warehouse Shipment Line":
-                begin
-                    RecRef.SetTable(WarehouseShipmentLine);
-                    FunctionResult := CopyStr(PageFunctions.WhseShpmtLineExtFunc(WarehouseShipmentLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Transfer Header":
-                begin
-                    RecRef.SetTable(TransferHeader);
-                    FunctionResult := CopyStr(PageFunctions.TransferHdrExtFunc(TransferHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Transfer Line":
-                begin
-                    RecRef.SetTable(TransferLine);
-                    FunctionResult := CopyStr(PageFunctions.TransferLineExtFunc(TransferLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Item Journal Batch":
-                begin
-                    RecRef.SetTable(ItemJournalBatch);
-                    FunctionResult := CopyStr(PageFunctions.ItemJrnlBatchExtFunc(ItemJournalBatch, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Item Journal Line":
-                begin
-                    RecRef.SetTable(ItemJournalLine);
-                    FunctionResult := CopyStr(PageFunctions.ItemJrnlLineExtFunc(ItemJournalLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Production Order":
-                begin
-                    RecRef.SetTable(ProductionOrder);
-                    FunctionResult := CopyStr(PageFunctions.ProdOrderExtFunc(ProductionOrder, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
-            Database::"Prod. Order Line":
-                begin
-                    RecRef.SetTable(ProdOrderLine);
-                    FunctionResult := CopyStr(PageFunctions.ProdOrderLineExtFunc(ProdOrderLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
-                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecutePurchaseAndTransfer(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        PurchaseHeader: Record "Purchase Header";
+        PurchaseLine: Record "Purchase Line";
+        TransferHeader: Record "Transfer Header";
+        TransferLine: Record "Transfer Line";
+    begin
+        case RecRef.Number() of
             Database::"Purchase Header":
                 begin
                     RecRef.SetTable(PurchaseHeader);
-                    FunctionResult := CopyStr(PageFunctions.PurchHeaderExtFunc(PurchaseHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.PurchHeaderExtFunc(PurchaseHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Purchase Line":
                 begin
                     RecRef.SetTable(PurchaseLine);
-                    FunctionResult := CopyStr(PageFunctions.PurchLineExtFunc(PurchaseLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.PurchLineExtFunc(PurchaseLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Profile Questionnaire Line":
+            Database::"Transfer Header":
                 begin
-                    RecRef.SetTable(ProfileQuestionnaireLine);
-                    FunctionResult := CopyStr(PageFunctions.ProfQuestLineExtFunc(ProfileQuestionnaireLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(TransferHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.TransferHdrExtFunc(TransferHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Whse. Worksheet Line":
+            Database::"Transfer Line":
                 begin
-                    RecRef.SetTable(WhseWorksheetLine);
-                    FunctionResult := CopyStr(PageFunctions.WhseWrkshLineExtFunc(WhseWorksheetLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(TransferLine);
+                    FunctionResult := CopyStr(this.PageFunctions.TransferLineExtFunc(TransferLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Warehouse Journal Line":
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteWarehouseDocuments(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        WarehouseActivityHeader: Record "Warehouse Activity Header";
+        WarehouseActivityLine: Record "Warehouse Activity Line";
+        WarehouseReceiptHeader: Record "Warehouse Receipt Header";
+        WarehouseReceiptLine: Record "Warehouse Receipt Line";
+        WarehouseShipmentHeader: Record "Warehouse Shipment Header";
+        WarehouseShipmentLine: Record "Warehouse Shipment Line";
+    begin
+        case RecRef.Number() of
+            Database::"Warehouse Activity Header":
                 begin
-                    RecRef.SetTable(WarehouseJournalLine);
-                    FunctionResult := CopyStr(PageFunctions.WhseJrnlLineExtFunc(WarehouseJournalLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseActivityHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseActHdrExtFunc(WarehouseActivityHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"MobileNAV Tracking Spec.":
+            Database::"Warehouse Activity Line":
                 begin
-                    RecRef.SetTable(MobileNAVTrackingSpec);
-                    FunctionResult := CopyStr(PageFunctions.MNTrackSpecExtFunc(MobileNAVTrackingSpec, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseActivityLine);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseActLineExtFunc(WarehouseActivityLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"MobileNAV Temporary Data":
+            Database::"Warehouse Receipt Header":
                 begin
-                    RecRef.SetTable(MobileNAVTemporaryData);
-                    FunctionResult := CopyStr(PageFunctions.MNTempDataExtFunc(MobileNAVTemporaryData, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseReceiptHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseReceiptHdrExtFunc(WarehouseReceiptHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Interaction Log Entry":
+            Database::"Warehouse Receipt Line":
                 begin
-                    RecRef.SetTable(InteractionLogEntry);
-                    FunctionResult := CopyStr(PageFunctions.MNInteractionLEExtFunc(InteractionLogEntry, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseReceiptLine);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseReceiptLineExtFunc(WarehouseReceiptLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Assembly Header":
+            Database::"Warehouse Shipment Header":
                 begin
-                    RecRef.SetTable(AssemblyHeader);
-                    FunctionResult := CopyStr(PageFunctions.MNAssemblyOrderExtFunc(AssemblyHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseShipmentHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseShpmtHdrExtFunc(WarehouseShipmentHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Assembly Line":
+            Database::"Warehouse Shipment Line":
                 begin
-                    RecRef.SetTable(AssemblyLine);
-                    FunctionResult := CopyStr(PageFunctions.MNAssemblyLineExtFunc(AssemblyLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseShipmentLine);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseShpmtLineExtFunc(WarehouseShipmentLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteWarehouseJournals(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        PostedWhseShipmentHeader: Record "Posted Whse. Shipment Header";
+        WarehouseRequest: Record "Warehouse Request";
+        WarehouseJournalBatch: Record "Warehouse Journal Batch";
+        WarehouseJournalLine: Record "Warehouse Journal Line";
+        WhseWorksheetLine: Record "Whse. Worksheet Line";
+    begin
+        case RecRef.Number() of
+            Database::"Posted Whse. Shipment Header":
+                begin
+                    RecRef.SetTable(PostedWhseShipmentHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.PostedWhseShipmentExtFunc(PostedWhseShipmentHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Warehouse Request":
                 begin
                     RecRef.SetTable(WarehouseRequest);
-                    FunctionResult := CopyStr(PageFunctions.WhseRequestExtFunc(WarehouseRequest, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.WhseRequestExtFunc(WarehouseRequest, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Warehouse Journal Batch":
                 begin
                     RecRef.SetTable(WarehouseJournalBatch);
-                    FunctionResult := CopyStr(PageFunctions.WhseJrnlBatchExtFunc(WarehouseJournalBatch, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.WhseJrnlBatchExtFunc(WarehouseJournalBatch, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
-            Database::"Posted Whse. Shipment Header":
+            Database::"Warehouse Journal Line":
                 begin
-                    RecRef.SetTable(PostedWhseShipmentHeader);
-                    FunctionResult := CopyStr(PageFunctions.PostedWhseShipmentExtFunc(PostedWhseShipmentHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    RecRef.SetTable(WarehouseJournalLine);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseJrnlLineExtFunc(WarehouseJournalLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Whse. Worksheet Line":
+                begin
+                    RecRef.SetTable(WhseWorksheetLine);
+                    FunctionResult := CopyStr(this.PageFunctions.WhseWrkshLineExtFunc(WhseWorksheetLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteItemJournals(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        Item: Record Item;
+        ItemJournalBatch: Record "Item Journal Batch";
+        ItemJournalLine: Record "Item Journal Line";
+    begin
+        case RecRef.Number() of
+            Database::Item:
+                begin
+                    RecRef.SetTable(Item);
+                    FunctionResult := CopyStr(this.PageFunctions.ItemExtFunc(Item, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Item Journal Batch":
+                begin
+                    RecRef.SetTable(ItemJournalBatch);
+                    FunctionResult := CopyStr(this.PageFunctions.ItemJrnlBatchExtFunc(ItemJournalBatch, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Item Journal Line":
+                begin
+                    RecRef.SetTable(ItemJournalLine);
+                    FunctionResult := CopyStr(this.PageFunctions.ItemJrnlLineExtFunc(ItemJournalLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteProduction(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        ProductionOrder: Record "Production Order";
+        ProdOrderLine: Record "Prod. Order Line";
+        AssemblyHeader: Record "Assembly Header";
+        AssemblyLine: Record "Assembly Line";
+    begin
+        case RecRef.Number() of
+            Database::"Production Order":
+                begin
+                    RecRef.SetTable(ProductionOrder);
+                    FunctionResult := CopyStr(this.PageFunctions.ProdOrderExtFunc(ProductionOrder, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Prod. Order Line":
+                begin
+                    RecRef.SetTable(ProdOrderLine);
+                    FunctionResult := CopyStr(this.PageFunctions.ProdOrderLineExtFunc(ProdOrderLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Assembly Header":
+                begin
+                    RecRef.SetTable(AssemblyHeader);
+                    FunctionResult := CopyStr(this.PageFunctions.MNAssemblyOrderExtFunc(AssemblyHeader, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Assembly Line":
+                begin
+                    RecRef.SetTable(AssemblyLine);
+                    FunctionResult := CopyStr(this.PageFunctions.MNAssemblyLineExtFunc(AssemblyLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteService(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        ServiceItemLine: Record "Service Item Line";
+        ServiceLine: Record "Service Line";
+        ServiceItem: Record "Service Item";
+    begin
+        case RecRef.Number() of
+            Database::"Service Item Line":
+                begin
+                    RecRef.SetTable(ServiceItemLine);
+                    FunctionResult := CopyStr(this.PageFunctions.ServiceTaskExtFunc(ServiceItemLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Service Line":
+                begin
+                    RecRef.SetTable(ServiceLine);
+                    FunctionResult := CopyStr(this.PageFunctions.ServiceLineExtFunc(ServiceLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             Database::"Service Item":
                 begin
                     RecRef.SetTable(ServiceItem);
-                    FunctionResult := CopyStr(PageFunctions.ServiceItemExtFunc(ServiceItem, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                    FunctionResult := CopyStr(this.PageFunctions.ServiceItemExtFunc(ServiceItem, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
                 end;
             else
-                Error(this.UnsupportedTableErr, RecRef.Name());
+                exit(false);
         end;
-        exit(ResultHelper.ConvertReturnValuesToResult(Base64Result, '', FunctionResult));
+        exit(true);
+    end;
+
+    local procedure TryExecuteProjects(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        Job: Record Job;
+        JobJournalBatch: Record "Job Journal Batch";
+        JobJournalLine: Record "Job Journal Line";
+    begin
+        case RecRef.Number() of
+            Database::Job:
+                begin
+                    RecRef.SetTable(Job);
+                    FunctionResult := CopyStr(this.PageFunctions.JobExtFunc(Job, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Job Journal Batch":
+                begin
+                    RecRef.SetTable(JobJournalBatch);
+                    FunctionResult := CopyStr(this.PageFunctions.JobJournalBatchExtFunc(JobJournalBatch, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Job Journal Line":
+                begin
+                    RecRef.SetTable(JobJournalLine);
+                    FunctionResult := CopyStr(this.PageFunctions.JobJournalLineExtFunc(JobJournalLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteCrm(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        Contact: Record Contact;
+        InteractionLogEntry: Record "Interaction Log Entry";
+        ProfileQuestionnaireLine: Record "Profile Questionnaire Line";
+    begin
+        case RecRef.Number() of
+            Database::Contact:
+                begin
+                    RecRef.SetTable(Contact);
+                    FunctionResult := CopyStr(this.PageFunctions.ContactExtFunc(Contact, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Interaction Log Entry":
+                begin
+                    RecRef.SetTable(InteractionLogEntry);
+                    FunctionResult := CopyStr(this.PageFunctions.MNInteractionLEExtFunc(InteractionLogEntry, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"Profile Questionnaire Line":
+                begin
+                    RecRef.SetTable(ProfileQuestionnaireLine);
+                    FunctionResult := CopyStr(this.PageFunctions.ProfQuestLineExtFunc(ProfileQuestionnaireLine, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
+    end;
+
+    local procedure TryExecuteApprovalsAndMobileNAV(var RecRef: RecordRef; PageName: Text[100]; FieldName: Text[75]; DeviceID: Text[190]; var FunctionResult: Text[1024]): Boolean
+    var
+        ApprovalEntry: Record "Approval Entry";
+        MobileNAVTrackingSpec: Record "MobileNAV Tracking Spec.";
+        MobileNAVTemporaryData: Record "MobileNAV Temporary Data";
+    begin
+        case RecRef.Number() of
+            Database::"Approval Entry":
+                begin
+                    RecRef.SetTable(ApprovalEntry);
+                    FunctionResult := CopyStr(this.PageFunctions.ApprovalEntryExtFunc(ApprovalEntry, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"MobileNAV Tracking Spec.":
+                begin
+                    RecRef.SetTable(MobileNAVTrackingSpec);
+                    FunctionResult := CopyStr(this.PageFunctions.MNTrackSpecExtFunc(MobileNAVTrackingSpec, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            Database::"MobileNAV Temporary Data":
+                begin
+                    RecRef.SetTable(MobileNAVTemporaryData);
+                    FunctionResult := CopyStr(this.PageFunctions.MNTempDataExtFunc(MobileNAVTemporaryData, PageName, FieldName, DeviceID), 1, MaxStrLen(FunctionResult));
+                end;
+            else
+                exit(false);
+        end;
+        exit(true);
     end;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"MobileNAV Page Functions", OnSalesHeaderExtFunc, '', false, false)]
@@ -676,5 +791,7 @@ codeunit 77786 "BJF MN Function Router"
 
     var
         Lookup: Codeunit "BJF MN Service Lookup";
+        PageFunctions: Codeunit "MobileNAV Page Functions";
+        DispatcherNames: Dictionary of [Integer, Text[50]];
         UnsupportedTableErr: Label 'MobileNAV Page Functions has no dispatcher for table %1.', Comment = '%1 = table name';
 }

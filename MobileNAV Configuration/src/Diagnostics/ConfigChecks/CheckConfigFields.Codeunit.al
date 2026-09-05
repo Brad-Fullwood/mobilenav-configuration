@@ -49,8 +49,6 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
     var
         FieldRow: Record "MobileNAV Service Setup";
         ServiceName: Text[100];
-        LiveImportance: Text;
-        ExpectedInMenu: Boolean;
     begin
         ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
@@ -61,18 +59,36 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
             exit;
         end;
 
+        this.CompareProperties(Finding, TempProvider, Line, ServiceName, FieldRow);
+        this.CompareFunctionFieldMenu(Finding, TempProvider, Line, ServiceName, FieldRow);
+        this.CompareImportance(Finding, TempProvider, Line, ServiceName, FieldRow);
+    end;
+
+    local procedure CompareProperties(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; Line: Record "BJF MN Config Line" temporary; ServiceName: Text[100]; FieldRow: Record "MobileNAV Service Setup")
+    begin
         if FieldRow.Visible <> Line.Visible then
             this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.VisibleTok, Format(Line.Visible), Format(FieldRow.Visible));
         if (Line.Operation <> Enum::"BJF MN Config Operation"::"Linked Field") and (FieldRow.Editable <> Line.Editable) then
             this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.EditableTok, Format(Line.Editable), Format(FieldRow.Editable));
         if (Line.Operation = Enum::"BJF MN Config Operation"::Field) and (FieldRow."Visible as Filter" <> Line.Filterable) then
             this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.FilterableTok, Format(Line.Filterable), Format(FieldRow."Visible as Filter"));
-        if Line.Operation = Enum::"BJF MN Config Operation"::"Function Field" then begin
-            ExpectedInMenu := not this.FieldManagement.RendersInline(Line."Mobile Type");
-            if FieldRow.DisplayInMenu <> ExpectedInMenu then
-                this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.DisplayInMenuTok, Format(ExpectedInMenu), Format(FieldRow.DisplayInMenu));
-        end;
+    end;
 
+    local procedure CompareFunctionFieldMenu(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; Line: Record "BJF MN Config Line" temporary; ServiceName: Text[100]; FieldRow: Record "MobileNAV Service Setup")
+    var
+        ExpectedInMenu: Boolean;
+    begin
+        if Line.Operation <> Enum::"BJF MN Config Operation"::"Function Field" then
+            exit;
+        ExpectedInMenu := not this.FieldManagement.RendersInline(Line."Mobile Type");
+        if FieldRow.DisplayInMenu <> ExpectedInMenu then
+            this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.DisplayInMenuTok, Format(ExpectedInMenu), Format(FieldRow.DisplayInMenu));
+    end;
+
+    local procedure CompareImportance(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; Line: Record "BJF MN Config Line" temporary; ServiceName: Text[100]; FieldRow: Record "MobileNAV Service Setup")
+    var
+        LiveImportance: Text;
+    begin
         LiveImportance := this.Lookup.OptionName(FieldRow, FieldRow.FieldNo(Mandatory));
         if UpperCase(LiveImportance) <> UpperCase(Line.Importance) then
             this.ImportanceFinding(Finding, TempProvider, Line, ServiceName, FieldRow, LiveImportance);

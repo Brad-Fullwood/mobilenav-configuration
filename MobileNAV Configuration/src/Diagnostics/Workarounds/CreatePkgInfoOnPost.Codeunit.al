@@ -27,7 +27,7 @@ codeunit 77776 "BJF Create Pkg Info On Post."
     Permissions = tabledata "Package No. Information" = ri;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Item Jnl.-Post Line", OnBeforeCheckItemTrackingInformation, '', false, false)]
-    local procedure ItemJnlPostLineOnBeforeCheckItemTrackingInformation(var ItemJnlLine2: Record "Item Journal Line"; var TrackingSpecification: Record "Tracking Specification"; var ItemTrackingSetup: Record "Item Tracking Setup"; var SignFactor: Decimal; var ItemTrackingCode: Record "Item Tracking Code"; var IsHandled: Boolean; var GlobalItemTrackingCode: Record "Item Tracking Code")
+    local procedure ItemJnlPostLineOnBeforeCheckItemTrackingInformation(var TrackingSpecification: Record "Tracking Specification"; var ItemTrackingSetup: Record "Item Tracking Setup"; var ItemTrackingCode: Record "Item Tracking Code"; var IsHandled: Boolean)
     begin
         if IsHandled then
             exit;

@@ -18,12 +18,7 @@ codeunit 77774 "BJF Check Page Relations" implements "BJF Diagnostic Check"
         ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Relation);
         if ServiceSetup.FindSet() then
             repeat
-                if not this.RelatedPageExists(ServiceSetup.RelatedPageName) then
-                    Finding.AddWithFix(
-                        Enum::"BJF Diagnostic Check Type"::"Page Relations", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(this.RelationMsg, ServiceSetup."Service Name", ServiceSetup.RelatedPageName),
-                        ServiceSetup.RecordId(),
-                        StrSubstNo(this.DeleteRelationFixLbl, ServiceSetup."Service Name", ServiceSetup.RelatedPageName));
+                this.CheckRelationRow(Finding, ServiceSetup);
             until ServiceSetup.Next() = 0;
 
         // A list page also points at the card page it opens, which is followed before any
@@ -32,14 +27,31 @@ codeunit 77774 "BJF Check Page Relations" implements "BJF Diagnostic Check"
         ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
         if ServiceSetup.FindSet() then
             repeat
-                if ServiceSetup.RelatedPageName <> ServiceSetup."Service Name" then
-                    if not this.RelatedPageExists(ServiceSetup.RelatedPageName) then
-                        Finding.AddWithFix(
-                            Enum::"BJF Diagnostic Check Type"::"Page Relations", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(this.PageMsg, ServiceSetup."Service Name", ServiceSetup.RelatedPageName),
-                            ServiceSetup.RecordId(),
-                            StrSubstNo(this.ClearPageFixLbl, ServiceSetup."Service Name", ServiceSetup.RelatedPageName));
+                this.CheckMainRow(Finding, ServiceSetup);
             until ServiceSetup.Next() = 0;
+    end;
+
+    local procedure CheckRelationRow(var Finding: Record "BJF Diagnostic Finding"; ServiceSetup: Record "MobileNAV Service Setup")
+    begin
+        if not this.RelatedPageExists(ServiceSetup.RelatedPageName) then
+            Finding.AddWithFix(
+                Enum::"BJF Diagnostic Check Type"::"Page Relations", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.RelationMsg, ServiceSetup."Service Name", ServiceSetup.RelatedPageName),
+                ServiceSetup.RecordId(),
+                StrSubstNo(this.DeleteRelationFixLbl, ServiceSetup."Service Name", ServiceSetup.RelatedPageName));
+    end;
+
+    local procedure CheckMainRow(var Finding: Record "BJF Diagnostic Finding"; ServiceSetup: Record "MobileNAV Service Setup")
+    begin
+        if ServiceSetup.RelatedPageName = ServiceSetup."Service Name" then
+            exit;
+        if this.RelatedPageExists(ServiceSetup.RelatedPageName) then
+            exit;
+        Finding.AddWithFix(
+            Enum::"BJF Diagnostic Check Type"::"Page Relations", Enum::"BJF Diagnostic Severity"::Blocker,
+            StrSubstNo(this.PageMsg, ServiceSetup."Service Name", ServiceSetup.RelatedPageName),
+            ServiceSetup.RecordId(),
+            StrSubstNo(this.ClearPageFixLbl, ServiceSetup."Service Name", ServiceSetup.RelatedPageName));
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
@@ -85,12 +97,13 @@ codeunit 77774 "BJF Check Page Relations" implements "BJF Diagnostic Check"
         if RelatedPageName = '' then
             exit(true);
 
-        // Resolved the same way the rebuild resolves it, so a main record that exists under
-        // unexpected line numbers is reported here exactly as the rebuild would miss it.
-        exit(MainPage.Get(RelatedPageName, MainPage."Line Type"::Main));
+        // Resolved the same way the rebuild resolves it, so a main row missing under the
+        // expected key is reported here exactly as the rebuild would miss it.
+        exit(this.Lookup.FindMainRow(RelatedPageName, MainPage));
     end;
 
     var
+        Lookup: Codeunit "BJF MN Service Lookup";
         RelationMsg: Label 'Page %1 has a relation to %2, which has no main configuration record. Rebuilding the profile hierarchy stops here and reports it against %1, so no configuration reaches any device. Register %2 in the configuration, or delete the relation.', Comment = '%1 = owning page service name, %2 = missing related page service name';
         PageMsg: Label 'Page %1 opens related page %2, which has no main configuration record. Rebuilding the profile hierarchy stops here and reports it against %1, so no configuration reaches any device. Register %2 in the configuration, or clear the related page.', Comment = '%1 = owning page service name, %2 = missing related page service name';
         DeleteRelationFixLbl: Label 'Delete the relation to the missing page %2 from page %1, together with its filters.', Comment = '%1 = owning page service name, %2 = missing related page service name';

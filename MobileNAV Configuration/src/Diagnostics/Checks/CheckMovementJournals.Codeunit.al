@@ -14,34 +14,44 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
     procedure RunCheck(var Finding: Record "BJF Diagnostic Finding")
     var
         MobileNAVUserSetup: Record "MobileNAV User Setup";
-        ItemJournalBatch: Record "Item Journal Batch";
         CheckedBatches: Dictionary of [Text, Boolean];
     begin
         if MobileNAVUserSetup.FindSet() then
             repeat
-                if MobileNAVUserSetup."Movement Journal Name" = '' then
-                    Finding.Add(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(this.NoMovementJournalMsg, MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId())
-                else begin
-                    ItemJournalBatch.SetRange(Name, MobileNAVUserSetup."Movement Journal Name");
-                    ItemJournalBatch.SetRange("Template Type", ItemJournalBatch."Template Type"::Transfer);
-                    if not ItemJournalBatch.FindFirst() then
-                        Finding.Add(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(this.MovementBatchMissingMsg, MobileNAVUserSetup."Movement Journal Name", MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId())
-                    else
-                        // Move Package builds its journal lines with SetUpNewLine, which takes
-                        // Document No. from the batch's No. Series; without one the line posts
-                        // with a blank Document No. and fails "Document No. must have a value".
-                        if (ItemJournalBatch."No. Series" = '') and
-                           not CheckedBatches.ContainsKey(ItemJournalBatch."Journal Template Name" + '/' + ItemJournalBatch.Name)
-                        then begin
-                            CheckedBatches.Add(ItemJournalBatch."Journal Template Name" + '/' + ItemJournalBatch.Name, true);
-                            Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
-                                StrSubstNo(this.NoDocumentSeriesMsg, ItemJournalBatch.Name, ItemJournalBatch."Journal Template Name"), ItemJournalBatch.RecordId(),
-                                StrSubstNo(this.AssignSeriesFixLbl, this.MovementSeriesCode(), ItemJournalBatch.Name));
-                        end;
-                end;
+                this.CheckUserSetup(Finding, MobileNAVUserSetup, CheckedBatches);
             until MobileNAVUserSetup.Next() = 0;
+    end;
+
+    local procedure CheckUserSetup(var Finding: Record "BJF Diagnostic Finding"; MobileNAVUserSetup: Record "MobileNAV User Setup"; var CheckedBatches: Dictionary of [Text, Boolean])
+    var
+        ItemJournalBatch: Record "Item Journal Batch";
+    begin
+        if MobileNAVUserSetup."Movement Journal Name" = '' then begin
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.NoMovementJournalMsg, MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId());
+            exit;
+        end;
+
+        ItemJournalBatch.SetRange(Name, MobileNAVUserSetup."Movement Journal Name");
+        ItemJournalBatch.SetRange("Template Type", ItemJournalBatch."Template Type"::Transfer);
+        if not ItemJournalBatch.FindFirst() then begin
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.MovementBatchMissingMsg, MobileNAVUserSetup."Movement Journal Name", MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId());
+            exit;
+        end;
+
+        // Move Package builds its journal lines with SetUpNewLine, which takes
+        // Document No. from the batch's No. Series; without one the line posts
+        // with a blank Document No. and fails "Document No. must have a value".
+        if (ItemJournalBatch."No. Series" <> '') or
+           CheckedBatches.ContainsKey(ItemJournalBatch."Journal Template Name" + '/' + ItemJournalBatch.Name)
+        then
+            exit;
+
+        CheckedBatches.Add(ItemJournalBatch."Journal Template Name" + '/' + ItemJournalBatch.Name, true);
+        Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
+            StrSubstNo(this.NoDocumentSeriesMsg, ItemJournalBatch.Name, ItemJournalBatch."Journal Template Name"), ItemJournalBatch.RecordId(),
+            StrSubstNo(this.AssignSeriesFixLbl, this.MovementSeriesCode(), ItemJournalBatch.Name));
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
@@ -68,14 +78,15 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
             exit(NoSeries.Code);
 
         NoSeries.Init();
-        NoSeries.Code := this.MovementSeriesCode();
-        NoSeries.Description := this.MovementSeriesDescriptionLbl;
-        NoSeries."Default Nos." := true;
+        NoSeries.Validate(Code, this.MovementSeriesCode());
+        NoSeries.Validate(Description, this.MovementSeriesDescriptionLbl);
+        // Only errors when both Default Nos. and Manual Nos. are false; Default Nos. is set true here.
+        NoSeries.Validate("Default Nos.", true);
         NoSeries.Insert(true);
 
         NoSeriesLine.Init();
-        NoSeriesLine."Series Code" := NoSeries.Code;
-        NoSeriesLine."Line No." := 10000;
+        NoSeriesLine.Validate("Series Code", NoSeries.Code);
+        NoSeriesLine.Validate("Line No.", 10000);
         NoSeriesLine.Validate("Starting No.", this.MovementSeriesStartTok);
         NoSeriesLine.Insert(true);
 

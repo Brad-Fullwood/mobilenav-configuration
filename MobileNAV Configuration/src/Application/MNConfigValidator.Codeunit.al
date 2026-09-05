@@ -27,32 +27,45 @@ codeunit 77785 "BJF MN Config Validator"
     end;
 
     local procedure ValidateLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedTargets: Dictionary of [Text, Boolean])
+    var
+        TargetKey: Text;
+    begin
+        if ConfigurationLine.Operation = Enum::"BJF MN Config Operation"::Stage then begin
+            this.ValidateStageLine(ConfigurationLine, DefinedTargets);
+            exit;
+        end;
+
+        TargetKey := this.TargetKeyOf(ConfigurationLine);
+        if TargetKey <> '' then
+            this.EnsureUnique(DefinedTargets, TargetKey);
+    end;
+
+    /// <summary>
+    /// The target key a line's operation contributes to uniqueness. The four control operations
+    /// (Field / Linked Field / Function Field / Scan Field) share one CONTROL key so a Field and
+    /// a Button declared on the same control still collide as duplicates.
+    /// </summary>
+    local procedure TargetKeyOf(ConfigurationLine: Record "BJF MN Config Line" temporary): Text
     begin
         case ConfigurationLine.Operation of
             Enum::"BJF MN Config Operation"::"Published Page":
-                this.EnsureUnique(DefinedTargets, StrSubstNo(this.PageKeyTok, ConfigurationLine."Page ID"));
+                exit(StrSubstNo(this.PageKeyTok, ConfigurationLine."Page ID"));
             Enum::"BJF MN Config Operation"::Field,
             Enum::"BJF MN Config Operation"::"Linked Field",
             Enum::"BJF MN Config Operation"::"Function Field",
             Enum::"BJF MN Config Operation"::"Scan Field":
-                this.EnsureUnique(
-                    DefinedTargets,
-                    StrSubstNo(this.ControlKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
+                exit(StrSubstNo(this.ControlKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name")));
             Enum::"BJF MN Config Operation"::"Profile Field":
-                this.EnsureUnique(
-                    DefinedTargets,
+                exit(
                     StrSubstNo(
                         this.ProfileFieldKeyTok, ConfigurationLine."Page ID",
                         LowerCase(ConfigurationLine."Control Name"), LowerCase(ConfigurationLine.Profile)));
             Enum::"BJF MN Config Operation"::"User Scope":
-                this.EnsureUnique(DefinedTargets, StrSubstNo(this.UserScopeKeyTok, ConfigurationLine."Page ID"));
+                exit(StrSubstNo(this.UserScopeKeyTok, ConfigurationLine."Page ID"));
             Enum::"BJF MN Config Operation"::Staging:
-                this.EnsureUnique(DefinedTargets, StrSubstNo(this.StagingKeyTok, ConfigurationLine."Page ID"));
-            Enum::"BJF MN Config Operation"::Stage:
-                this.ValidateStageLine(ConfigurationLine, DefinedTargets);
+                exit(StrSubstNo(this.StagingKeyTok, ConfigurationLine."Page ID"));
             Enum::"BJF MN Config Operation"::"Stage Field":
-                this.EnsureUnique(
-                    DefinedTargets,
+                exit(
                     StrSubstNo(
                         this.StageFieldKeyTok, ConfigurationLine."Page ID",
                         LowerCase(ConfigurationLine."Stage Id"), LowerCase(ConfigurationLine."Control Name")));

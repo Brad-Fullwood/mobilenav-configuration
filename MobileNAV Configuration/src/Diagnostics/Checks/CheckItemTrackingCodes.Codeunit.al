@@ -14,21 +14,32 @@ codeunit 77772 "BJF Check Item Tracking Codes" implements "BJF Diagnostic Check"
         ItemTrackingCode.SetRange("Package Specific Tracking", true);
         if ItemTrackingCode.FindSet() then
             repeat
-                // BC posting (PackageInfoManagement subscriber to Item Jnl.-Post Line) does a hard Get of
-                // Package No. Information for the New Package No. of a reclass when either toggle is on.
-                // MobileNAV WMS never creates that record for the new package, so Split/Move Package fails
-                // unless the create-on-posting workaround (codeunit "BJF Create Pkg Info On Post.") is enabled.
-                if ItemTrackingCode."Package Info. Inb. Must Exist" or ItemTrackingCode."Package Info. Outb. Must Exist" then
-                    if ItemTrackingCode."BJF MN Create Pkg Info on Post" then
-                        Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Info,
-                            StrSubstNo(this.MustExistWorkaroundMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId())
-                    else
-                        Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(this.MustExistOnMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
-                if not ItemTrackingCode."Package Transfer Tracking" then
-                    Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Warning,
-                        StrSubstNo(this.NoTransferTrackingMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
+                this.CheckMustExistWorkaround(Finding, ItemTrackingCode);
+                this.CheckTransferTracking(Finding, ItemTrackingCode);
             until ItemTrackingCode.Next() = 0;
+    end;
+
+    // BC posting (PackageInfoManagement subscriber to Item Jnl.-Post Line) does a hard Get of
+    // Package No. Information for the New Package No. of a reclass when either toggle is on.
+    // MobileNAV WMS never creates that record for the new package, so Split/Move Package fails
+    // unless the create-on-posting workaround (codeunit "BJF Create Pkg Info On Post.") is enabled.
+    local procedure CheckMustExistWorkaround(var Finding: Record "BJF Diagnostic Finding"; ItemTrackingCode: Record "Item Tracking Code")
+    begin
+        if not (ItemTrackingCode."Package Info. Inb. Must Exist" or ItemTrackingCode."Package Info. Outb. Must Exist") then
+            exit;
+        if ItemTrackingCode."BJF MN Create Pkg Info on Post" then
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Info,
+                StrSubstNo(this.MustExistWorkaroundMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId())
+        else
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.MustExistOnMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
+    end;
+
+    local procedure CheckTransferTracking(var Finding: Record "BJF Diagnostic Finding"; ItemTrackingCode: Record "Item Tracking Code")
+    begin
+        if not ItemTrackingCode."Package Transfer Tracking" then
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Warning,
+                StrSubstNo(this.NoTransferTrackingMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")

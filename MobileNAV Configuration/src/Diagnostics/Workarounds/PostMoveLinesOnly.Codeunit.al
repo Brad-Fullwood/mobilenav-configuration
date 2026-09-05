@@ -1,7 +1,6 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
 using Microsoft.Inventory.Journal;
-using Microsoft.Inventory.Ledger;
 using Microsoft.Inventory.Posting;
 using Microsoft.Inventory.Setup;
 
@@ -27,7 +26,7 @@ codeunit 77777 "BJF Post Move Lines Only"
         tabledata "Item Journal Line" = r;
 
     [EventSubscriber(ObjectType::Codeunit, Codeunit::"Item Jnl.-Post Batch", OnBeforeCode, '', false, false)]
-    local procedure ItemJnlPostBatchOnBeforeCode(var ItemJournalLine: Record "Item Journal Line"; var ItemLedgerEntry: Record "Item Ledger Entry")
+    local procedure ItemJnlPostBatchOnBeforeCode(var ItemJournalLine: Record "Item Journal Line")
     var
         InventorySetup: Record "Inventory Setup";
         MovementJournalMgt: Codeunit "BJF Movement Journal Mgt.";

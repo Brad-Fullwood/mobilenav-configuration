@@ -92,7 +92,7 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
         if ServiceName = '' then
             exit;
         foreach Profile in Profiles do
-            if not ProfileSetup.Get(ProfileSetup."Profile Type"::Page, ServiceName, Profile) or ProfileSetup."Exclude from Profile" or not ProfileSetup."Display in Menu" then begin
+            if not this.FindPageRow(ServiceName, Profile, ProfileSetup) or ProfileSetup."Exclude from Profile" or not ProfileSetup."Display in Menu" then begin
                 Clear(Args);
                 Args.Add(ServiceName);
                 Args.Add(Profile);
@@ -117,8 +117,7 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
             exit;
         foreach Profile in Profiles do begin
             // A profile that does not carry the parent page cannot show the button anyway.
-            ProfileSetup.Reset();
-            if not ProfileSetup.Get(ProfileSetup."Profile Type"::Page, ParentService, Profile) then
+            if not this.FindPageRow(ParentService, Profile, ProfileSetup) then
                 continue;
             ProfileSetup.Reset();
             ProfileSetup.SetRange("Profile Type", ProfileSetup."Profile Type"::"Parent Page");
@@ -146,7 +145,6 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
         Profiles: List of [Code[30]];
         Profile: Code[30];
         Args: List of [Text];
-        Wrong: Boolean;
     begin
         ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
@@ -162,12 +160,7 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
             // No row means the profile inherits the service row, which the field check covers.
             if not ProfileSetup.Get(ProfileSetup."Profile Type"::Field, ServiceName, Profile, FieldRow.ControlID) then
                 continue;
-            Wrong := ProfileSetup."Exclude from Profile";
-            if not Wrong and not ProfileSetup."Visible Inherited" then
-                Wrong := ProfileSetup.Visible <> Line.Visible;
-            if not Wrong and not ProfileSetup."Editable Inherited" then
-                Wrong := ProfileSetup.Editable <> Line.Editable;
-            if Wrong then begin
+            if this.IsRowWrong(ProfileSetup, Line) then begin
                 Clear(Args);
                 Args.Add(ServiceName);
                 Args.Add(Line."Control Name");
@@ -180,6 +173,30 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
                     this.Support.PackFix(this.FieldFixTok, Args));
             end;
         end;
+    end;
+
+    /// <summary>Whether a profile field row contradicts the provider's declaration for it.</summary>
+    local procedure IsRowWrong(ProfileSetup: Record "MobileNAV Profile Setup"; Line: Record "BJF MN Config Line" temporary): Boolean
+    var
+        Wrong: Boolean;
+    begin
+        Wrong := ProfileSetup."Exclude from Profile";
+        if not Wrong and not ProfileSetup."Visible Inherited" then
+            Wrong := ProfileSetup.Visible <> Line.Visible;
+        if not Wrong and not ProfileSetup."Editable Inherited" then
+            Wrong := ProfileSetup.Editable <> Line.Editable;
+        exit(Wrong);
+    end;
+
+    /// <summary>Finds a profile's Page row, filtering "Control ID" = 0 (the field left blank on a partial-key Get).</summary>
+    local procedure FindPageRow(ServiceName: Text[100]; Profile: Code[30]; var ProfileSetup: Record "MobileNAV Profile Setup"): Boolean
+    begin
+        ProfileSetup.Reset();
+        ProfileSetup.SetRange("Profile Type", ProfileSetup."Profile Type"::Page);
+        ProfileSetup.SetRange(ID, ServiceName);
+        ProfileSetup.SetRange(Profile, Profile);
+        ProfileSetup.SetRange("Control ID", 0);
+        exit(ProfileSetup.FindFirst());
     end;
 
     var

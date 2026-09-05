@@ -19,10 +19,27 @@ codeunit 77775 "BJF Movement Journal Mgt."
     /// </summary>
     procedure SetMovementLineFilters(var ItemJournalLine: Record "Item Journal Line")
     var
+        TemplateFilter: Text;
+        BatchFilter: Text;
+    begin
+        TemplateFilter := this.TransferTemplateFilter();
+        BatchFilter := this.MovementBatchFilter();
+
+        // No Transfer templates or no MobileNAV movement batches configured: match nothing.
+        if (TemplateFilter = '') or (BatchFilter = '') then begin
+            ItemJournalLine.SetRange("Journal Template Name", '');
+            ItemJournalLine.SetRange("Journal Batch Name", '');
+            exit;
+        end;
+
+        ItemJournalLine.SetFilter("Journal Template Name", TemplateFilter);
+        ItemJournalLine.SetFilter("Journal Batch Name", BatchFilter);
+    end;
+
+    local procedure TransferTemplateFilter(): Text
+    var
         ItemJournalTemplate: Record "Item Journal Template";
-        MobileNAVUserSetup: Record "MobileNAV User Setup";
         TemplateFilter: TextBuilder;
-        BatchFilter: TextBuilder;
     begin
         ItemJournalTemplate.SetRange(Type, ItemJournalTemplate.Type::Transfer);
         if ItemJournalTemplate.FindSet() then
@@ -31,7 +48,14 @@ codeunit 77775 "BJF Movement Journal Mgt."
                     TemplateFilter.Append('|');
                 TemplateFilter.Append('''' + ItemJournalTemplate.Name + '''');
             until ItemJournalTemplate.Next() = 0;
+        exit(TemplateFilter.ToText());
+    end;
 
+    local procedure MovementBatchFilter(): Text
+    var
+        MobileNAVUserSetup: Record "MobileNAV User Setup";
+        BatchFilter: TextBuilder;
+    begin
         MobileNAVUserSetup.SetFilter("Movement Journal Name", '<>%1', '');
         if MobileNAVUserSetup.FindSet() then
             repeat
@@ -41,16 +65,7 @@ codeunit 77775 "BJF Movement Journal Mgt."
                     BatchFilter.Append('''' + MobileNAVUserSetup."Movement Journal Name" + '''');
                 end;
             until MobileNAVUserSetup.Next() = 0;
-
-        // No Transfer templates or no MobileNAV movement batches configured: match nothing.
-        if (TemplateFilter.Length() = 0) or (BatchFilter.Length() = 0) then begin
-            ItemJournalLine.SetRange("Journal Template Name", '');
-            ItemJournalLine.SetRange("Journal Batch Name", '');
-            exit;
-        end;
-
-        ItemJournalLine.SetFilter("Journal Template Name", TemplateFilter.ToText());
-        ItemJournalLine.SetFilter("Journal Batch Name", BatchFilter.ToText());
+        exit(BatchFilter.ToText());
     end;
 
     /// <summary>

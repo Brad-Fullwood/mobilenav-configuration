@@ -75,11 +75,11 @@ table 77761 "BJF Diagnostic Finding"
     procedure Add(CheckType: Enum "BJF Diagnostic Check Type"; FindingSeverity: Enum "BJF Diagnostic Severity"; MsgText: Text; RelatedRecordId: RecordId)
     begin
         Rec.Init();
-        Rec."Check Type" := CheckType;
-        Rec.Severity := FindingSeverity;
-        Rec.Message := CopyStr(MsgText, 1, MaxStrLen(Rec.Message));
-        Rec."Related Record ID" := RelatedRecordId;
-        Rec."User ID" := CopyStr(UserId(), 1, MaxStrLen(Rec."User ID"));
+        Rec.Validate("Check Type", CheckType);
+        Rec.Validate(Severity, FindingSeverity);
+        Rec.Validate(Message, CopyStr(MsgText, 1, MaxStrLen(Rec.Message)));
+        Rec.Validate("Related Record ID", RelatedRecordId);
+        Rec.Validate("User ID", CopyStr(UserId(), 1, MaxStrLen(Rec."User ID")));
         Rec.Insert(false);
     end;
 
@@ -93,9 +93,9 @@ table 77761 "BJF Diagnostic Finding"
     procedure AddWithFix(CheckType: Enum "BJF Diagnostic Check Type"; FindingSeverity: Enum "BJF Diagnostic Severity"; MsgText: Text; RelatedRecordId: RecordId; FixDescriptionText: Text; FixContext: Text)
     begin
         this.Add(CheckType, FindingSeverity, MsgText, RelatedRecordId);
-        Rec.Fixable := true;
-        Rec."Fix Description" := CopyStr(FixDescriptionText, 1, MaxStrLen(Rec."Fix Description"));
-        Rec."Fix Context" := CopyStr(FixContext, 1, MaxStrLen(Rec."Fix Context"));
+        Rec.Validate(Fixable, true);
+        Rec.Validate("Fix Description", CopyStr(FixDescriptionText, 1, MaxStrLen(Rec."Fix Description")));
+        Rec.Validate("Fix Context", CopyStr(FixContext, 1, MaxStrLen(Rec."Fix Context")));
         Rec.Modify(false);
     end;
 }

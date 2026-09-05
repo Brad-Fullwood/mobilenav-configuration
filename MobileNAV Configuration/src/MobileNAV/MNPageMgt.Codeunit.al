@@ -188,7 +188,7 @@ codeunit 77788 "BJF MN Page Mgt."
         IsNew: Boolean;
     begin
         IsNew := not TenantWebService.Get(ObjectType, ServiceName);
-        if not IsNew and (TenantWebService."Object ID" = ObjectId) and (TenantWebService.Published or not Publish) then
+        if not IsNew and this.WebServiceIsCorrect(TenantWebService, ObjectId, Publish) then
             exit;
 
         // Tenant Web Service is a platform table; Insert/Modify(true) run its triggers.
@@ -205,6 +205,12 @@ codeunit 77788 "BJF MN Page Mgt."
             TenantWebService.Insert(true)
         else
             TenantWebService.Modify(true);
+    end;
+
+    /// <summary>An existing registration already points at the object and is published if required.</summary>
+    local procedure WebServiceIsCorrect(TenantWebService: Record "Tenant Web Service"; ObjectId: Integer; Publish: Boolean): Boolean
+    begin
+        exit((TenantWebService."Object ID" = ObjectId) and (TenantWebService.Published or not Publish));
     end;
 
     local procedure SetConstructionWindow(Open: Boolean)
