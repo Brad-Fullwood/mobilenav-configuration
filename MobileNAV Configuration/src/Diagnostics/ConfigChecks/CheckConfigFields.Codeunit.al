@@ -33,16 +33,15 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
     var
         FieldRow: Record "MobileNAV Service Setup";
-        FieldManagement: Codeunit "BJF MN Field Mgt.";
         Kind: Text;
         Args: List of [Text];
     begin
         this.Support.UnpackFix(Finding."Fix Context", Kind, Args);
         if Kind <> this.ImportanceFixTok then
             Error(this.NoAutomaticFixErr);
-        if not this.Support.FindFieldRow(CopyStr(Args.Get(1), 1, 100), CopyStr(Args.Get(2), 1, 100), FieldRow) then
+        if not this.Lookup.FindFieldRow(CopyStr(Args.Get(1), 1, 100), CopyStr(Args.Get(2), 1, 100), FieldRow) then
             Error(this.RowGoneErr);
-        FieldManagement.SetOptionField(FieldRow, FieldRow.FieldNo(Mandatory), Args.Get(3));
+        this.Lookup.SetOptionField(FieldRow, FieldRow.FieldNo(Mandatory), Args.Get(3));
         FieldRow.Modify(true);
     end;
 
@@ -53,10 +52,10 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
         LiveImportance: Text;
         ExpectedInMenu: Boolean;
     begin
-        ServiceName := this.Support.GetServiceName(Line."Page ID");
+        ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
             exit; // Reported by the services check.
-        if not this.Support.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then begin
+        if not this.Lookup.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then begin
             Finding.Add(Finding."Check Type"::"Config Fields", Finding.Severity::Blocker,
                 this.Support.Prefix(TempProvider, StrSubstNo(this.NoFieldRowMsg, Line."Control Name", ServiceName)));
             exit;
@@ -74,7 +73,7 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
                 this.Mismatch(Finding, TempProvider, Line, ServiceName, FieldRow, this.DisplayInMenuTok, Format(ExpectedInMenu), Format(FieldRow.DisplayInMenu));
         end;
 
-        LiveImportance := this.Support.OptionName(FieldRow, FieldRow.FieldNo(Mandatory));
+        LiveImportance := this.Lookup.OptionName(FieldRow, FieldRow.FieldNo(Mandatory));
         if UpperCase(LiveImportance) <> UpperCase(Line.Importance) then
             this.ImportanceFinding(Finding, TempProvider, Line, ServiceName, FieldRow, LiveImportance);
     end;
@@ -107,6 +106,8 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
 
     var
         Support: Codeunit "BJF MN Doctor Support";
+        Lookup: Codeunit "BJF MN Service Lookup";
+        FieldManagement: Codeunit "BJF MN Field Mgt.";
         NoFieldRowMsg: Label 'Control %1 is declared on %2 but MobileNAV has no field row for it. Apply the provider, or check the control name.', Comment = '%1 = control, %2 = service';
         MismatchMsg: Label 'Control %1 on %2: %3 is declared %4 but MobileNAV has %5. Apply the provider.', Comment = '%1 = control, %2 = service, %3 = property, %4 = declared, %5 = live';
         ImportanceMsg: Label 'Control %1 on %2 sits at importance %3 but is declared %4. At Additional a button is hidden behind the card''s "show more" section.', Comment = '%1 = control, %2 = service, %3 = live importance, %4 = declared importance';
@@ -119,5 +120,4 @@ codeunit 77795 "BJF Check Config Fields" implements "BJF Diagnostic Check"
         EditableTok: Label 'Editable', Locked = true;
         FilterableTok: Label 'Filterable', Locked = true;
         DisplayInMenuTok: Label 'Display In Menu', Locked = true;
-        FieldManagement: Codeunit "BJF MN Field Mgt.";
 }

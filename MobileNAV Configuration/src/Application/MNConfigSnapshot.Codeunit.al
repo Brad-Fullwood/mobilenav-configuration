@@ -4,10 +4,8 @@ using System.Integration;
 using System.Utilities;
 
 /// <summary>
-/// Dumps the live MobileNAV rows a provider's definition touches — every Service Setup line of
-/// each service, every Profile Setup row for it, and the tenant web services under its name —
-/// in primary-key order with every user field, so two snapshots can be diffed line by line.
-/// Used to prove that a rewritten provider or framework produces the same configuration.
+/// Dumps the live MobileNAV rows a provider's definition touches, in primary-key order with
+/// every user field, so two environments or two versions can be diffed line by line.
 /// </summary>
 codeunit 77793 "BJF MN Config Snapshot"
 {
@@ -15,21 +13,6 @@ codeunit 77793 "BJF MN Config Snapshot"
     Permissions = tabledata "MobileNAV Service Setup" = r,
         tabledata "MobileNAV Profile Setup" = r,
         tabledata "Tenant Web Service" = r;
-
-    procedure Export(var TempConfigurationLine: Record "BJF MN Config Line" temporary): Text
-    var
-        Output: TextBuilder;
-        ServiceNames: List of [Text];
-        ServiceName: Text;
-    begin
-        this.CollectServiceNames(TempConfigurationLine, ServiceNames);
-        foreach ServiceName in ServiceNames do begin
-            this.AppendServiceSetup(Output, ServiceName);
-            this.AppendProfileSetup(Output, ServiceName);
-            this.AppendWebServices(Output, ServiceName);
-        end;
-        exit(Output.ToText());
-    end;
 
     procedure Download(FileName: Text; var TempConfigurationLine: Record "BJF MN Config Line" temporary)
     var
@@ -43,7 +26,20 @@ codeunit 77793 "BJF MN Config Snapshot"
         DownloadFromStream(InStream, '', '', '', FileName);
     end;
 
-    local procedure CollectServiceNames(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var ServiceNames: List of [Text])
+    procedure Export(var TempConfigurationLine: Record "BJF MN Config Line" temporary): Text
+    var
+        Output: TextBuilder;
+        ServiceName: Text;
+    begin
+        foreach ServiceName in this.ServiceNames(TempConfigurationLine) do begin
+            this.AppendServiceSetup(Output, ServiceName);
+            this.AppendProfileSetup(Output, ServiceName);
+            this.AppendWebServices(Output, ServiceName);
+        end;
+        exit(Output.ToText());
+    end;
+
+    local procedure ServiceNames(var TempConfigurationLine: Record "BJF MN Config Line" temporary) Names: List of [Text]
     var
         PageIds: List of [Integer];
         PageId: Integer;
@@ -52,28 +48,20 @@ codeunit 77793 "BJF MN Config Snapshot"
         TempConfigurationLine.Reset();
         if TempConfigurationLine.FindSet() then
             repeat
-                if not PageIds.Contains(TempConfigurationLine."Page ID") then
-                    PageIds.Add(TempConfigurationLine."Page ID");
-                if (TempConfigurationLine."Target Page ID" <> 0) and not PageIds.Contains(TempConfigurationLine."Target Page ID") then
-                    PageIds.Add(TempConfigurationLine."Target Page ID");
+                this.AddUnique(PageIds, TempConfigurationLine."Page ID");
+                this.AddUnique(PageIds, TempConfigurationLine."Target Page ID");
             until TempConfigurationLine.Next() = 0;
-        foreach PageId in PageIds do
-            if this.TryGetServiceName(PageId, ServiceName) then
-                if not ServiceNames.Contains(ServiceName) then
-                    ServiceNames.Add(ServiceName);
+        foreach PageId in PageIds do begin
+            ServiceName := this.Lookup.GetServiceName(PageId);
+            if (ServiceName <> '') and not Names.Contains(ServiceName) then
+                Names.Add(ServiceName);
+        end;
     end;
 
-    local procedure TryGetServiceName(PageId: Integer; var ServiceName: Text): Boolean
-    var
-        ServiceSetup: Record "MobileNAV Service Setup";
+    local procedure AddUnique(var PageIds: List of [Integer]; PageId: Integer)
     begin
-        ServiceSetup.SetRange("Object Type", ServiceSetup."Object Type"::Page);
-        ServiceSetup.SetRange("Object ID", PageId);
-        ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
-        if not ServiceSetup.FindFirst() then
-            exit(false);
-        ServiceName := ServiceSetup."Service Name";
-        exit(true);
+        if (PageId <> 0) and not PageIds.Contains(PageId) then
+            PageIds.Add(PageId);
     end;
 
     local procedure AppendServiceSetup(var Output: TextBuilder; ServiceName: Text)
@@ -120,13 +108,12 @@ codeunit 77793 "BJF MN Config Snapshot"
         FieldRef: FieldRef;
         FieldIndex: Integer;
     begin
-        Output.Append(RecRef.Name);
+        Output.Append(RecRef.Name());
         for FieldIndex := 1 to RecRef.FieldCount() do begin
             FieldRef := RecRef.FieldIndex(FieldIndex);
-            // System fields (ids, timestamps, audit columns) differ between any two runs.
-            if (FieldRef.Number < 2000000000) and (FieldRef.Class = FieldClass::Normal) then begin
+            if this.IsUserField(FieldRef) then begin
                 Output.Append(this.FieldSeparatorTok);
-                Output.Append(FieldRef.Name);
+                Output.Append(FieldRef.Name());
                 Output.Append(this.ValueSeparatorTok);
                 Output.Append(Format(FieldRef.Value(), 0, 9));
             end;
@@ -134,7 +121,14 @@ codeunit 77793 "BJF MN Config Snapshot"
         Output.AppendLine();
     end;
 
+    /// <summary>System fields (ids, timestamps, audit columns) differ between any two runs.</summary>
+    local procedure IsUserField(FieldRef: FieldRef): Boolean
+    begin
+        exit((FieldRef.Number() < 2000000000) and (FieldRef.Class() = FieldClass::Normal));
+    end;
+
     var
+        Lookup: Codeunit "BJF MN Service Lookup";
         FieldSeparatorTok: Label '|', Locked = true;
         ValueSeparatorTok: Label '=', Locked = true;
 }

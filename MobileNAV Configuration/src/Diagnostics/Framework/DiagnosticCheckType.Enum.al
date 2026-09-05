@@ -1,5 +1,10 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
+/// <summary>
+/// Every check the doctor can run. Values below 100 are general MobileNAV checks, 100 to 199
+/// are reserved for satellite apps, and 200 upwards compare providers' declarations with
+/// MobileNAV's live configuration.
+/// </summary>
 enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
 {
     Access = Public;
@@ -25,5 +30,30 @@ enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
     {
         Caption = 'Page Relations';
         Implementation = "BJF Diagnostic Check" = "BJF Check Page Relations";
+    }
+    value(200; "Config Services")
+    {
+        Caption = 'Config: Services & Web Services';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Services";
+    }
+    value(201; "Config Fields")
+    {
+        Caption = 'Config: Fields & Importance';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Fields";
+    }
+    value(202; "Config Profiles")
+    {
+        Caption = 'Config: Profiles';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Profiles";
+    }
+    value(203; "Config Page Rules")
+    {
+        Caption = 'Config: Relations & Page Rules';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Page Rules";
+    }
+    value(204; "Config Apply State")
+    {
+        Caption = 'Config: Apply State';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Apply State";
     }
 }

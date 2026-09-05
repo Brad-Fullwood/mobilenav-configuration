@@ -4,9 +4,9 @@ using Microsoft.Utilities;
 
 page 77762 "BJF Diagnostic Findings Part"
 {
+    Caption = 'Diagnostic Findings';
     PageType = ListPart;
     SourceTable = "BJF Diagnostic Finding";
-    Caption = 'Diagnostic Findings';
     InsertAllowed = false;
     ModifyAllowed = false;
     DeleteAllowed = false;
@@ -20,7 +20,7 @@ page 77762 "BJF Diagnostic Findings Part"
                 field(Severity; Rec.Severity)
                 {
                     ApplicationArea = All;
-                    StyleExpr = SeverityStyle;
+                    StyleExpr = this.SeverityStyle;
                     ToolTip = 'Specifies how serious the finding is. Blockers break a MobileNAV device flow.';
                 }
                 field("Check Type"; Rec."Check Type")
@@ -67,7 +67,7 @@ page 77762 "BJF Diagnostic Findings Part"
 
                 trigger OnAction()
                 begin
-                    ApplySelectedFixes();
+                    this.ApplySelectedFixes();
                 end;
             }
             action(OpenRelatedRecord)
@@ -84,11 +84,11 @@ page 77762 "BJF Diagnostic Findings Part"
                     RecRef: RecordRef;
                 begin
                     if Rec."Related Record ID".TableNo() = 0 then begin
-                        Message(NoRelatedRecordMsg);
+                        Message(this.NoRelatedRecordMsg);
                         exit;
                     end;
                     if not RecRef.Get(Rec."Related Record ID") then begin
-                        Message(RelatedRecordGoneMsg);
+                        Message(this.RelatedRecordGoneMsg);
                         exit;
                     end;
                     PageManagement.PageRun(RecRef);
@@ -108,11 +108,11 @@ page 77762 "BJF Diagnostic Findings Part"
     begin
         case Rec.Severity of
             Rec.Severity::Blocker:
-                SeverityStyle := 'Unfavorable';
+                this.SeverityStyle := Format(PageStyle::Unfavorable);
             Rec.Severity::Warning:
-                SeverityStyle := 'Ambiguous';
+                this.SeverityStyle := Format(PageStyle::Ambiguous);
             else
-                SeverityStyle := 'Standard';
+                this.SeverityStyle := Format(PageStyle::Standard);
         end;
     end;
 
@@ -128,16 +128,16 @@ page 77762 "BJF Diagnostic Findings Part"
         SelectedFinding.SetRange(Fixable, true);
         FixCount := SelectedFinding.Count();
         if FixCount = 0 then begin
-            Message(NoFixableSelectedMsg);
+            Message(this.NoFixableSelectedMsg);
             exit;
         end;
 
         if FixCount = 1 then begin
             SelectedFinding.FindFirst();
-            if not Confirm(StrSubstNo(ConfirmSingleFixQst, SelectedFinding."Fix Description"), false) then
+            if not Confirm(StrSubstNo(this.ConfirmSingleFixQst, SelectedFinding."Fix Description"), false) then
                 exit;
         end else
-            if not Confirm(StrSubstNo(ConfirmMultiFixQst, FixCount), false) then
+            if not Confirm(StrSubstNo(this.ConfirmMultiFixQst, FixCount), false) then
                 exit;
 
         SelectedFinding.FindSet();

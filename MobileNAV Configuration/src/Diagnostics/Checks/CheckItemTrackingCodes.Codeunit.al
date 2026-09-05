@@ -21,19 +21,19 @@ codeunit 77772 "BJF Check Item Tracking Codes" implements "BJF Diagnostic Check"
                 if ItemTrackingCode."Package Info. Inb. Must Exist" or ItemTrackingCode."Package Info. Outb. Must Exist" then
                     if ItemTrackingCode."BJF MN Create Pkg Info on Post" then
                         Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Info,
-                            StrSubstNo(MustExistWorkaroundMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId())
+                            StrSubstNo(this.MustExistWorkaroundMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId())
                     else
                         Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(MustExistOnMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
+                            StrSubstNo(this.MustExistOnMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
                 if not ItemTrackingCode."Package Transfer Tracking" then
                     Finding.Add(Enum::"BJF Diagnostic Check Type"::"Item Tracking Codes", Enum::"BJF Diagnostic Severity"::Warning,
-                        StrSubstNo(NoTransferTrackingMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
+                        StrSubstNo(this.NoTransferTrackingMsg, ItemTrackingCode.Code), ItemTrackingCode.RecordId());
             until ItemTrackingCode.Next() = 0;
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
     begin
-        Error(NoAutomaticFixErr);
+        Error(this.NoAutomaticFixErr);
     end;
 
     var

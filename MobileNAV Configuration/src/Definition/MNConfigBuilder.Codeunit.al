@@ -164,7 +164,6 @@ codeunit 77781 "BJF MN Config Builder"
         this.TempConfigurationLine.Editable := true;
         this.TempConfigurationLine."Mobile Type" := this.Vocabulary.MobileTypeName(Enum::"BJF MN Mobile Type"::Normal);
         this.TempConfigurationLine."Function Type" := this.Vocabulary.FunctionTypeName(Enum::"BJF MN Function Type"::Normal);
-        // Empty means "derive from the page's table at apply time"; see FunctionName.
         this.TempConfigurationLine."Function Name" := '';
         this.TempConfigurationLine.Modify(false);
         exit(this);
@@ -276,12 +275,12 @@ codeunit 77781 "BJF MN Config Builder"
     end;
 
     /// <summary>Sets how the device validates the button or scan declared last.</summary>
-    /// <param name="Behavior">Validation behavior; Default keeps MobileNAV's own.</param>
+    /// <param name="ValidationBehavior">Validation behavior; Default keeps MobileNAV's own.</param>
     /// <returns>The builder, for chaining.</returns>
-    procedure Validation(Behavior: Enum "BJF MN Validation Behavior"): Codeunit "BJF MN Config Builder"
+    procedure Validation(ValidationBehavior: Enum "BJF MN Validation Behavior"): Codeunit "BJF MN Config Builder"
     begin
         this.RequireControl(this.ValidationTok, this.ButtonAndScanKinds());
-        this.TempConfigurationLine."Validation Behavior" := this.Vocabulary.ValidationBehaviorName(Behavior);
+        this.TempConfigurationLine."Validation Behavior" := this.Vocabulary.ValidationBehaviorName(ValidationBehavior);
         this.TempConfigurationLine.Modify(false);
         exit(this);
     end;
@@ -489,36 +488,45 @@ codeunit 77781 "BJF MN Config Builder"
 
     local procedure ExpandProfileLines(var Target: Record "BJF MN Config Line" temporary)
     var
-        NextEntryNo: Integer;
-        Profile: Code[30];
+        ProfileEntryNo: Integer;
     begin
-        NextEntryNo := this.NextEntryNo;
+        ProfileEntryNo := this.NextEntryNo;
         this.TempConfigurationLine.SetFilter(Operation, '%1|%2|%3|%4',
             Enum::"BJF MN Config Operation"::Field, Enum::"BJF MN Config Operation"::"Function Field",
             Enum::"BJF MN Config Operation"::"Linked Field", Enum::"BJF MN Config Operation"::"Scan Field");
         if this.TempConfigurationLine.FindSet() then
             repeat
                 if not this.UnprofiledControls.Contains(this.TempConfigurationLine."Entry No.") then
-                    if this.OnlyProfiles.ContainsKey(this.TempConfigurationLine."Entry No.") then begin
-                        foreach Profile in this.OnlyProfiles.Get(this.TempConfigurationLine."Entry No.") do
-                            this.AddProfileLine(Target, this.TempConfigurationLine, NextEntryNo, Profile, this.TempConfigurationLine.Visible);
-                    end else begin
-                        this.AddProfileLine(Target, this.TempConfigurationLine, NextEntryNo, '', this.TempConfigurationLine.Visible);
-                        // The specific row after the general one: profile rows are written in
-                        // entry order, so the hidden row for the excluded profile wins.
-                        if this.ExceptProfiles.ContainsKey(this.TempConfigurationLine."Entry No.") then
-                            foreach Profile in this.ExceptProfiles.Get(this.TempConfigurationLine."Entry No.") do
-                                this.AddProfileLine(Target, this.TempConfigurationLine, NextEntryNo, Profile, false);
-                    end;
+                    this.AddProfileLinesForControl(Target, this.TempConfigurationLine, ProfileEntryNo);
             until this.TempConfigurationLine.Next() = 0;
         this.TempConfigurationLine.Reset();
     end;
 
-    local procedure AddProfileLine(var Target: Record "BJF MN Config Line" temporary; ControlLine: Record "BJF MN Config Line" temporary; var NextEntryNo: Integer; Profile: Code[30]; Visible: Boolean)
+    /// <summary>
+    /// OnlyInProfile writes one visible row per named profile. Otherwise one all-profiles row
+    /// carries the control's own visibility, followed by a hidden row per ExceptInProfile:
+    /// profile rows are written in entry order, so the specific row wins over the general one.
+    /// </summary>
+    local procedure AddProfileLinesForControl(var Target: Record "BJF MN Config Line" temporary; ControlLine: Record "BJF MN Config Line" temporary; var ProfileEntryNo: Integer)
+    var
+        Profile: Code[30];
     begin
-        NextEntryNo += 1;
+        if this.OnlyProfiles.ContainsKey(ControlLine."Entry No.") then begin
+            foreach Profile in this.OnlyProfiles.Get(ControlLine."Entry No.") do
+                this.AddProfileLine(Target, ControlLine, ProfileEntryNo, Profile, ControlLine.Visible);
+            exit;
+        end;
+        this.AddProfileLine(Target, ControlLine, ProfileEntryNo, '', ControlLine.Visible);
+        if this.ExceptProfiles.ContainsKey(ControlLine."Entry No.") then
+            foreach Profile in this.ExceptProfiles.Get(ControlLine."Entry No.") do
+                this.AddProfileLine(Target, ControlLine, ProfileEntryNo, Profile, false);
+    end;
+
+    local procedure AddProfileLine(var Target: Record "BJF MN Config Line" temporary; ControlLine: Record "BJF MN Config Line" temporary; var ProfileEntryNo: Integer; Profile: Code[30]; Visible: Boolean)
+    begin
+        ProfileEntryNo += 1;
         Target.Init();
-        Target."Entry No." := NextEntryNo;
+        Target."Entry No." := ProfileEntryNo;
         Target.Operation := Enum::"BJF MN Config Operation"::"Profile Field";
         Target."Page ID" := ControlLine."Page ID";
         Target."Control Name" := ControlLine."Control Name";

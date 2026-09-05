@@ -61,8 +61,8 @@ codeunit 77798 "BJF Check Config Apply State" implements "BJF Diagnostic Check"
     var
         Support: Codeunit "BJF MN Doctor Support";
         UnderConstructionMsg: Label 'MobileNAV is "Under Construction", which rejects every device logon. Clear it on MobileNAV General Setup once configuration work is finished.';
-        NeverAppliedMsg: Label 'This provider has never been applied. Apply it from "Apply custom MobileNAV config".';
-        HandoverPendingMsg: Label 'The last apply ran without a user session, so the configuration is in MobileNAV''s tables but has not been handed over to the devices. Apply again from "Apply custom MobileNAV config".';
+        NeverAppliedMsg: Label 'This provider has never been applied. Apply it from the MobileNAV Configuration page.';
+        HandoverPendingMsg: Label 'The last apply ran without a user session, so the configuration is in MobileNAV''s tables but has not been handed over to the devices. Apply again from the MobileNAV Configuration page.';
         ChangedSinceApplyMsg: Label 'The provider''s definition has changed since it was last applied; devices show the earlier configuration. Apply it again.';
         ManuallyOutdatedMsg: Label 'The provider was marked outdated by an administrator and has not been applied since.';
         NoAutomaticFixErr: Label 'This finding has no automatic fix.';

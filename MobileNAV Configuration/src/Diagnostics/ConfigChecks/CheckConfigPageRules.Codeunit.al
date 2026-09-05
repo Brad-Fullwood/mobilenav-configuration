@@ -36,15 +36,17 @@ codeunit 77797 "BJF Check Config Page Rules" implements "BJF Diagnostic Check"
                 begin
                     if not ServiceSetup.Get(Finding."Related Record ID") then
                         Error(this.RowGoneErr);
-                    // A relation with this field set is a lookup binding, not a button.
+                    // Set, this field turns the relation into a lookup binding instead of a button.
+#pragma warning disable PC0037
                     ServiceSetup.RelatedPgCodeFldName := '';
+#pragma warning restore PC0037
                     ServiceSetup.Modify(false);
                 end;
             this.ScopeFixTok:
                 FieldManagement.ConfigureUserScope(CopyStr(Args.Get(1), 1, 100), CopyStr(Args.Get(2), 1, 100));
             this.PageUpdateFixTok:
                 begin
-                    if not this.Support.GetMainRow(CopyStr(Args.Get(1), 1, 100), ServiceSetup) then
+                    if not this.Lookup.FindMainRow(CopyStr(Args.Get(1), 1, 100), ServiceSetup) then
                         Error(this.RowGoneErr);
                     ServiceSetup.Validate("Page Update", true);
                     ServiceSetup.Modify(true);
@@ -86,10 +88,10 @@ codeunit 77797 "BJF Check Config Page Rules" implements "BJF Diagnostic Check"
         ServiceName: Text[100];
         Args: List of [Text];
     begin
-        ServiceName := this.Support.GetServiceName(Line."Page ID");
+        ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
             exit;
-        if not this.Support.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then
+        if not this.Lookup.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then
             exit;
         RelationRow.SetRange("Object Type", FieldRow."Object Type");
         RelationRow.SetRange("Service Name", ServiceName);
@@ -116,12 +118,12 @@ codeunit 77797 "BJF Check Config Page Rules" implements "BJF Diagnostic Check"
         Args: List of [Text];
         Missing: Boolean;
     begin
-        ServiceName := this.Support.GetServiceName(Line."Page ID");
+        ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
             exit;
-        if not this.Support.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then
+        if not this.Lookup.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then
             exit;
-        Missing := UpperCase(this.Support.OptionName(FieldRow, FieldRow.FieldNo(MobileType))) <> this.UserIdTok;
+        Missing := UpperCase(this.Lookup.OptionName(FieldRow, FieldRow.FieldNo(MobileType))) <> this.UserIdTok;
         if not Missing then begin
             FilterRow.SetRange("Service Name", ServiceName);
             FilterRow.SetRange("Line Type", FilterRow."Line Type"::Filter);
@@ -147,10 +149,10 @@ codeunit 77797 "BJF Check Config Page Rules" implements "BJF Diagnostic Check"
         ServiceName: Text[100];
         Args: List of [Text];
     begin
-        ServiceName := this.Support.GetServiceName(PageId);
+        ServiceName := this.Lookup.GetServiceName(PageId);
         if ServiceName = '' then
             exit;
-        if not this.Support.GetMainRow(ServiceName, MainRow) then
+        if not this.Lookup.FindMainRow(ServiceName, MainRow) then
             exit;
         if MainRow."Page Update" then
             exit;
@@ -163,6 +165,7 @@ codeunit 77797 "BJF Check Config Page Rules" implements "BJF Diagnostic Check"
 
     var
         Support: Codeunit "BJF MN Doctor Support";
+        Lookup: Codeunit "BJF MN Service Lookup";
         NoRelationMsg: Label 'Link %1 on %2 has no relation row, so it opens nothing. Apply the provider.', Comment = '%1 = control, %2 = service';
         LookupBindingMsg: Label 'Link %1 on %2 carries a lookup binding (%3), so MobileNAV draws it as a lookup rather than a button.', Comment = '%1 = control, %2 = service, %3 = bound field';
         RelationFixMsg: Label 'Clear the lookup binding on link %1.', Comment = '%1 = control';

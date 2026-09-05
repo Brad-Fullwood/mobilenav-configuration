@@ -61,7 +61,7 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
         TempPageLine: Record "BJF MN Config Line" temporary;
         ServiceName: Text[100];
     begin
-        ServiceName := this.Support.GetServiceName(PageId);
+        ServiceName := this.Lookup.GetServiceName(PageId);
         if ServiceName = '' then begin
             Finding.Add(Finding."Check Type"::"Config Services", Finding.Severity::Blocker,
                 this.Support.Prefix(TempProvider, StrSubstNo(this.PageNotRegisteredMsg, PageId)));
@@ -87,9 +87,8 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
     var
         TenantWebService: Record "Tenant Web Service";
     begin
-        if this.Support.HasWebService(TenantWebService."Object Type"::Page, ServiceName, TenantWebService) then
-            if TenantWebService.Published then
-                exit;
+        if TenantWebService.Get(TenantWebService."Object Type"::Page, ServiceName) and TenantWebService.Published then
+            exit;
         Finding.Add(Finding."Check Type"::"Config Services", Finding.Severity::Blocker,
             this.Support.Prefix(TempProvider, StrSubstNo(this.NotPublishedMsg, ServiceName)));
     end;
@@ -99,7 +98,7 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
         TenantWebService: Record "Tenant Web Service";
         Args: List of [Text];
     begin
-        if this.Support.HasWebService(TenantWebService."Object Type"::Codeunit, ServiceName, TenantWebService) then
+        if TenantWebService.Get(TenantWebService."Object Type"::Codeunit, ServiceName) then
             exit;
         Args.Add(ServiceName);
         Finding.AddWithFix(Finding."Check Type"::"Config Services", Finding.Severity::Blocker,
@@ -111,18 +110,17 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
     local procedure CheckFunctionName(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; ServiceName: Text[100]; ButtonLine: Record "BJF MN Config Line" temporary)
     var
         FieldRow: Record "MobileNAV Service Setup";
-        PageManagement: Codeunit "BJF MN Page Mgt.";
-        FunctionMap: Codeunit "BJF MN Function Map";
+        FunctionRouter: Codeunit "BJF MN Function Router";
         Expected: Text[50];
         TableNo: Integer;
     begin
-        if not this.Support.FindFieldRow(ServiceName, ButtonLine."Control Name", FieldRow) then
+        if not this.Lookup.FindFieldRow(ServiceName, ButtonLine."Control Name", FieldRow) then
             exit; // Reported by the field check.
         Expected := ButtonLine."Function Name";
         if Expected = '' then begin
-            if not PageManagement.GetServiceTableNo(ServiceName, TableNo) then
+            if not this.Lookup.GetServiceTableNo(ServiceName, TableNo) then
                 exit;
-            if not FunctionMap.TryGetDispatcher(TableNo, Expected) then begin
+            if not FunctionRouter.TryGetDispatcher(TableNo, Expected) then begin
                 Finding.Add(Finding."Check Type"::"Config Services", Finding.Severity::Blocker,
                     this.Support.Prefix(TempProvider, StrSubstNo(this.NoDispatcherMsg, ButtonLine."Control Name", ServiceName, TableNo)), FieldRow.RecordId());
                 exit;
@@ -135,6 +133,7 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
 
     var
         Support: Codeunit "BJF MN Doctor Support";
+        Lookup: Codeunit "BJF MN Service Lookup";
         PageNotRegisteredMsg: Label 'Page %1 is declared but MobileNAV has no configuration for it. Apply the provider.', Comment = '%1 = page id';
         NotPublishedMsg: Label 'Service %1 is declared as published but its page web service is missing or unpublished. Apply the provider.', Comment = '%1 = service name';
         NoCompanionMsg: Label 'Service %1 carries a button but has no companion codeunit web service, so every tap fails on the device with ''Method is invalid''.', Comment = '%1 = service name';

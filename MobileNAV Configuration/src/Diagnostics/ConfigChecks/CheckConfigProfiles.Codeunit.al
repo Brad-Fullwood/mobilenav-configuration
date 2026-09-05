@@ -88,7 +88,7 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
         Profile: Code[30];
         Args: List of [Text];
     begin
-        ServiceName := this.Support.GetServiceName(Line."Page ID");
+        ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
             exit;
         foreach Profile in Profiles do
@@ -111,8 +111,8 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
         Profile: Code[30];
         Args: List of [Text];
     begin
-        ParentService := this.Support.GetServiceName(Line."Page ID");
-        ChildService := this.Support.GetServiceName(Line."Target Page ID");
+        ParentService := this.Lookup.GetServiceName(Line."Page ID");
+        ChildService := this.Lookup.GetServiceName(Line."Target Page ID");
         if (ParentService = '') or (ChildService = '') then
             exit;
         foreach Profile in Profiles do begin
@@ -148,10 +148,10 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
         Args: List of [Text];
         Wrong: Boolean;
     begin
-        ServiceName := this.Support.GetServiceName(Line."Page ID");
+        ServiceName := this.Lookup.GetServiceName(Line."Page ID");
         if ServiceName = '' then
             exit;
-        if not this.Support.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then
+        if not this.Lookup.FindFieldRow(ServiceName, Line."Control Name", FieldRow) then
             exit; // Reported by the field check.
         if Line.Profile <> '' then
             Profiles.Add(Line.Profile)
@@ -184,6 +184,7 @@ codeunit 77796 "BJF Check Config Profiles" implements "BJF Diagnostic Check"
 
     var
         Support: Codeunit "BJF MN Doctor Support";
+        Lookup: Codeunit "BJF MN Service Lookup";
         PageMissingMsg: Label 'Page %1 is missing from profile %2 (or excluded from its menu), so the profile''s devices cannot reach it and any button opening it is hidden.', Comment = '%1 = service, %2 = profile';
         PageFixMsg: Label 'Add page %1 to profile %2.', Comment = '%1 = service, %2 = profile';
         ParentMissingMsg: Label 'Button %1 on %2 opens %3, but profile %4 has no parent link between them, so the button is not drawn.', Comment = '%1 = control, %2 = parent service, %3 = child service, %4 = profile';

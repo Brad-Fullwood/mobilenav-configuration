@@ -1,11 +1,11 @@
 namespace BradFullwood.MobileNAV.Configuration.WMS;
 
 using BradFullwood.MobileNAV.Configuration;
-
 using Microsoft.Inventory.Tracking;
 
 codeunit 77741 "BJF Check Package Consistency" implements "BJF Diagnostic Check"
 {
+    Access = Internal;
     Permissions = tabledata "Package No. Information" = r,
         tabledata "MUL WMS Package" = r;
 
@@ -23,17 +23,17 @@ codeunit 77741 "BJF Check Package Consistency" implements "BJF Diagnostic Check"
                     // after every package posting, so a missing record breaks Split/Move for that package.
                     if MissingCount <= 10 then
                         Finding.Add(Enum::"BJF Diagnostic Check Type"::"Package Consistency", Enum::"BJF Diagnostic Severity"::Warning,
-                            StrSubstNo(MissingWMSPackageMsg, PackageNoInformation."Package No.", PackageNoInformation."Item No."), PackageNoInformation.RecordId());
+                            StrSubstNo(this.MissingWMSPackageMsg, PackageNoInformation."Package No.", PackageNoInformation."Item No."), PackageNoInformation.RecordId());
                 end;
             until PackageNoInformation.Next() = 0;
         if MissingCount > 10 then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Package Consistency", Enum::"BJF Diagnostic Severity"::Warning,
-                StrSubstNo(MoreMissingMsg, MissingCount - 10));
+                StrSubstNo(this.MoreMissingMsg, MissingCount - 10));
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
     begin
-        Error(NoAutomaticFixErr);
+        Error(this.NoAutomaticFixErr);
     end;
 
     var

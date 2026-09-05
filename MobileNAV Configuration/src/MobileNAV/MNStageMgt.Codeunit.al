@@ -1,12 +1,10 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
-/// Owns MobileNAV wizard-stage persistence. The data shape mirrors MobileNAV's own config
-/// XML import (ImportPageStages in codeunit "MobileNAV Config XML Handler"): one
-/// Line Type::Stage row per stage at Page Line No. 10000, 20000, ..., and a comma-separated
-/// mask in each visible field row's Stage field with one token per stage — 'H' hidden,
-/// 'R' visible read-only, empty enabled. Stage rows are rebuilt from scratch on every apply
-/// so re-applying a provider stays idempotent.
+/// Writes a wizard's stages the way MobileNAV's own configuration import does: one Stage row
+/// per stage at Page Line No. 10000, 20000, ..., and a comma-separated mask on every visible
+/// field row with one token per stage: 'H' hidden, 'R' read-only, empty editable. Stage rows
+/// are rebuilt from scratch on every apply.
 /// </summary>
 codeunit 77790 "BJF MN Stage Mgt."
 {
@@ -14,6 +12,7 @@ codeunit 77790 "BJF MN Stage Mgt."
     Permissions = tabledata "MobileNAV Master Data" = rim,
         tabledata "MobileNAV Service Setup" = rimd;
 
+    /// <summary>Applies the page's Staging, Stage and Stage Field lines.</summary>
     procedure ApplyPageStaging(ServiceName: Text[100]; var ConfigurationLine: Record "BJF MN Config Line" temporary; PageId: Integer)
     var
         StageIds: List of [Text];
@@ -38,14 +37,14 @@ codeunit 77790 "BJF MN Stage Mgt."
             until ConfigurationLine.Next() = 0;
 
         this.RebuildStageRows(ServiceName, StageIds, RestartFromStageId);
-        this.InitializeFieldMasks(ServiceName, StageIds.Count());
+        this.HideAllFieldsInAllStages(ServiceName, StageIds.Count());
 
         ConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Stage Field");
         if ConfigurationLine.FindSet() then
             repeat
-                this.SetFieldMaskToken(
-                    ServiceName, StageIds, StageIds.IndexOf(ConfigurationLine."Stage Id"),
-                    ConfigurationLine."Control Name", ConfigurationLine."Stage Enabled");
+                this.ShowFieldInStage(
+                    ServiceName, ConfigurationLine."Control Name", StageIds.IndexOf(ConfigurationLine."Stage Id"),
+                    StageIds.Count(), ConfigurationLine."Stage Enabled");
             until ConfigurationLine.Next() = 0;
         ConfigurationLine.Reset();
     end;
@@ -60,9 +59,6 @@ codeunit 77790 "BJF MN Stage Mgt."
         StageRow.SetRange("Line Type", StageRow."Line Type"::Stage);
         StageRow.DeleteAll(false);
 
-        // Mirrors ImportPageStages: stage rows carry only the primary key, the stage id, and
-        // the restart-from flag ('Restart From Here' — the stage the device re-enters the
-        // wizard at when the next record starts it, keeping what earlier stages captured).
         foreach StageId in StageIds do begin
             PageLineNo += 10000;
             StageRow.Init();
@@ -72,12 +68,12 @@ codeunit 77790 "BJF MN Stage Mgt."
             StageRow.Validate("Relation No.", 0);
             StageRow.Validate("Line No.", 0);
             StageRow.Validate(Stage, CopyStr(StageId, 1, MaxStrLen(StageRow.Stage)));
-            StageRow.Validate("Staging Restart From", (RestartFromStageId <> '') and (StageId = RestartFromStageId));
+            StageRow.Validate("Staging Restart From", StageId = RestartFromStageId);
             StageRow.Insert(false);
         end;
     end;
 
-    local procedure InitializeFieldMasks(ServiceName: Text[100]; StageCount: Integer)
+    local procedure HideAllFieldsInAllStages(ServiceName: Text[100]; StageCount: Integer)
     var
         FieldRow: Record "MobileNAV Service Setup";
     begin
@@ -88,57 +84,52 @@ codeunit 77790 "BJF MN Stage Mgt."
         FieldRow.ModifyAll(Stage, this.HiddenMask(StageCount), false);
     end;
 
-    local procedure SetFieldMaskToken(ServiceName: Text[100]; StageIds: List of [Text]; StageIndex: Integer; ControlName: Text[100]; FieldEnabled: Boolean)
+    local procedure ShowFieldInStage(ServiceName: Text[100]; ControlName: Text[100]; StageIndex: Integer; StageCount: Integer; FieldEnabled: Boolean)
     var
         FieldRow: Record "MobileNAV Service Setup";
         Tokens: List of [Text];
-        MaskText: Text;
-        NewMask: Text;
+        Mask: TextBuilder;
+        CurrentMask: Text;
         TokenIndex: Integer;
     begin
-        FieldRow.SetRange("Object Type", FieldRow."Object Type"::Page);
-        FieldRow.SetRange("Service Name", ServiceName);
-        FieldRow.SetRange("Line Type", FieldRow."Line Type"::Field);
-        FieldRow.SetRange(FieldName, this.ConvertFieldName(ControlName));
-        if not FieldRow.FindFirst() then
+        if not this.Lookup.FindFieldRow(ServiceName, ControlName, FieldRow) then
             Error(this.StageFieldMissingErr, ControlName, ServiceName);
 
-        MaskText := FieldRow.Stage;
-        if MaskText = '' then
-            MaskText := this.HiddenMask(StageIds.Count());
-        Tokens := MaskText.Split(',');
+        CurrentMask := FieldRow.Stage;
+        if CurrentMask = '' then
+            CurrentMask := this.HiddenMask(StageCount);
+        Tokens := CurrentMask.Split(',');
+        if not FieldEnabled then
+            Tokens.Set(StageIndex, 'R')
+        else
+            Tokens.Set(StageIndex, '');
 
         for TokenIndex := 1 to Tokens.Count() do begin
             if TokenIndex > 1 then
-                NewMask += ',';
-            if TokenIndex = StageIndex then begin
-                if not FieldEnabled then
-                    NewMask += 'R';
-            end else
-                NewMask += Tokens.Get(TokenIndex);
+                Mask.Append(',');
+            Mask.Append(Tokens.Get(TokenIndex));
         end;
-
-        FieldRow.Validate(Stage, CopyStr(NewMask, 1, MaxStrLen(FieldRow.Stage)));
+        FieldRow.Validate(Stage, CopyStr(Mask.ToText(), 1, MaxStrLen(FieldRow.Stage)));
         FieldRow.Modify(false);
     end;
 
-    local procedure HiddenMask(StageCount: Integer) Mask: Text
+    local procedure HiddenMask(StageCount: Integer): Text
     var
+        Mask: TextBuilder;
         StageIndex: Integer;
     begin
         for StageIndex := 1 to StageCount do begin
             if StageIndex > 1 then
-                Mask += ',';
-            Mask += 'H';
+                Mask.Append(',');
+            Mask.Append('H');
         end;
+        exit(Mask.ToText());
     end;
 
     /// <summary>
     /// Stage ids double as MobileNAV category codes, whose descriptions caption the wizard
-    /// steps on the device. Categories live in MobileNAV Master Data under Type::Category.
+    /// steps on the device.
     /// </summary>
-    /// <param name="StageId">The stage id, used as the MobileNAV Master Data category code.</param>
-    /// <param name="Description">The category description shown as the wizard step caption on the device.</param>
     local procedure EnsureStageCategory(StageId: Code[100]; Description: Text[250])
     var
         MasterData: Record "MobileNAV Master Data";
@@ -158,13 +149,8 @@ codeunit 77790 "BJF MN Stage Mgt."
         MasterData.Insert(false);
     end;
 
-    local procedure ConvertFieldName(OriginalName: Text): Text[75]
-    begin
-        exit(CopyStr(this.WebServiceHandling.ConvertFieldName(OriginalName), 1, 75));
-    end;
-
     var
+        Lookup: Codeunit "BJF MN Service Lookup";
         PageManagement: Codeunit "BJF MN Page Mgt.";
-        WebServiceHandling: Codeunit "MobileNAV Web Service Handling";
         StageFieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 when assigning wizard stages.', Comment = '%1 = control name, %2 = MobileNAV service name';
 }

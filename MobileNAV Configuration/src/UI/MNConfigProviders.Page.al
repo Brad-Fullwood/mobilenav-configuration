@@ -1,11 +1,10 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
-/// <summary>Lists registered providers and applies or invalidates the selected rows.</summary>
-page 77780 "BJF Custom MN Config"
+/// <summary>Lists the registered providers with their state, and applies the selected ones.</summary>
+page 77780 "BJF MN Config Providers"
 {
     ApplicationArea = All;
-    Caption = 'Apply custom MobileNAV config';
+    Caption = 'MobileNAV Configuration';
     Editable = false;
     PageType = List;
     SourceTable = "BJF MN Provider Buffer";

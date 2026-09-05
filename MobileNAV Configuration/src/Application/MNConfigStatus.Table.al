@@ -1,4 +1,3 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Per-company application state for each stable provider id.</summary>
@@ -19,13 +18,6 @@ table 77781 "BJF MN Config Status"
         field(2; "Provider Name"; Text[100])
         {
             Caption = 'Provider Name';
-        }
-        field(3; "Applied Version"; Integer)
-        {
-            Caption = 'Applied Version';
-            ObsoleteState = Pending;
-            ObsoleteReason = 'Providers are fingerprinted by content; see Content Hash.';
-            ObsoleteTag = '3.0.0.0';
         }
         field(4; "Applied At"; DateTime)
         {
@@ -77,8 +69,7 @@ table 77781 "BJF MN Config Status"
         TempProviderBuffer."Applied By" := "Applied By";
 
         // A pending device handover counts as outdated: the configuration is in the setup
-        // tables but has not reached the devices, and only applying again from this page
-        // can finish the job.
+        // tables but has not reached the devices.
         if "Manually Outdated" or "Device Handover Pending" or ("Content Hash" <> TempProviderBuffer."Defined Hash") then
             TempProviderBuffer.State := Enum::"BJF MN Config State"::Outdated
         else
@@ -90,7 +81,7 @@ table 77781 "BJF MN Config Status"
         if not this.Get(ProviderId) then begin
             this.Init();
             "Provider ID" := ProviderId;
-            this.Insert();
+            this.Insert(false);
         end;
 
         "Provider Name" := ProviderName;
@@ -101,7 +92,7 @@ table 77781 "BJF MN Config Status"
         "Device Handover Pending" := DeviceHandoverPending;
         Clear("Outdated At");
         Clear("Outdated By");
-        this.Modify();
+        this.Modify(false);
     end;
 
     procedure MarkOutdated(ProviderId: Code[50])
@@ -112,7 +103,7 @@ table 77781 "BJF MN Config Status"
         "Manually Outdated" := true;
         "Outdated At" := CurrentDateTime();
         "Outdated By" := CopyStr(UserId(), 1, MaxStrLen("Outdated By"));
-        this.Modify();
+        this.Modify(false);
     end;
 
     var

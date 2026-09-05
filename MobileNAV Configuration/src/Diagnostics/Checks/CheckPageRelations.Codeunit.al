@@ -67,7 +67,10 @@ codeunit 77774 "BJF Check Page Relations" implements "BJF Diagnostic Check"
                 end;
             ServiceSetup."Line Type"::Main:
                 begin
+                    // RelatedPageName's OnValidate deletes the page's filter and propagated-field rows.
+#pragma warning disable PC0037
                     ServiceSetup.RelatedPageName := '';
+#pragma warning restore PC0037
                     ServiceSetup.Modify(false);
                 end;
             else

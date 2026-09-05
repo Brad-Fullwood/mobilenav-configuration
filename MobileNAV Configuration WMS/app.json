@@ -2,7 +2,7 @@
   "id": "a7e0d38d-9896-45a5-b337-dc130656dd5f",
   "name": "MobileNAV Configuration WMS",
   "publisher": "Brad Fullwood",
-  "version": "2.0.0.0",
+  "version": "2.1.0.0",
   "brief": "WMS MobileNAV checks for the MobileNAV Configuration doctor.",
   "description": "Contributes the checks that need WMS MobileNAV - inventory setup for package tracking, package record consistency and split packages with an automatic consolidation fix - to the MobileNAV Doctor in MobileNAV Configuration. Kept as a separate app so the framework installs in environments without WMS MobileNAV.",
   "privacyStatement": "",
@@ -14,7 +14,7 @@
       "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
       "name": "MobileNAV Configuration",
       "publisher": "Brad Fullwood",
-      "version": "3.0.0.0"
+      "version": "4.0.0.0"
     },
     {
       "id": "e8af7984-24eb-43bb-a518-2abdbcb32e44",

@@ -20,7 +20,7 @@ codeunit 77773 "BJF Check Leftover Jnl. Lines" implements "BJF Diagnostic Check"
         BinMissing: Boolean;
         FixDescription: Text;
     begin
-        CheckOutputBatchLeftovers(Finding);
+        this.CheckOutputBatchLeftovers(Finding);
 
         MovementJournalMgt.SetMovementLineFilters(ItemJournalLine);
         if ItemJournalLine.FindSet() then
@@ -28,15 +28,15 @@ codeunit 77773 "BJF Check Leftover Jnl. Lines" implements "BJF Diagnostic Check"
                 BinMissing := false;
                 if Location.Get(ItemJournalLine."Location Code") then
                     BinMissing := Location."Bin Mandatory" and ((ItemJournalLine."New Bin Code" = '') or (ItemJournalLine."Bin Code" = ''));
-                FixDescription := StrSubstNo(DeleteLineFixLbl, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.");
+                FixDescription := StrSubstNo(this.DeleteLineFixLbl, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.");
                 // MobileNAV WMS Move Package posts the entire batch, so any line left here
                 // is swept into the next Move Package posting and can block it.
                 if BinMissing then
                     Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(BrokenLeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No."), ItemJournalLine.RecordId(), FixDescription)
+                        StrSubstNo(this.BrokenLeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No."), ItemJournalLine.RecordId(), FixDescription)
                 else
                     Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Warning,
-                        StrSubstNo(LeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No.", ItemJournalLine.Quantity), ItemJournalLine.RecordId(), FixDescription);
+                        StrSubstNo(this.LeftoverLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No.", ItemJournalLine.Quantity), ItemJournalLine.RecordId(), FixDescription);
             until ItemJournalLine.Next() = 0;
     end;
 
@@ -61,16 +61,16 @@ codeunit 77773 "BJF Check Leftover Jnl. Lines" implements "BJF Diagnostic Check"
 
         ItemJournalLine.SetRange("Journal Template Name", ItemJournalBatch."Journal Template Name");
         ItemJournalLine.SetRange("Journal Batch Name", ItemJournalBatch.Name);
-        ItemJournalLine.SetFilter(SystemCreatedAt, '<%1', CurrentDateTime() - InFlightGracePeriod());
+        ItemJournalLine.SetFilter(SystemCreatedAt, '<%1', CurrentDateTime() - this.InFlightGracePeriod());
         if ItemJournalLine.FindSet() then
             repeat
-                FixDescription := StrSubstNo(DeleteLineFixLbl, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.");
+                FixDescription := StrSubstNo(this.DeleteLineFixLbl, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.");
                 if ItemJournalLine."Item No." = '' then
                     Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Warning,
-                        StrSubstNo(AbandonedOutputLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No."), ItemJournalLine.RecordId(), FixDescription)
+                        StrSubstNo(this.AbandonedOutputLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No."), ItemJournalLine.RecordId(), FixDescription)
                 else
                     Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Leftover Journal Lines", Enum::"BJF Diagnostic Severity"::Warning,
-                        StrSubstNo(StaleOutputLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No.", ItemJournalLine."Order No."), ItemJournalLine.RecordId(), FixDescription);
+                        StrSubstNo(this.StaleOutputLineMsg, ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", ItemJournalLine."Line No.", ItemJournalLine."Item No.", ItemJournalLine."Order No."), ItemJournalLine.RecordId(), FixDescription);
             until ItemJournalLine.Next() = 0;
     end;
 

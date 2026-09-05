@@ -1,11 +1,11 @@
 namespace BradFullwood.MobileNAV.Configuration.WMS;
 
 using BradFullwood.MobileNAV.Configuration;
-
 using Microsoft.Inventory.Setup;
 
 codeunit 77740 "BJF Check Inventory Setup" implements "BJF Diagnostic Check"
 {
+    Access = Internal;
     Permissions = tabledata "Inventory Setup" = r;
 
     procedure RunCheck(var Finding: Record "BJF Diagnostic Finding")
@@ -15,21 +15,21 @@ codeunit 77740 "BJF Check Inventory Setup" implements "BJF Diagnostic Check"
         InventorySetup.Get();
         if InventorySetup."Package Nos." = '' then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Inventory Setup", Enum::"BJF Diagnostic Severity"::Blocker,
-                StrSubstNo(MissingSetupMsg, InventorySetup.FieldCaption("Package Nos."), InventorySetup.TableCaption()), InventorySetup.RecordId());
+                StrSubstNo(this.MissingSetupMsg, InventorySetup.FieldCaption("Package Nos."), InventorySetup.TableCaption()), InventorySetup.RecordId());
         if not InventorySetup."MUL WMS Package Tracking" then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Inventory Setup", Enum::"BJF Diagnostic Severity"::Warning,
-                StrSubstNo(MissingSetupMsg, InventorySetup.FieldCaption("MUL WMS Package Tracking"), InventorySetup.TableCaption()), InventorySetup.RecordId());
+                StrSubstNo(this.MissingSetupMsg, InventorySetup.FieldCaption("MUL WMS Package Tracking"), InventorySetup.TableCaption()), InventorySetup.RecordId());
         if InventorySetup."MUL WMS Undefined Package No." = '' then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Inventory Setup", Enum::"BJF Diagnostic Severity"::Warning,
-                StrSubstNo(MissingSetupMsg, InventorySetup.FieldCaption("MUL WMS Undefined Package No."), InventorySetup.TableCaption()), InventorySetup.RecordId());
+                StrSubstNo(this.MissingSetupMsg, InventorySetup.FieldCaption("MUL WMS Undefined Package No."), InventorySetup.TableCaption()), InventorySetup.RecordId());
         if InventorySetup."BJF MN Move Posts Own Lines" then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Inventory Setup", Enum::"BJF Diagnostic Severity"::Info,
-                MoveWorkaroundActiveMsg, InventorySetup.RecordId());
+                this.MoveWorkaroundActiveMsg, InventorySetup.RecordId());
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
     begin
-        Error(NoAutomaticFixErr);
+        Error(this.NoAutomaticFixErr);
     end;
 
     var

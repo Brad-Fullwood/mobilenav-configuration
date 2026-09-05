@@ -37,7 +37,7 @@ codeunit 77776 "BJF Create Pkg Info On Post."
             exit;
         if not ItemTrackingCode."BJF MN Create Pkg Info on Post" then
             exit;
-        CreatePackageNoInformation(TrackingSpecification);
+        this.CreatePackageNoInformation(TrackingSpecification);
     end;
 
     local procedure CreatePackageNoInformation(TrackingSpecification: Record "Tracking Specification")

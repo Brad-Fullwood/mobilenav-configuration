@@ -21,7 +21,6 @@ codeunit 77792 "BJF MN Config Hash"
         TempSorted.Copy(ConfigurationLine, true);
         TempSorted.Reset();
         TempSorted.SetCurrentKey(Operation, "Page ID", "Control Name", Profile, "Stage Id", "Entry No.");
-        Serialized.Append(this.FormatVersionTok);
         if TempSorted.FindSet() then
             repeat
                 this.AppendLine(Serialized, TempSorted);
@@ -40,10 +39,10 @@ codeunit 77792 "BJF MN Config Hash"
         Serialized.Append(this.LineSeparatorTok);
         for FieldIndex := 1 to LineRef.FieldCount() do begin
             FieldRef := LineRef.FieldIndex(FieldIndex);
-            if FieldRef.Number <> Line.FieldNo("Entry No.") then begin
+            if FieldRef.Number() <> Line.FieldNo("Entry No.") then begin
                 // Options and enums serialize as ordinals: captions depend on the session
                 // language and a fingerprint must not.
-                if FieldRef.Type = FieldType::Option then begin
+                if FieldRef.Type() = FieldType::Option then begin
                     OptionOrdinal := FieldRef.Value();
                     Serialized.Append(Format(OptionOrdinal, 0, 9));
                 end else
@@ -54,7 +53,6 @@ codeunit 77792 "BJF MN Config Hash"
     end;
 
     var
-        FormatVersionTok: Label 'v3:', Locked = true;
         LineSeparatorTok: Label '\n', Locked = true;
         FieldSeparatorTok: Label '|', Locked = true;
 }

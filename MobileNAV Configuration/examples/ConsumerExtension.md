@@ -1,6 +1,6 @@
 # Consumer extension example
 
-A DMS-shaped skeleton: the consuming app declares this extension as a dependency, implements the provider contract in the new fluent style, registers it through an enum extension, wires up a page of its own for a button and an action dialog, and handles both taps.
+A complete skeleton: the consuming app declares this extension as a dependency, implements the provider contract, registers it through an enum extension, wires up a page of its own for a button and an action dialog, and handles both taps.
 
 ## app.json dependency
 
@@ -13,7 +13,7 @@ A DMS-shaped skeleton: the consuming app declares this extension as a dependency
             "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
             "name": "MobileNAV Configuration",
             "publisher": "Brad Fullwood",
-            "version": "3.0.0.0"
+            "version": "4.0.0.0"
         }
     ]
 }
@@ -31,7 +31,7 @@ using Contoso.MobileNAV.CustomSN;
 /// Declarative Contoso MobileNAV configuration provider. Every control this extension adds to
 /// a MobileNAV page is inert until this declaration describes it, so each page extension has a
 /// matching declaration below. The shared configuration extension validates and applies the
-/// definition and notices on its own when it changes — there is no version to maintain.
+/// definition and notices on its own when it changes; there is no version to maintain.
 /// </summary>
 codeunit 50100 "CTO MN Config Provider" implements "BJF MN Config Provider"
 {
@@ -114,7 +114,7 @@ enumextension 50100 "CTO MN Config Providers" extends "BJF MN Config Provider"
 
 ## The action-dialog page's web-service wrapper
 
-`Page::"CTO CSNCreateSNReport"` is a page of Contoso's own, so — unlike MobileNAV's own pages, which already have theirs — it needs the `[ServiceEnabled]` function wrapper the `Button('Create')` declaration above depends on. Its source table is `"MobileNAV Tracking Spec."`, whose dispatcher (from the table → dispatcher mapping in the README) is `MNTrackSpecExtFunc`; the wrapper's name has to be exactly that:
+`Page::"CTO CSNCreateSNReport"` is a page of Contoso's own, so unlike MobileNAV's own pages, which already have theirs, it needs the `[ServiceEnabled]` function wrapper the `Button('Create')` declaration above depends on. Its source table is `"MobileNAV Tracking Spec."`, whose dispatcher (from the table → dispatcher mapping in the README) is `MNTrackSpecExtFunc`; the wrapper's name has to be exactly that:
 
 ```al
 page 50100 "CTO CSNCreateSNReport"
@@ -154,7 +154,7 @@ page 50100 "CTO CSNCreateSNReport"
 
 ## Handling the taps
 
-`"MobileNAV WhseShipment"` is MobileNAV's own page, so its `[ServiceEnabled]` wrapper already exists — the despatch button's tap only needs a subscriber:
+`"MobileNAV WhseShipment"` is MobileNAV's own page, so its `[ServiceEnabled]` wrapper already exists; the despatch button's tap only needs a subscriber:
 
 ```al
 namespace Contoso.MobileNAV.DespatchNote;
@@ -211,6 +211,6 @@ codeunit 50102 "CTO Install"
 }
 ```
 
-Because install has no client to answer MobileNAV's confirmation dialogs, this apply writes the full configuration but is recorded with a pending device handover — **Apply custom MobileNAV config** shows the provider as Outdated until an administrator applies it again from there, where a client is available to finish the handover.
+Because install has no client to answer MobileNAV's confirmation dialogs, this apply writes the full configuration but is recorded with a pending device handover. **MobileNAV Configuration** shows the provider as Outdated until an administrator applies it again from there, where a client is available to finish the handover.
 
-The consumer's permission set must grant execute permission to `"CTO MN Config Provider"` and `"CTO MN Despatch Events"`, and administrators need the library's `"BJF MN Configuration"` permission set to reach **Apply custom MobileNAV config** and **MobileNAV Doctor**.
+The consumer's permission set must grant execute permission to `"CTO MN Config Provider"` and `"CTO MN Despatch Events"`, and administrators need the `"BJF MN Configuration"` permission set to reach **MobileNAV Configuration** and **MobileNAV Doctor**.

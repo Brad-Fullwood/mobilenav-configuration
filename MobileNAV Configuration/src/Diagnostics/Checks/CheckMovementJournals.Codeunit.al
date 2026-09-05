@@ -21,13 +21,13 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
             repeat
                 if MobileNAVUserSetup."Movement Journal Name" = '' then
                     Finding.Add(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(NoMovementJournalMsg, MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId())
+                        StrSubstNo(this.NoMovementJournalMsg, MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId())
                 else begin
                     ItemJournalBatch.SetRange(Name, MobileNAVUserSetup."Movement Journal Name");
                     ItemJournalBatch.SetRange("Template Type", ItemJournalBatch."Template Type"::Transfer);
                     if not ItemJournalBatch.FindFirst() then
                         Finding.Add(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
-                            StrSubstNo(MovementBatchMissingMsg, MobileNAVUserSetup."Movement Journal Name", MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId())
+                            StrSubstNo(this.MovementBatchMissingMsg, MobileNAVUserSetup."Movement Journal Name", MobileNAVUserSetup."User ID"), MobileNAVUserSetup.RecordId())
                     else
                         // Move Package builds its journal lines with SetUpNewLine, which takes
                         // Document No. from the batch's No. Series; without one the line posts
@@ -37,8 +37,8 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
                         then begin
                             CheckedBatches.Add(ItemJournalBatch."Journal Template Name" + '/' + ItemJournalBatch.Name, true);
                             Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Movement Journals", Enum::"BJF Diagnostic Severity"::Blocker,
-                                StrSubstNo(NoDocumentSeriesMsg, ItemJournalBatch.Name, ItemJournalBatch."Journal Template Name"), ItemJournalBatch.RecordId(),
-                                StrSubstNo(AssignSeriesFixLbl, MovementSeriesCode(), ItemJournalBatch.Name));
+                                StrSubstNo(this.NoDocumentSeriesMsg, ItemJournalBatch.Name, ItemJournalBatch."Journal Template Name"), ItemJournalBatch.RecordId(),
+                                StrSubstNo(this.AssignSeriesFixLbl, this.MovementSeriesCode(), ItemJournalBatch.Name));
                         end;
                 end;
             until MobileNAVUserSetup.Next() = 0;
@@ -50,12 +50,12 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
         RecRef: RecordRef;
     begin
         if Finding."Related Record ID".TableNo() <> Database::"Item Journal Batch" then
-            Error(NoAutomaticFixErr);
+            Error(this.NoAutomaticFixErr);
         RecRef.Get(Finding."Related Record ID");
         RecRef.SetTable(ItemJournalBatch);
         if ItemJournalBatch."No. Series" <> '' then
             exit;
-        ItemJournalBatch.Validate("No. Series", EnsureMovementSeries());
+        ItemJournalBatch.Validate("No. Series", this.EnsureMovementSeries());
         ItemJournalBatch.Modify(true);
     end;
 
@@ -64,19 +64,19 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
         NoSeries: Record "No. Series";
         NoSeriesLine: Record "No. Series Line";
     begin
-        if NoSeries.Get(MovementSeriesCode()) then
+        if NoSeries.Get(this.MovementSeriesCode()) then
             exit(NoSeries.Code);
 
         NoSeries.Init();
-        NoSeries.Code := MovementSeriesCode();
-        NoSeries.Description := MovementSeriesDescriptionLbl;
+        NoSeries.Code := this.MovementSeriesCode();
+        NoSeries.Description := this.MovementSeriesDescriptionLbl;
         NoSeries."Default Nos." := true;
         NoSeries.Insert(true);
 
         NoSeriesLine.Init();
         NoSeriesLine."Series Code" := NoSeries.Code;
         NoSeriesLine."Line No." := 10000;
-        NoSeriesLine.Validate("Starting No.", MovementSeriesStartTok);
+        NoSeriesLine.Validate("Starting No.", this.MovementSeriesStartTok);
         NoSeriesLine.Insert(true);
 
         exit(NoSeries.Code);
@@ -84,7 +84,7 @@ codeunit 77771 "BJF Check Movement Journals" implements "BJF Diagnostic Check"
 
     local procedure MovementSeriesCode(): Code[20]
     begin
-        exit(MovementSeriesCodeTok);
+        exit(this.MovementSeriesCodeTok);
     end;
 
     var

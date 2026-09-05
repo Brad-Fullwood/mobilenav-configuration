@@ -123,9 +123,8 @@ codeunit 77784 "BJF MN Config Application"
         if TempConfigurationLine.FindSet() then
             repeat
                 PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
-                // A dialog page with its own function codeunit runs the button as a procedure of
-                // that codeunit, so the name is the procedure's and cannot be derived; and the
-                // page-function companion is not what the device calls, so it is not registered.
+                // A function codeunit runs the button as one of its own procedures: the name is
+                // the procedure's, and the page-function companion is not what the device calls.
                 UsesFunctionCodeunit := this.HasFunctionCodeunit(TempConfigurationLine, TempConfigurationLine."Page ID");
                 if UsesFunctionCodeunit then begin
                     if TempConfigurationLine."Function Name" = '' then
@@ -141,8 +140,6 @@ codeunit 77784 "BJF MN Config Application"
                     TempConfigurationLine.Importance)
                 then
                     Error(this.FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
-                // Without the companion registration the button renders but every tap dies
-                // client-side as 'Method "…" is invalid!'. See PublishFunctionCompanion.
                 if not UsesFunctionCodeunit then
                     this.PageManagement.PublishFunctionCompanion(CopyStr(ServiceName, 1, 100));
             until TempConfigurationLine.Next() = 0;
@@ -302,9 +299,9 @@ codeunit 77784 "BJF MN Config Application"
     begin
         if ConfigurationLine."Function Name" <> '' then
             exit(ConfigurationLine."Function Name");
-        if not this.PageManagement.GetServiceTableNo(ServiceName, TableNo) then
+        if not this.Lookup.GetServiceTableNo(ServiceName, TableNo) then
             Error(this.PageMissingErr, ConfigurationLine."Page ID");
-        if not this.FunctionMap.TryGetDispatcher(TableNo, DispatcherName) then
+        if not this.FunctionRouter.TryGetDispatcher(TableNo, DispatcherName) then
             Error(this.NoDispatcherErr, ConfigurationLine."Control Name", ServiceName, TableNo);
         exit(DispatcherName);
     end;
@@ -338,7 +335,8 @@ codeunit 77784 "BJF MN Config Application"
         ProviderCatalog: Codeunit "BJF MN Provider Catalog";
         ConfigurationValidator: Codeunit "BJF MN Config Validator";
         ConfigurationHash: Codeunit "BJF MN Config Hash";
-        FunctionMap: Codeunit "BJF MN Function Map";
+        Lookup: Codeunit "BJF MN Service Lookup";
+        FunctionRouter: Codeunit "BJF MN Function Router";
         PageManagement: Codeunit "BJF MN Page Mgt.";
         FieldManagement: Codeunit "BJF MN Field Mgt.";
         ProfileManagement: Codeunit "BJF MN Profile Mgt.";

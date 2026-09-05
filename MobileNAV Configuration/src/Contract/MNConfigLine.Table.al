@@ -1,4 +1,3 @@
-
 namespace BradFullwood.MobileNAV.Configuration;
 
 /// <summary>Validated intermediate representation produced by a configuration provider.</summary>
@@ -111,29 +110,26 @@ table 77780 "BJF MN Config Line"
         {
             Caption = 'Stage Restart From';
         }
+        field(26; Profile; Code[30])
+        {
+            Caption = 'Profile';
+            // Empty means every defined profile.
+        }
         field(27; "Page Type"; Text[30])
         {
             Caption = 'Page Type';
-            // Empty keeps MobileNAV's default for the page object; see "BJF MN Page Mgt.".SetPageType.
-            DataClassification = SystemMetadata;
+            // Empty keeps MobileNAV's default for the page object.
         }
         field(28; "Function Codeunit ID"; Integer)
         {
             Caption = 'Function Codeunit ID';
             // Dialog pages only: the codeunit whose procedures the page's buttons run. Zero means
-            // the buttons go through MobileNAV's page functions. See the builder's Functions().
+            // the buttons go through MobileNAV's page functions.
         }
         field(29; "Report Service Name"; Text[100])
         {
             Caption = 'Report Service Name';
-            // The web service name the function codeunit is published under; MobileNAV calls
-            // the page's buttons as <name>_<procedure> on it.
-        }
-        field(26; Profile; Code[30])
-        {
-            Caption = 'Profile';
-            // Empty means every defined profile; see "BJF MN Profile Mgt.".
-            DataClassification = SystemMetadata;
+            // The web service the function codeunit is published under.
         }
     }
 

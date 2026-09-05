@@ -1,7 +1,6 @@
 namespace BradFullwood.MobileNAV.Configuration.WMS;
 
 using BradFullwood.MobileNAV.Configuration;
-
 using Microsoft.Inventory.Journal;
 using Microsoft.Inventory.Ledger;
 using Microsoft.Inventory.Posting;
@@ -24,6 +23,7 @@ using Microsoft.Warehouse.Ledger;
 /// </summary>
 codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
 {
+    Access = Internal;
     Permissions = tabledata "Item Ledger Entry" = r,
         tabledata "Warehouse Entry" = r,
         tabledata "Item Journal Template" = r,
@@ -40,55 +40,47 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         PackageNo: Text;
         FindingCount: Integer;
     begin
-        CollectLocationPlacements(LocationPlacements);
-        CollectBinPlacements(BinPlacements);
+        this.CollectLocationPlacements(LocationPlacements);
+        this.CollectBinPlacements(BinPlacements);
 
         foreach PackageNo in LocationPlacements.Keys() do
             if LocationPlacements.Get(PackageNo).Count() > 1 then begin
                 FindingCount += 1;
-                if FindingCount <= MaxFindings() then
+                if FindingCount <= this.MaxFindings() then
                     Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(SplitLocationMsg, PackageNo, JoinPlacements(LocationPlacements.Get(PackageNo))));
+                        StrSubstNo(this.SplitLocationMsg, PackageNo, this.JoinPlacements(LocationPlacements.Get(PackageNo))));
             end;
 
         foreach PackageNo in BinPlacements.Keys() do
-            if (BinPlacements.Get(PackageNo).Count() > 1) and not IsMultiLocation(LocationPlacements, PackageNo) then begin
+            if (BinPlacements.Get(PackageNo).Count() > 1) and not this.IsMultiLocation(LocationPlacements, PackageNo) then begin
                 FindingCount += 1;
-                if FindingCount <= MaxFindings() then begin
+                if FindingCount <= this.MaxFindings() then begin
                     // The package number rides in Fix Context; the Related Record ID is only
                     // for navigation and may legitimately be blank - the fix creates a
                     // missing MUL WMS Package record itself.
                     Clear(WMSPackage);
-                    if WMSPackage.Get(PackageNo) then;
+                    if WMSPackage.Get(CopyStr(PackageNo, 1, MaxStrLen(WMSPackage."Package No."))) then;
                     Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
-                        StrSubstNo(SplitBinMsg, PackageNo, JoinPlacements(BinPlacements.Get(PackageNo))),
+                        StrSubstNo(this.SplitBinMsg, PackageNo, this.JoinPlacements(BinPlacements.Get(PackageNo))),
                         WMSPackage.RecordId(),
-                        StrSubstNo(ConsolidateFixLbl, PackageNo),
+                        StrSubstNo(this.ConsolidateFixLbl, PackageNo),
                         PackageNo);
                 end;
             end;
 
-        if FindingCount > MaxFindings() then
+        if FindingCount > this.MaxFindings() then
             Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
-                StrSubstNo(MoreFindingsMsg, FindingCount - MaxFindings()));
+                StrSubstNo(this.MoreFindingsMsg, FindingCount - this.MaxFindings()));
     end;
 
     procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
     var
-        WMSPackage: Record "MUL WMS Package";
-        RecRef: RecordRef;
         PackageNo: Code[50];
     begin
         PackageNo := CopyStr(Finding."Fix Context", 1, MaxStrLen(PackageNo));
-        // Findings recorded before Fix Context existed anchored the package to its record id.
-        if (PackageNo = '') and (Finding."Related Record ID".TableNo() = Database::"MUL WMS Package") then
-            if RecRef.Get(Finding."Related Record ID") then begin
-                RecRef.SetTable(WMSPackage);
-                PackageNo := WMSPackage."Package No.";
-            end;
         if PackageNo = '' then
-            Error(NoAutomaticFixErr);
-        ConsolidatePackage(PackageNo);
+            Error(this.NoAutomaticFixErr);
+        this.ConsolidatePackage(PackageNo);
     end;
 
     /// <summary>
@@ -105,7 +97,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         ItemLedgerEntry.SetRange(Open, true);
         if ItemLedgerEntry.FindSet() then
             repeat
-                AddPlacement(LocationPlacements, ItemLedgerEntry."Package No.", ItemLedgerEntry."Location Code");
+                this.AddPlacement(LocationPlacements, ItemLedgerEntry."Package No.", ItemLedgerEntry."Location Code");
             until ItemLedgerEntry.Next() = 0;
     end;
 
@@ -125,7 +117,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         WarehouseEntry.SetFilter("Package No.", '<>%1', '');
         if WarehouseEntry.FindSet() then
             repeat
-                Placement := WarehouseEntry."Package No." + Format(Separator()) + WarehouseEntry."Location Code" + '/' + WarehouseEntry."Bin Code";
+                Placement := WarehouseEntry."Package No." + this.Separator() + WarehouseEntry."Location Code" + '/' + WarehouseEntry."Bin Code";
                 Qty := 0;
                 if PlacementQty.Get(Placement, Qty) then;
                 PlacementQty.Set(Placement, Qty + WarehouseEntry."Qty. (Base)");
@@ -134,9 +126,9 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
 
         foreach Placement in PlacementQty.Keys() do
             if PlacementQty.Get(Placement) <> 0 then
-                AddPlacement(
+                this.AddPlacement(
                     BinPlacements, PackageOfPlacement.Get(Placement),
-                    Placement.Split(Format(Separator())).Get(2) + ': ' + Format(PlacementQty.Get(Placement)));
+                    Placement.Split(this.Separator()).Get(2) + ': ' + Format(PlacementQty.Get(Placement)));
     end;
 
     /// <summary>
@@ -158,35 +150,35 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         TargetBin: Text;
         LineNo: Integer;
     begin
-        CollectPackageGroups(PackageNo, GroupQty, BinQty);
-        TargetBin := FindTargetBin(BinQty);
+        this.CollectPackageGroups(PackageNo, GroupQty, BinQty);
+        TargetBin := this.FindTargetBin(BinQty);
         if TargetBin = '' then
-            Error(NothingToConsolidateErr, PackageNo);
+            Error(this.NothingToConsolidateErr, PackageNo);
 
         // The vendor integrity check hard-Gets this record after the posting below; create
         // it when missing (validating Package No. computes location, bin and hierarchy).
         if not WMSPackage.Get(PackageNo) then begin
             WMSPackage.Init();
             WMSPackage.Validate("Package No.", PackageNo);
-            WMSPackage.Insert();
+            WMSPackage.Insert(false);
         end;
 
-        PrepareFixBatch(ItemJournalBatch);
+        this.PrepareFixBatch(ItemJournalBatch);
 
         foreach GroupKey in GroupQty.Keys() do begin
-            GroupParts := GroupKey.Split(Format(Separator()));
+            GroupParts := GroupKey.Split(this.Separator());
             if GroupParts.Get(2) <> TargetBin then begin
                 if GroupQty.Get(GroupKey) < 0 then
-                    Error(NegativeStockErr, PackageNo, GroupParts.Get(2));
+                    Error(this.NegativeStockErr, PackageNo, GroupParts.Get(2));
                 if GroupQty.Get(GroupKey) > 0 then begin
                     LineNo += 10000;
-                    InsertReclassLine(ItemJournalLine, ItemJournalBatch, LineNo, PackageNo, GroupParts, TargetBin, GroupQty.Get(GroupKey));
+                    this.InsertReclassLine(ItemJournalLine, ItemJournalBatch, LineNo, PackageNo, GroupParts, TargetBin, GroupQty.Get(GroupKey));
                 end;
             end;
         end;
 
         if LineNo = 0 then
-            Error(NothingToConsolidateErr, PackageNo);
+            Error(this.NothingToConsolidateErr, PackageNo);
 
         // Posting re-runs the vendor package integrity check, which now passes and rewrites
         // the MUL WMS Package and Package No. Information bin fields to the target bin.
@@ -205,17 +197,18 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         GroupKey: Text;
         Qty: Decimal;
     begin
+        LocationCode := '';
         WarehouseEntry.SetRange("Package No.", PackageNo);
         if WarehouseEntry.FindSet() then
             repeat
                 if LocationCode = '' then
                     LocationCode := WarehouseEntry."Location Code";
                 if LocationCode <> WarehouseEntry."Location Code" then
-                    Error(MultiLocationErr, PackageNo, LocationCode, WarehouseEntry."Location Code");
+                    Error(this.MultiLocationErr, PackageNo, LocationCode, WarehouseEntry."Location Code");
                 GroupKey :=
-                    WarehouseEntry."Location Code" + Format(Separator()) + WarehouseEntry."Bin Code" +
-                    Format(Separator()) + WarehouseEntry."Item No." + Format(Separator()) + WarehouseEntry."Variant Code" +
-                    Format(Separator()) + WarehouseEntry."Lot No." + Format(Separator()) + WarehouseEntry."Serial No.";
+                    WarehouseEntry."Location Code" + this.Separator() + WarehouseEntry."Bin Code" +
+                    this.Separator() + WarehouseEntry."Item No." + this.Separator() + WarehouseEntry."Variant Code" +
+                    this.Separator() + WarehouseEntry."Lot No." + this.Separator() + WarehouseEntry."Serial No.";
                 Qty := 0;
                 if GroupQty.Get(GroupKey, Qty) then;
                 GroupQty.Set(GroupKey, Qty + WarehouseEntry."Qty. (Base)");
@@ -231,6 +224,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         TargetBin: Text;
         LargestQty: Decimal;
     begin
+        LargestQty := 0;
         foreach BinCode in BinQty.Keys() do
             if BinQty.Get(BinCode) > LargestQty then begin
                 LargestQty := BinQty.Get(BinCode);
@@ -247,13 +241,13 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
     begin
         ItemJournalTemplate.SetRange(Type, ItemJournalTemplate.Type::Transfer);
         if not ItemJournalTemplate.FindFirst() then
-            Error(NoTransferTemplateErr);
+            Error(this.NoTransferTemplateErr);
 
-        if not ItemJournalBatch.Get(ItemJournalTemplate.Name, FixBatchTok) then begin
+        if not ItemJournalBatch.Get(ItemJournalTemplate.Name, this.FixBatchTok) then begin
             ItemJournalBatch.Init();
             ItemJournalBatch."Journal Template Name" := ItemJournalTemplate.Name;
-            ItemJournalBatch.Name := FixBatchTok;
-            ItemJournalBatch.Description := FixBatchDescriptionLbl;
+            ItemJournalBatch.Name := this.FixBatchTok;
+            ItemJournalBatch.Description := this.FixBatchDescriptionLbl;
             ItemJournalBatch.Insert(true);
         end;
 
@@ -277,7 +271,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         ItemJournalLine."Line No." := LineNo;
         ItemJournalLine.Validate("Entry Type", ItemJournalLine."Entry Type"::Transfer);
         ItemJournalLine.Validate("Posting Date", WorkDate());
-        ItemJournalLine."Document No." := FixDocumentTok;
+        ItemJournalLine."Document No." := this.FixDocumentTok;
         ItemJournalLine.Validate("Item No.", CopyStr(GroupParts.Get(3), 1, 20));
         ItemJournalLine.Validate("Variant Code", CopyStr(GroupParts.Get(4), 1, 10));
         ItemJournalLine.Validate("Location Code", CopyStr(GroupParts.Get(1), 1, 10));
@@ -285,8 +279,8 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         ItemJournalLine.Validate("Bin Code", CopyStr(GroupParts.Get(2), 1, 20));
         ItemJournalLine.Validate("New Bin Code", CopyStr(TargetBin, 1, 20));
         ItemJournalLine.Validate(Quantity, QtyBase);
-        ItemJournalLine.Insert();
-        CreateTrackingEntry(
+        ItemJournalLine.Insert(false);
+        this.CreateTrackingEntry(
             ItemJournalLine, PackageNo, CopyStr(GroupParts.Get(5), 1, 50), CopyStr(GroupParts.Get(6), 1, 50));
     end;
 
@@ -307,7 +301,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         TempReservationEntry.Validate("Serial No.", SerialNo);
         TempReservationEntry.Validate("Package No.", PackageNo);
         TempReservationEntry.Validate(Quantity, ItemJournalLine.Quantity);
-        TempReservationEntry.Insert();
+        TempReservationEntry.Insert(false);
 
         TempTrackingSpecification.Init();
         TempTrackingSpecification.Validate("Serial No.", SerialNo);
@@ -317,7 +311,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         TempTrackingSpecification.Validate("New Lot No.", LotNo);
         TempTrackingSpecification.Validate("New Package No.", PackageNo);
         TempTrackingSpecification.Validate("Quantity (Base)", ItemJournalLine."Quantity (Base)");
-        TempTrackingSpecification.Insert();
+        TempTrackingSpecification.Insert(false);
 
         CreateReservEntry.CreateReservEntryFor(
             Database::"Item Journal Line", ItemJournalLine."Entry Type".AsInteger(),
@@ -365,9 +359,13 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
         exit(Result.ToText());
     end;
 
-    local procedure Separator(): Char
+    /// <summary>The unit separator cannot occur in a Code field, so keys can be joined and split on it.</summary>
+    local procedure Separator(): Text
+    var
+        UnitSeparator: Char;
     begin
-        exit(31); // unit separator: cannot occur in Code fields, safe to join/split keys on
+        UnitSeparator := 31;
+        exit(Format(UnitSeparator));
     end;
 
     local procedure MaxFindings(): Integer
@@ -378,7 +376,7 @@ codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
     var
         FixBatchTok: Label 'BJFPKGFIX', Locked = true;
         FixDocumentTok: Label 'PKGFIX', Locked = true;
-        FixBatchDescriptionLbl: Label 'Split package repair (MobileNAV Diagnostics)', MaxLength = 100;
+        FixBatchDescriptionLbl: Label 'Split package repair (MobileNAV Doctor)', MaxLength = 100;
         SplitBinMsg: Label 'Package %1 has stock in more than one bin (%2). The WMS package integrity check fails every posting that touches this package - including production output that flush-consumes it.', Comment = '%1 = package no., %2 = bin: quantity list';
         SplitLocationMsg: Label 'Package %1 has open item ledger entries in more than one location (%2). Consolidating across locations needs a transfer order; no automatic fix.', Comment = '%1 = package no., %2 = location list';
         ConsolidateFixLbl: Label 'Post an item reclassification consolidating package %1 into the bin holding its largest quantity.', Comment = '%1 = package no.';
