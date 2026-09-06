@@ -48,6 +48,26 @@ codeunit 77783 "BJF MN Vocabulary"
         exit(this.ValueName(StagingBehavior.Names(), StagingBehavior.Ordinals(), StagingBehavior.AsInteger()));
     end;
 
+    procedure PageTypeName(PageType: Enum "BJF MN Page Type"): Text[30]
+    begin
+        exit(this.ValueName(PageType.Names(), PageType.Ordinals(), PageType.AsInteger()));
+    end;
+
+    procedure MineFilterName(MineFilter: Enum "BJF MN Mine Filter"): Text[30]
+    begin
+        exit(this.ValueName(MineFilter.Names(), MineFilter.Ordinals(), MineFilter.AsInteger()));
+    end;
+
+    procedure AssignToMeName(AssignToMe: Enum "BJF MN Assign To Me"): Text[30]
+    begin
+        exit(this.ValueName(AssignToMe.Names(), AssignToMe.Ordinals(), AssignToMe.AsInteger()));
+    end;
+
+    procedure FieldCategoryName(FieldCategory: Enum "BJF MN Field Category"): Text[30]
+    begin
+        exit(this.ValueName(FieldCategory.Names(), FieldCategory.Ordinals(), FieldCategory.AsInteger()));
+    end;
+
     /// <summary>MobileNAV's MobileType for the barcode-scannable input a Scan control renders as.</summary>
     procedure BarcodeMobileTypeName(): Text[30]
     begin

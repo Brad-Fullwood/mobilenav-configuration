@@ -56,4 +56,9 @@ enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
         Caption = 'Config: Apply State';
         Implementation = "BJF Diagnostic Check" = "BJF Check Config Apply State";
     }
+    value(205; "Config Properties")
+    {
+        Caption = 'Config: Page & Control Settings';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Properties";
+    }
 }

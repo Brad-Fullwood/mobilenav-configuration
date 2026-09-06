@@ -18,9 +18,17 @@ codeunit 77799 "BJF MN Doctor Support"
     end;
 
     procedure BuildDefinition(ProviderType: Enum "BJF MN Config Provider"; var TempConfigurationLine: Record "BJF MN Config Line" temporary)
+    var
+        TempConfigurationProperty: Record "BJF MN Config Property" temporary;
     begin
-        this.ProviderCatalog.BuildDefinition(ProviderType, TempConfigurationLine);
+        this.BuildDefinition(ProviderType, TempConfigurationLine, TempConfigurationProperty);
+    end;
+
+    procedure BuildDefinition(ProviderType: Enum "BJF MN Config Provider"; var TempConfigurationLine: Record "BJF MN Config Line" temporary; var TempConfigurationProperty: Record "BJF MN Config Property" temporary)
+    begin
+        this.ProviderCatalog.BuildDefinition(ProviderType, TempConfigurationLine, TempConfigurationProperty);
         TempConfigurationLine.Reset();
+        TempConfigurationProperty.Reset();
     end;
 
     /// <summary>Every profile MobileNAV defines.</summary>

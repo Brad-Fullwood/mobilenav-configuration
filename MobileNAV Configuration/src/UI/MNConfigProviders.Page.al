@@ -171,9 +171,10 @@ page 77780 "BJF MN Config Providers"
     local procedure ExportSnapshotForCurrentProvider()
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
+        TempConfigurationProperty: Record "BJF MN Config Property" temporary;
         ConfigurationSnapshot: Codeunit "BJF MN Config Snapshot";
     begin
-        this.ProviderCatalog.BuildDefinition(Rec.Provider, TempConfigurationLine);
+        this.ProviderCatalog.BuildDefinition(Rec.Provider, TempConfigurationLine, TempConfigurationProperty);
         ConfigurationSnapshot.Download(StrSubstNo(this.SnapshotFileNameTok, Rec."Provider ID"), TempConfigurationLine);
     end;
 

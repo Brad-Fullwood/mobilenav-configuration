@@ -10,12 +10,13 @@ codeunit 77785 "BJF MN Config Validator"
 {
     Access = Internal;
 
-    procedure Validate(var ConfigurationLine: Record "BJF MN Config Line" temporary)
+    procedure Validate(var ConfigurationLine: Record "BJF MN Config Line" temporary; var ConfigurationProperty: Record "BJF MN Config Property" temporary)
     var
         DefinedTargets: Dictionary of [Text, Boolean];
     begin
         ConfigurationLine.Reset();
-        if ConfigurationLine.IsEmpty() then
+        ConfigurationProperty.Reset();
+        if ConfigurationLine.IsEmpty() and ConfigurationProperty.IsEmpty() then
             Error(this.EmptyDefinitionErr);
 
         if ConfigurationLine.FindSet() then
@@ -24,6 +25,13 @@ codeunit 77785 "BJF MN Config Validator"
             until ConfigurationLine.Next() = 0;
         this.ValidateRestartStages(ConfigurationLine);
         ConfigurationLine.Reset();
+
+        if ConfigurationProperty.FindSet() then
+            repeat
+                this.EnsureUnique(
+                    DefinedTargets,
+                    StrSubstNo(this.PropertyKeyTok, ConfigurationProperty."Page ID", LowerCase(ConfigurationProperty."Control Name"), ConfigurationProperty."Field No."));
+            until ConfigurationProperty.Next() = 0;
     end;
 
     local procedure ValidateLine(ConfigurationLine: Record "BJF MN Config Line" temporary; var DefinedTargets: Dictionary of [Text, Boolean])
@@ -136,4 +144,5 @@ codeunit 77785 "BJF MN Config Validator"
         StagingKeyTok: Label 'STAGING|%1', Locked = true;
         StageKeyTok: Label 'STAGE|%1|%2', Locked = true;
         StageFieldKeyTok: Label 'STAGEFIELD|%1|%2|%3', Locked = true;
+        PropertyKeyTok: Label 'PROPERTY|%1|%2|%3', Locked = true;
 }

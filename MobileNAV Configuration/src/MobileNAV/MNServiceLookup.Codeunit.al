@@ -86,14 +86,21 @@ codeunit 77778 "BJF MN Service Lookup"
     var
         SetupRecordRef: RecordRef;
         OptionFieldRef: FieldRef;
-        MemberIndex: Integer;
     begin
         SetupRecordRef.GetTable(ServiceSetup);
         OptionFieldRef := SetupRecordRef.Field(FieldNumber);
+        this.SetOptionMember(OptionFieldRef, ValueName);
+        SetupRecordRef.SetTable(ServiceSetup);
+    end;
+
+    /// <summary>Assigns an option field by member name.</summary>
+    procedure SetOptionMember(var OptionFieldRef: FieldRef; ValueName: Text)
+    var
+        MemberIndex: Integer;
+    begin
         for MemberIndex := 1 to OptionFieldRef.EnumValueCount() do
             if UpperCase(OptionFieldRef.GetEnumValueName(MemberIndex)) = UpperCase(ValueName) then begin
                 OptionFieldRef.Value := OptionFieldRef.GetEnumValueOrdinal(MemberIndex);
-                SetupRecordRef.SetTable(ServiceSetup);
                 exit;
             end;
         Error(this.UnknownOptionValueErr, ValueName, OptionFieldRef.Caption());

@@ -37,34 +37,35 @@ codeunit 77782 "BJF MN Provider Catalog"
         this.ValidateMetadata(ProviderId, ProviderName, ProviderDescription);
     end;
 
-    /// <summary>Builds the provider's definition and returns its lines with the profile rows expanded.</summary>
-    procedure BuildDefinition(ProviderType: Enum "BJF MN Config Provider"; var TempConfigurationLine: Record "BJF MN Config Line" temporary)
+    /// <summary>Builds the provider's definition: its lines, with the profile rows expanded, and its properties.</summary>
+    procedure BuildDefinition(ProviderType: Enum "BJF MN Config Provider"; var TempConfigurationLine: Record "BJF MN Config Line" temporary; var TempConfigurationProperty: Record "BJF MN Config Property" temporary)
     var
         ConfigurationBuilder: Codeunit "BJF MN Config Builder";
         Provider: Interface "BJF MN Config Provider";
     begin
         Provider := ProviderType;
         Provider.DefineConfiguration(ConfigurationBuilder);
-        ConfigurationBuilder.GetLines(TempConfigurationLine);
+        ConfigurationBuilder.GetDefinition(TempConfigurationLine, TempConfigurationProperty);
     end;
 
     local procedure AddProvider(var ProviderBuffer: Record "BJF MN Provider Buffer" temporary; ProviderType: Enum "BJF MN Config Provider")
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
+        TempConfigurationProperty: Record "BJF MN Config Property" temporary;
         ProviderId: Code[50];
         ProviderName: Text[100];
         ProviderDescription: Text[250];
     begin
         this.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription);
         this.EnsureUniqueId(ProviderBuffer, ProviderId);
-        this.BuildDefinition(ProviderType, TempConfigurationLine);
+        this.BuildDefinition(ProviderType, TempConfigurationLine, TempConfigurationProperty);
 
         ProviderBuffer.Init();
         ProviderBuffer.Provider := ProviderType;
         ProviderBuffer."Provider ID" := ProviderId;
         ProviderBuffer.Name := ProviderName;
         ProviderBuffer.Description := ProviderDescription;
-        ProviderBuffer."Defined Hash" := this.ConfigurationHash.Compute(TempConfigurationLine);
+        ProviderBuffer."Defined Hash" := this.ConfigurationHash.Compute(TempConfigurationLine, TempConfigurationProperty);
         this.ConfigurationStatus.PopulateState(ProviderBuffer);
         ProviderBuffer.Insert(false);
     end;

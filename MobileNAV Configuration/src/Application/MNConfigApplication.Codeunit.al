@@ -13,6 +13,7 @@ codeunit 77784 "BJF MN Config Application"
     procedure ApplyProvider(ProviderType: Enum "BJF MN Config Provider")
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
+        TempConfigurationProperty: Record "BJF MN Config Property" temporary;
         ProviderId: Code[50];
         ProviderName: Text[100];
         ProviderDescription: Text[250];
@@ -20,16 +21,16 @@ codeunit 77784 "BJF MN Config Application"
         DeviceHandoverCompleted: Boolean;
     begin
         this.ProviderCatalog.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription);
-        this.ProviderCatalog.BuildDefinition(ProviderType, TempConfigurationLine);
-        ContentHash := this.ConfigurationHash.Compute(TempConfigurationLine);
+        this.ProviderCatalog.BuildDefinition(ProviderType, TempConfigurationLine, TempConfigurationProperty);
+        ContentHash := this.ConfigurationHash.Compute(TempConfigurationLine, TempConfigurationProperty);
 
-        this.ConfigurationValidator.Validate(TempConfigurationLine);
-        DeviceHandoverCompleted := this.Execute(TempConfigurationLine);
+        this.ConfigurationValidator.Validate(TempConfigurationLine, TempConfigurationProperty);
+        DeviceHandoverCompleted := this.Execute(TempConfigurationLine, TempConfigurationProperty);
         this.ConfigurationStatus.RecordApplied(
             ProviderId, ProviderName, ContentHash, not DeviceHandoverCompleted);
     end;
 
-    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary): Boolean
+    local procedure Execute(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var TempConfigurationProperty: Record "BJF MN Config Property" temporary): Boolean
     var
         PageServices: Dictionary of [Integer, Text];
     begin
@@ -37,11 +38,14 @@ codeunit 77784 "BJF MN Config Application"
         // construction window is open, so the whole apply runs inside one.
         this.PageManagement.BeginConfigurationChange();
         this.PreparePublishedPages(TempConfigurationLine, PageServices);
-        this.PrepareReferencedPages(TempConfigurationLine, PageServices);
+        this.PrepareReferencedPages(TempConfigurationLine, TempConfigurationProperty, PageServices);
+        // Page settings first: a page type change resets list-only field settings.
+        this.ApplyProperties(TempConfigurationProperty, PageServices, true);
         this.ApplyFields(TempConfigurationLine, PageServices);
         this.ApplyFunctionFields(TempConfigurationLine, PageServices);
         this.ApplyScanFields(TempConfigurationLine, PageServices);
         this.ApplyLinkedFields(TempConfigurationLine, PageServices);
+        this.ApplyProperties(TempConfigurationProperty, PageServices, false);
         this.ApplyUserScopes(TempConfigurationLine, PageServices);
         // Profile rows override the service-level field rows on the device, so they are written
         // after every field operation and read the Control IDs those operations settled.
@@ -82,7 +86,7 @@ codeunit 77784 "BJF MN Config Application"
         TempConfigurationLine.Reset();
     end;
 
-    local procedure PrepareReferencedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    local procedure PrepareReferencedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var TempConfigurationProperty: Record "BJF MN Config Property" temporary; var PageServices: Dictionary of [Integer, Text])
     begin
         TempConfigurationLine.SetFilter(Operation, '<>%1', Enum::"BJF MN Config Operation"::"Published Page");
         if TempConfigurationLine.FindSet() then
@@ -92,6 +96,30 @@ codeunit 77784 "BJF MN Config Application"
                     this.ResolvePage(TempConfigurationLine."Target Page ID", PageServices);
             until TempConfigurationLine.Next() = 0;
         TempConfigurationLine.Reset();
+
+        TempConfigurationProperty.Reset();
+        if TempConfigurationProperty.FindSet() then
+            repeat
+                this.ResolvePage(TempConfigurationProperty."Page ID", PageServices);
+            until TempConfigurationProperty.Next() = 0;
+    end;
+
+    /// <param name="PageLevel">True writes the page (Main row) properties, false the control properties.</param>
+    local procedure ApplyProperties(var TempConfigurationProperty: Record "BJF MN Config Property" temporary; var PageServices: Dictionary of [Integer, Text]; PageLevel: Boolean)
+    var
+        ServiceName: Text;
+    begin
+        TempConfigurationProperty.Reset();
+        if PageLevel then
+            TempConfigurationProperty.SetRange("Control Name", '')
+        else
+            TempConfigurationProperty.SetFilter("Control Name", '<>%1', '');
+        if TempConfigurationProperty.FindSet() then
+            repeat
+                PageServices.Get(TempConfigurationProperty."Page ID", ServiceName);
+                this.PropertyManagement.Apply(CopyStr(ServiceName, 1, 100), TempConfigurationProperty);
+            until TempConfigurationProperty.Next() = 0;
+        TempConfigurationProperty.Reset();
     end;
 
     local procedure ApplyFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
@@ -340,6 +368,7 @@ codeunit 77784 "BJF MN Config Application"
         PageManagement: Codeunit "BJF MN Page Mgt.";
         FieldManagement: Codeunit "BJF MN Field Mgt.";
         ProfileManagement: Codeunit "BJF MN Profile Mgt.";
+        PropertyManagement: Codeunit "BJF MN Property Mgt.";
         StageManagement: Codeunit "BJF MN Stage Mgt.";
         PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
         FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';

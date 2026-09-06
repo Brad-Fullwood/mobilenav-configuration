@@ -12,23 +12,32 @@ codeunit 77792 "BJF MN Config Hash"
 {
     Access = Internal;
 
-    procedure Compute(var ConfigurationLine: Record "BJF MN Config Line" temporary): Text[64]
+    procedure Compute(var ConfigurationLine: Record "BJF MN Config Line" temporary; var ConfigurationProperty: Record "BJF MN Config Property" temporary): Text[64]
     var
-        TempSorted: Record "BJF MN Config Line" temporary;
+        TempSortedLine: Record "BJF MN Config Line" temporary;
+        TempSortedProperty: Record "BJF MN Config Property" temporary;
         CryptographyManagement: Codeunit "Cryptography Management";
         Serialized: TextBuilder;
     begin
-        TempSorted.Copy(ConfigurationLine, true);
-        TempSorted.Reset();
-        TempSorted.SetCurrentKey(Operation, "Page ID", "Control Name", Profile, "Stage Id", "Entry No.");
-        if TempSorted.FindSet() then
+        TempSortedLine.Copy(ConfigurationLine, true);
+        TempSortedLine.Reset();
+        TempSortedLine.SetCurrentKey(Operation, "Page ID", "Control Name", Profile, "Stage Id", "Entry No.");
+        if TempSortedLine.FindSet() then
             repeat
-                this.AppendLine(Serialized, TempSorted);
-            until TempSorted.Next() = 0;
+                this.AppendRecord(Serialized, TempSortedLine, TempSortedLine.FieldNo("Entry No."));
+            until TempSortedLine.Next() = 0;
+
+        TempSortedProperty.Copy(ConfigurationProperty, true);
+        TempSortedProperty.Reset();
+        TempSortedProperty.SetCurrentKey("Page ID", "Control Name", "Field No.");
+        if TempSortedProperty.FindSet() then
+            repeat
+                this.AppendRecord(Serialized, TempSortedProperty, TempSortedProperty.FieldNo("Entry No."));
+            until TempSortedProperty.Next() = 0;
         exit(CopyStr(CryptographyManagement.GenerateHash(Serialized.ToText(), 2), 1, 64));
     end;
 
-    local procedure AppendLine(var Serialized: TextBuilder; Line: Record "BJF MN Config Line" temporary)
+    local procedure AppendRecord(var Serialized: TextBuilder; Line: Variant; EntryNoFieldNo: Integer)
     var
         LineRef: RecordRef;
         FieldRef: FieldRef;
@@ -39,7 +48,7 @@ codeunit 77792 "BJF MN Config Hash"
         Serialized.Append(this.LineSeparatorTok);
         for FieldIndex := 1 to LineRef.FieldCount() do begin
             FieldRef := LineRef.FieldIndex(FieldIndex);
-            if FieldRef.Number() <> Line.FieldNo("Entry No.") then begin
+            if FieldRef.Number() <> EntryNoFieldNo then begin
                 // Options and enums serialize as ordinals: captions depend on the session
                 // language and a fingerprint must not.
                 if FieldRef.Type() = FieldType::Option then begin

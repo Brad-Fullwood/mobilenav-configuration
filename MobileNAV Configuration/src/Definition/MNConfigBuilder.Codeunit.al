@@ -131,6 +131,183 @@ codeunit 77781 "BJF MN Config Builder"
         exit(this);
     end;
 
+
+    // ---- Page settings ------------------------------------------------------------------
+
+    /// <summary>Sets the shape MobileNAV gives the current page: list, card, list and card, dialog or offline.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure PageType(Shape: Enum "BJF MN Page Type"): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.PageTypeTok, 96, this.Vocabulary.PageTypeName(Shape), false);
+        exit(this);
+    end;
+
+    /// <summary>Lets the device create records on the current page.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Insertable(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.InsertableTok, 125, this.TrueTok, true);
+        exit(this);
+    end;
+
+    /// <summary>Lets the device change records on the current page. Editable() on a control does this on its own.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Updatable(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.UpdatableTok, 126, this.TrueTok, true);
+        exit(this);
+    end;
+
+    /// <summary>Lets the device delete records on the current page.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Deletable(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.DeletableTok, 127, this.TrueTok, true);
+        exit(this);
+    end;
+
+    /// <summary>Caps how many records a list fetches.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ListLimit(MaxRecords: Integer): Codeunit "BJF MN Config Builder"
+    begin
+        if MaxRecords <= 0 then
+            Error(this.PositiveValueRequiredErr, this.ListLimitTok, this.CurrentPageId);
+        this.AddPageProperty(this.ListLimitTok, 252, Format(MaxRecords, 0, 9), true);
+        exit(this);
+    end;
+
+    /// <summary>Names the control whose related page opens when a record is tapped.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure DefaultDrillDown(ControlName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControlName(ControlName);
+        this.AddPagePropertyOf(this.DefaultDrillDownTok, 114, ControlName, Enum::"BJF MN Property Value"::"Control Name", true);
+        exit(this);
+    end;
+
+    /// <summary>Names the MobileNAV page function the device calls when the page opens.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure OnOpen(PageFunction: Text[50]): Codeunit "BJF MN Config Builder"
+    begin
+        if PageFunction = '' then
+            Error(this.PageFunctionRequiredErr, this.OnOpenTok);
+        this.AddPageProperty(this.OnOpenTok, 153, PageFunction, true);
+        exit(this);
+    end;
+
+    /// <summary>Names the MobileNAV page function the device calls when the page closes.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure OnClose(PageFunction: Text[50]): Codeunit "BJF MN Config Builder"
+    begin
+        if PageFunction = '' then
+            Error(this.PageFunctionRequiredErr, this.OnCloseTok);
+        this.AddPageProperty(this.OnCloseTok, 154, PageFunction, true);
+        exit(this);
+    end;
+
+    /// <summary>Removes one of the standard toolbar buttons from the current page. Repeatable.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure HideButton(ToolbarButton: Enum "BJF MN Toolbar Button"): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.HideButtonTok, this.ToolbarButtonFieldNo(ToolbarButton), this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Removes a prefix from the current page's title. Repeatable.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure HideTitlePrefix(Prefix: Enum "BJF MN Title Prefix"): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.HideTitlePrefixTok, 200 + Prefix.AsInteger(), this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Makes the device reload the current page's data on its own. Repeatable.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure AutoRefresh(Moment: Enum "BJF MN Auto Refresh"): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.AutoRefreshTok, this.AutoRefreshFieldNo(Moment), this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Opens the record straight away when a list holds exactly one.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure AutoOpenSingleRecord(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.AutoOpenSingleRecordTok, 273, this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Shows the filter panel instead of the empty-list placeholder when a list opens.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ShowFilterPanel(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.ShowFilterPanelTok, 203, this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Puts an unread-record badge on the page's tile. Not available on a page with an assign-to-me control.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ShowUnreadCount(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.ShowUnreadCountTok, 282, this.TrueTok, true);
+        exit(this);
+    end;
+
+    /// <summary>Which "assigned to me" views the list offers, for a page with an assign-to-me control.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure MineFilter(Views: Enum "BJF MN Mine Filter"): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.MineFilterTok, 307, this.Vocabulary.MineFilterName(Views), false);
+        exit(this);
+    end;
+
+    /// <summary>Where the device places the assign-to-me control, on the card and on the list.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure AssignToMe(Placement: Enum "BJF MN Assign To Me"): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.AssignToMeTok, 308, this.Vocabulary.AssignToMeName(Placement), false);
+        this.AddPageProperty(this.AssignToMeTok, 309, this.Vocabulary.AssignToMeName(Placement), false);
+        exit(this);
+    end;
+
+    /// <summary>Applies a MobileNAV page style (a Page Style code from MobileNAV's master data).</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Style(PageStyleCode: Code[20]): Codeunit "BJF MN Config Builder"
+    begin
+        if PageStyleCode = '' then
+            Error(this.CodeRequiredErr, this.StyleTok, this.CurrentPageId);
+        this.AddPageProperty(this.StyleTok, 260, PageStyleCode, true);
+        exit(this);
+    end;
+
+    /// <summary>Filters a child page to the record that opened it, on top of any declared link filter.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure FilterByParent(): Codeunit "BJF MN Config Builder"
+    begin
+        this.AddPageProperty(this.FilterByParentTok, 235, this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>How many records an offline page downloads per request.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ChunkSize(Records: Integer): Codeunit "BJF MN Config Builder"
+    begin
+        if Records <= 0 then
+            Error(this.PositiveValueRequiredErr, this.ChunkSizeTok, this.CurrentPageId);
+        this.AddPageProperty(this.ChunkSizeTok, 229, Format(Records, 0, 9), false);
+        exit(this);
+    end;
+
+    /// <summary>How often, in hours, an offline page checks the server for changed records.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure CheckForChanges(Hours: Decimal): Codeunit "BJF MN Config Builder"
+    begin
+        if Hours <= 0 then
+            Error(this.PositiveValueRequiredErr, this.CheckForChangesTok, this.CurrentPageId);
+        this.AddPageProperty(this.CheckForChangesTok, 90, Format(Hours, 0, 9), true);
+        exit(this);
+    end;
+
     // ---- Controls -----------------------------------------------------------------------
 
     /// <summary>
@@ -363,6 +540,123 @@ codeunit 77781 "BJF MN Config Builder"
         exit(this);
     end;
 
+
+    // ---- Control settings ---------------------------------------------------------------
+
+    /// <summary>Formats the decimal field declared last, in Business Central's DecimalPlaces notation, for example '2:2'.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure DecimalPlaces(Places: Text[5]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.DecimalPlacesTok, this.PlainFieldKind());
+        this.AddControlProperty(this.DecimalPlacesTok, 227, Places, false);
+        exit(this);
+    end;
+
+    /// <summary>Draws the field declared last as a quantity with plus/minus steppers of the given increment.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Quantity(Increment: Decimal): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.QuantityTok, this.PlainFieldKind());
+        if Increment <= 0 then
+            Error(this.PositiveValueRequiredErr, this.QuantityTok, this.TempConfigurationLine."Control Name");
+        this.TempConfigurationLine."Mobile Type" := this.Vocabulary.MobileTypeName(Enum::"BJF MN Mobile Type"::Quantity);
+        this.TempConfigurationLine.Modify(false);
+        this.AddControlProperty(this.QuantityTok, 228, Format(Increment, 0, 9), true);
+        exit(this);
+    end;
+
+    /// <summary>Makes a scan into the control declared last increase the named quantity field ("scan to add").</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Increases(QuantityControlName: Text[100]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.IncreasesTok, this.FieldKinds());
+        this.RequireControlName(QuantityControlName);
+        this.AddControlPropertyOf(this.IncreasesTok, 236, QuantityControlName, Enum::"BJF MN Property Value"::"Control Line No.", false);
+        exit(this);
+    end;
+
+    /// <summary>Bounds the numeric field declared last.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure Range(MinValue: Decimal; MaxValue: Decimal): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.RangeTok, this.PlainFieldKind());
+        if MinValue > MaxValue then
+            Error(this.RangeOrderErr, this.TempConfigurationLine."Control Name");
+        this.AddControlProperty(this.RangeTok, 254, Format(MinValue, 0, 9), false);
+        this.AddControlProperty(this.RangeTok, 255, Format(MaxValue, 0, 9), false);
+        exit(this);
+    end;
+
+    /// <summary>Lets the field declared last be edited from the list row without opening the card. One per page.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure QuickEdit(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.QuickEditTok, this.PlainFieldKind());
+        this.AddControlProperty(this.QuickEditTok, 237, this.TrueTok, true);
+        exit(this);
+    end;
+
+    /// <summary>Shows the field declared last on a collapsed group header when the list is grouped.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure PromotedOnGroupHeader(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.PromotedOnGroupHeaderTok, this.PlainFieldKind());
+        this.AddControlProperty(this.PromotedOnGroupHeaderTok, 190, this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Lets the device user skip the scan the control declared last requires. Needs Validation() first.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure AllowSkip(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.AllowSkipTok, this.ButtonAndScanKinds());
+        if this.TempConfigurationLine."Validation Behavior" = '' then
+            Error(this.ValidationRequiredErr, this.TempConfigurationLine."Control Name");
+        this.AddControlProperty(this.AllowSkipTok, 243, this.TrueTok, true);
+        exit(this);
+    end;
+
+    /// <summary>Validates and parses what is scanned or typed into the control declared last with a regular expression.</summary>
+    /// <param name="Pattern">The .NET regular expression.</param>
+    /// <param name="Results">Comma-separated capture-group indexes that make up the resulting value.</param>
+    /// <returns>The builder, for chaining.</returns>
+    procedure RegEx(Pattern: Text[250]; Results: Text[50]): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.RegExTok, this.FieldAndScanKinds());
+        if Pattern = '' then
+            Error(this.PatternRequiredErr, this.TempConfigurationLine."Control Name");
+        this.AddControlProperty(this.RegExTok, 155, Pattern, true);
+        this.AddControlProperty(this.RegExTok, 157, Results, true);
+        exit(this);
+    end;
+
+    /// <summary>Tags the control declared last with the role MobileNAV's warehouse features key on.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure FieldCategory(Role: Enum "BJF MN Field Category"): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.FieldCategoryTok, this.FieldAndScanKinds());
+        this.AddControlProperty(this.FieldCategoryTok, 215, this.Vocabulary.FieldCategoryName(Role), true);
+        exit(this);
+    end;
+
+    /// <summary>Keeps the field declared last from opening its related page from the card.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure HideDrillDown(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.HideDrillDownTok, this.PlainFieldKind());
+        this.AddControlProperty(this.HideDrillDownTok, 239, this.TrueTok, false);
+        exit(this);
+    end;
+
+    /// <summary>Runs the field's Business Central validation even when the value did not change.</summary>
+    /// <returns>The builder, for chaining.</returns>
+    procedure ValidateAlways(): Codeunit "BJF MN Config Builder"
+    begin
+        this.RequireControl(this.ValidateAlwaysTok, this.FieldAndScanKinds());
+        this.AddControlProperty(this.ValidateAlwaysTok, 240, this.TrueTok, true);
+        exit(this);
+    end;
+
     // ---- Wizard -------------------------------------------------------------------------
 
     /// <summary>
@@ -468,22 +762,32 @@ codeunit 77781 "BJF MN Config Builder"
     // ---- Framework side -----------------------------------------------------------------
 
     /// <summary>
-    /// Returns the declared lines with the profile rows the declarations imply appended: one
-    /// all-profiles row per control carrying the control's own visibility and editability,
-    /// reshaped by OnlyInProfile, ExceptInProfile and NotInProfiles.
+    /// Returns the declared lines, with the profile rows the declarations imply appended (one
+    /// all-profiles row per control carrying its own visibility and editability, reshaped by
+    /// OnlyInProfile, ExceptInProfile and NotInProfiles), and the declared properties.
     /// </summary>
-    internal procedure GetLines(var Target: Record "BJF MN Config Line" temporary)
+    internal procedure GetDefinition(var TargetLine: Record "BJF MN Config Line" temporary; var TargetProperty: Record "BJF MN Config Property" temporary)
     begin
-        Target.Reset();
-        Target.DeleteAll(false);
+        TargetLine.Reset();
+        TargetLine.DeleteAll(false);
         this.TempConfigurationLine.Reset();
         if this.TempConfigurationLine.FindSet() then
             repeat
-                Target := this.TempConfigurationLine;
-                Target.Insert(false);
+                TargetLine := this.TempConfigurationLine;
+                TargetLine.Insert(false);
             until this.TempConfigurationLine.Next() = 0;
-        this.ExpandProfileLines(Target);
-        Target.Reset();
+        this.ExpandProfileLines(TargetLine);
+        TargetLine.Reset();
+
+        TargetProperty.Reset();
+        TargetProperty.DeleteAll(false);
+        this.TempConfigurationProperty.Reset();
+        if this.TempConfigurationProperty.FindSet() then
+            repeat
+                TargetProperty := this.TempConfigurationProperty;
+                TargetProperty.Insert(false);
+            until this.TempConfigurationProperty.Next() = 0;
+        TargetProperty.Reset();
     end;
 
     local procedure ExpandProfileLines(var Target: Record "BJF MN Config Line" temporary)
@@ -534,6 +838,86 @@ codeunit 77781 "BJF MN Config Builder"
         Target.Visible := Visible;
         Target.Editable := ControlLine.Editable and Visible;
         Target.Insert(false);
+    end;
+
+    local procedure AddPageProperty(Setting: Text[50]; FieldNo: Integer; Value: Text[250]; RunValidate: Boolean)
+    begin
+        this.AddPagePropertyOf(Setting, FieldNo, Value, Enum::"BJF MN Property Value"::Literal, RunValidate);
+    end;
+
+    local procedure AddPagePropertyOf(Setting: Text[50]; FieldNo: Integer; Value: Text[250]; ValueKind: Enum "BJF MN Property Value"; RunValidate: Boolean)
+    begin
+        this.RequirePage();
+        this.AddProperty(Setting, '', FieldNo, Value, ValueKind, RunValidate);
+    end;
+
+    /// <summary>Adds a property of the control declared last; RequireControl has positioned the shared record on it.</summary>
+    local procedure AddControlProperty(Setting: Text[50]; FieldNo: Integer; Value: Text[250]; RunValidate: Boolean)
+    begin
+        this.AddControlPropertyOf(Setting, FieldNo, Value, Enum::"BJF MN Property Value"::Literal, RunValidate);
+    end;
+
+    local procedure AddControlPropertyOf(Setting: Text[50]; FieldNo: Integer; Value: Text[250]; ValueKind: Enum "BJF MN Property Value"; RunValidate: Boolean)
+    begin
+        this.AddProperty(Setting, this.TempConfigurationLine."Control Name", FieldNo, Value, ValueKind, RunValidate);
+    end;
+
+    /// <summary>A later declaration of the same setting replaces the earlier one.</summary>
+    local procedure AddProperty(Setting: Text[50]; ControlName: Text[100]; FieldNo: Integer; Value: Text[250]; ValueKind: Enum "BJF MN Property Value"; RunValidate: Boolean)
+    begin
+        this.TempConfigurationProperty.Reset();
+        this.TempConfigurationProperty.SetRange("Page ID", this.CurrentPageId);
+        this.TempConfigurationProperty.SetRange("Control Name", ControlName);
+        this.TempConfigurationProperty.SetRange("Field No.", FieldNo);
+        if not this.TempConfigurationProperty.FindFirst() then begin
+            this.NextPropertyEntryNo += 1;
+            this.TempConfigurationProperty.Init();
+            this.TempConfigurationProperty."Entry No." := this.NextPropertyEntryNo;
+            this.TempConfigurationProperty."Page ID" := this.CurrentPageId;
+            this.TempConfigurationProperty."Control Name" := ControlName;
+            this.TempConfigurationProperty."Field No." := FieldNo;
+            this.TempConfigurationProperty.Insert(false);
+        end;
+        this.TempConfigurationProperty.Setting := Setting;
+        this.TempConfigurationProperty.Value := Value;
+        this.TempConfigurationProperty."Value Kind" := ValueKind;
+        this.TempConfigurationProperty.Validate := RunValidate;
+        this.TempConfigurationProperty.Modify(false);
+        this.TempConfigurationProperty.Reset();
+    end;
+
+    /// <summary>The MobileNAV Hide* field for each toolbar button, in the enum's order.</summary>
+    local procedure ToolbarButtonFieldNo(ToolbarButton: Enum "BJF MN Toolbar Button"): Integer
+    var
+        FieldNos: List of [Integer];
+    begin
+        FieldNos.Add(204); // CardRefresh
+        FieldNos.Add(205); // CardHideFields
+        FieldNos.Add(206); // CardFlowFilters
+        FieldNos.Add(207); // CardNavigate
+        FieldNos.Add(208); // ListSort
+        FieldNos.Add(209); // ListRefresh
+        FieldNos.Add(210); // ListFilter
+        FieldNos.Add(211); // ListFlowFilters
+        FieldNos.Add(281); // ListFullScreen
+        FieldNos.Add(238); // ListMultiSelect
+        FieldNos.Add(242); // ListHideFilters
+        FieldNos.Add(280); // LongerToolbarCaption
+        exit(FieldNos.Get(ToolbarButton.AsInteger() + 1));
+    end;
+
+    local procedure AutoRefreshFieldNo(Moment: Enum "BJF MN Auto Refresh"): Integer
+    begin
+        case Moment of
+            Enum::"BJF MN Auto Refresh"::OnOpen:
+                exit(148);
+            Enum::"BJF MN Auto Refresh"::CardOnChildUpdate:
+                exit(270);
+            Enum::"BJF MN Auto Refresh"::ListOnChildUpdate:
+                exit(271);
+            Enum::"BJF MN Auto Refresh"::ListOnUpdate:
+                exit(272);
+        end;
     end;
 
     local procedure BeginControl(Operation: Enum "BJF MN Config Operation"; ControlName: Text[100])
@@ -690,6 +1074,12 @@ codeunit 77781 "BJF MN Config Builder"
         Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
     end;
 
+    local procedure FieldAndScanKinds() Kinds: List of [Enum "BJF MN Config Operation"]
+    begin
+        Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+    end;
+
     local procedure ButtonAndScanKinds() Kinds: List of [Enum "BJF MN Config Operation"]
     begin
         Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
@@ -698,11 +1088,13 @@ codeunit 77781 "BJF MN Config Builder"
 
     var
         TempConfigurationLine: Record "BJF MN Config Line" temporary;
+        TempConfigurationProperty: Record "BJF MN Config Property" temporary;
         Vocabulary: Codeunit "BJF MN Vocabulary";
         OnlyProfiles: Dictionary of [Integer, List of [Code[30]]];
         ExceptProfiles: Dictionary of [Integer, List of [Code[30]]];
         UnprofiledControls: List of [Integer];
         NextEntryNo: Integer;
+        NextPropertyEntryNo: Integer;
         CurrentPageId: Integer;
         CurrentControlEntryNo: Integer;
         CurrentStageEntryNo: Integer;
@@ -725,6 +1117,44 @@ codeunit 77781 "BJF MN Config Builder"
         WizardRequiredForModifierErr: Label '%1() needs Wizard() on the page first.', Comment = '%1 = modifier name';
         StageIdRequiredErr: Label 'Stage() needs a stage id.';
         NoStageErr: Label '%1() applies to the stage declared last, but no Stage has been declared yet.', Comment = '%1 = modifier name';
+        PositiveValueRequiredErr: Label '%1() on %2 needs a value greater than zero.', Comment = '%1 = setting name, %2 = page id or control name';
+        CodeRequiredErr: Label '%1() on page %2 needs a code.', Comment = '%1 = setting name, %2 = page id';
+        PageFunctionRequiredErr: Label '%1() needs the name of a MobileNAV page function.', Comment = '%1 = setting name';
+        RangeOrderErr: Label 'Range() on %1 needs the minimum below the maximum.', Comment = '%1 = control name';
+        ValidationRequiredErr: Label 'AllowSkip() on %1 needs Validation() first: there is nothing to skip until a scan is required.', Comment = '%1 = control name';
+        PatternRequiredErr: Label 'RegEx() on %1 needs a pattern.', Comment = '%1 = control name';
+        TrueTok: Label 'true', Locked = true;
+        PageTypeTok: Label 'PageType', Locked = true;
+        InsertableTok: Label 'Insertable', Locked = true;
+        UpdatableTok: Label 'Updatable', Locked = true;
+        DeletableTok: Label 'Deletable', Locked = true;
+        ListLimitTok: Label 'ListLimit', Locked = true;
+        DefaultDrillDownTok: Label 'DefaultDrillDown', Locked = true;
+        OnOpenTok: Label 'OnOpen', Locked = true;
+        OnCloseTok: Label 'OnClose', Locked = true;
+        HideButtonTok: Label 'HideButton', Locked = true;
+        HideTitlePrefixTok: Label 'HideTitlePrefix', Locked = true;
+        AutoRefreshTok: Label 'AutoRefresh', Locked = true;
+        AutoOpenSingleRecordTok: Label 'AutoOpenSingleRecord', Locked = true;
+        ShowFilterPanelTok: Label 'ShowFilterPanel', Locked = true;
+        ShowUnreadCountTok: Label 'ShowUnreadCount', Locked = true;
+        MineFilterTok: Label 'MineFilter', Locked = true;
+        AssignToMeTok: Label 'AssignToMe', Locked = true;
+        StyleTok: Label 'Style', Locked = true;
+        FilterByParentTok: Label 'FilterByParent', Locked = true;
+        ChunkSizeTok: Label 'ChunkSize', Locked = true;
+        CheckForChangesTok: Label 'CheckForChanges', Locked = true;
+        DecimalPlacesTok: Label 'DecimalPlaces', Locked = true;
+        QuantityTok: Label 'Quantity', Locked = true;
+        IncreasesTok: Label 'Increases', Locked = true;
+        RangeTok: Label 'Range', Locked = true;
+        QuickEditTok: Label 'QuickEdit', Locked = true;
+        PromotedOnGroupHeaderTok: Label 'PromotedOnGroupHeader', Locked = true;
+        AllowSkipTok: Label 'AllowSkip', Locked = true;
+        RegExTok: Label 'RegEx', Locked = true;
+        FieldCategoryTok: Label 'FieldCategory', Locked = true;
+        HideDrillDownTok: Label 'HideDrillDown', Locked = true;
+        ValidateAlwaysTok: Label 'ValidateAlways', Locked = true;
         EditableTok: Label 'Editable', Locked = true;
         ReadOnlyTok: Label 'ReadOnly', Locked = true;
         HiddenTok: Label 'Hidden', Locked = true;
