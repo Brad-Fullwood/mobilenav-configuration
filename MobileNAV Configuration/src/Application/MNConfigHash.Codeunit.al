@@ -1,6 +1,8 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
 using System.Security.Encryption;
+using System.Text;
+using System.Utilities;
 
 /// <summary>
 /// Fingerprints a provider's definition so the framework can tell on its own when the
@@ -51,14 +53,34 @@ codeunit 77792 "BJF MN Config Hash"
             if FieldRef.Number() <> EntryNoFieldNo then begin
                 // Options and enums serialize as ordinals: captions depend on the session
                 // language and a fingerprint must not.
-                if FieldRef.Type() = FieldType::Option then begin
-                    OptionOrdinal := FieldRef.Value();
-                    Serialized.Append(Format(OptionOrdinal, 0, 9));
-                end else
-                    Serialized.Append(Format(FieldRef.Value(), 0, 9));
+                case FieldRef.Type() of
+                    FieldType::Option:
+                        begin
+                            OptionOrdinal := FieldRef.Value();
+                            Serialized.Append(Format(OptionOrdinal, 0, 9));
+                        end;
+                    FieldType::Blob:
+                        Serialized.Append(this.BlobText(FieldRef));
+                    else
+                        Serialized.Append(Format(FieldRef.Value(), 0, 9));
+                end;
                 Serialized.Append(this.FieldSeparatorTok);
             end;
         end;
+    end;
+
+    local procedure BlobText(var BlobFieldRef: FieldRef): Text
+    var
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        BlobIn: InStream;
+    begin
+        BlobFieldRef.CalcField();
+        TempBlob.FromFieldRef(BlobFieldRef);
+        if not TempBlob.HasValue() then
+            exit('');
+        TempBlob.CreateInStream(BlobIn);
+        exit(Base64Convert.ToBase64(BlobIn));
     end;
 
     var

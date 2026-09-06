@@ -37,6 +37,7 @@ codeunit 77784 "BJF MN Config Application"
         // MobileNAV only carries configuration through to devices for changes made while its
         // construction window is open, so the whole apply runs inside one.
         this.PageManagement.BeginConfigurationChange();
+        this.ApplyMasterData(TempConfigurationLine);
         this.PreparePublishedPages(TempConfigurationLine, PageServices);
         this.PrepareReferencedPages(TempConfigurationLine, TempConfigurationProperty, PageServices);
         // Page settings first: a page type change resets list-only field settings.
@@ -44,9 +45,13 @@ codeunit 77784 "BJF MN Config Application"
         this.ApplyFields(TempConfigurationLine, PageServices);
         this.ApplyFunctionFields(TempConfigurationLine, PageServices);
         this.ApplyScanFields(TempConfigurationLine, PageServices);
-        this.ApplyLinkedFields(TempConfigurationLine, PageServices);
+        this.ApplyRelations(TempConfigurationLine, PageServices);
         this.ApplyProperties(TempConfigurationProperty, PageServices, false);
         this.ApplyUserScopes(TempConfigurationLine, PageServices);
+        this.ApplyPageRows(TempConfigurationLine, PageServices);
+        // Groups and order last among the field rows: flow filters add rows of their own.
+        this.ApplyGroupsAndOrder(TempConfigurationLine, PageServices);
+        this.ApplyAppearance(TempConfigurationLine, PageServices);
         // Profile rows override the service-level field rows on the device, so they are written
         // after every field operation and read the Control IDs those operations settled.
         this.ApplyProfilePages(TempConfigurationLine, PageServices);
@@ -54,12 +59,32 @@ codeunit 77784 "BJF MN Config Application"
         // target has to be reachable from the page the control sits on or the control is not
         // drawn at all. See "BJF MN Profile Mgt.".LinkPageToParent.
         this.ApplyProfilePageParents(TempConfigurationLine, PageServices);
+        this.ApplyProfilePageSettings(TempConfigurationLine, PageServices);
         this.ApplyProfileFields(TempConfigurationLine, PageServices);
-        // Staging runs last: the per-field stage masks span every visible field row, so all
-        // field configuration must be in place before the masks are written.
+        // Staging runs after the fields: the per-field stage masks span every visible field row.
         this.ApplyStaging(TempConfigurationLine, PageServices);
+        this.ApplyLayouts(TempConfigurationLine, PageServices);
         TempConfigurationLine.Reset();
         exit(this.PageManagement.PublishConfigurationToDevices());
+    end;
+
+    local procedure ApplyMasterData(var TempConfigurationLine: Record "BJF MN Config Line" temporary)
+    begin
+        TempConfigurationLine.SetFilter(Operation, '%1|%2|%3',
+            Enum::"BJF MN Config Operation"::Category, Enum::"BJF MN Config Operation"::"Category Translation",
+            Enum::"BJF MN Config Operation"::Profile);
+        if TempConfigurationLine.FindSet() then
+            repeat
+                case TempConfigurationLine.Operation of
+                    Enum::"BJF MN Config Operation"::Category:
+                        this.MasterDataManagement.EnsureCategory(CopyStr(TempConfigurationLine."Control Name", 1, 20), TempConfigurationLine.Description);
+                    Enum::"BJF MN Config Operation"::"Category Translation":
+                        this.MasterDataManagement.EnsureCategoryTranslation(CopyStr(TempConfigurationLine."Control Name", 1, 20), TempConfigurationLine."Language Code", TempConfigurationLine.Description);
+                    Enum::"BJF MN Config Operation"::Profile:
+                        this.MasterDataManagement.EnsureProfile(TempConfigurationLine.Profile, TempConfigurationLine.Description);
+                end;
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
     end;
 
     local procedure PreparePublishedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
@@ -89,10 +114,11 @@ codeunit 77784 "BJF MN Config Application"
     local procedure PrepareReferencedPages(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var TempConfigurationProperty: Record "BJF MN Config Property" temporary; var PageServices: Dictionary of [Integer, Text])
     begin
         TempConfigurationLine.SetFilter(Operation, '<>%1', Enum::"BJF MN Config Operation"::"Published Page");
+        TempConfigurationLine.SetFilter("Page ID", '<>%1', 0);
         if TempConfigurationLine.FindSet() then
             repeat
                 this.ResolvePage(TempConfigurationLine."Page ID", PageServices);
-                if TempConfigurationLine.Operation = Enum::"BJF MN Config Operation"::"Linked Field" then
+                if TempConfigurationLine."Target Page ID" <> 0 then
                     this.ResolvePage(TempConfigurationLine."Target Page ID", PageServices);
             until TempConfigurationLine.Next() = 0;
         TempConfigurationLine.Reset();
@@ -245,7 +271,7 @@ codeunit 77784 "BJF MN Config Application"
         ParentService: Text;
         ChildService: Text;
     begin
-        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Linked Field");
+        TempConfigurationLine.SetFilter(Operation, '%1|%2', Enum::"BJF MN Config Operation"::"Linked Field", Enum::"BJF MN Config Operation"::"Lookup Field");
         if TempConfigurationLine.FindSet() then
             repeat
                 PageServices.Get(TempConfigurationLine."Page ID", ParentService);
@@ -295,22 +321,127 @@ codeunit 77784 "BJF MN Config Application"
         end;
     end;
 
-    local procedure ApplyLinkedFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    local procedure ApplyRelations(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
     var
+        TempControlLine: Record "BJF MN Config Line" temporary;
         ServiceName: Text;
         TargetServiceName: Text;
+        Configured: Boolean;
     begin
-        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Linked Field");
+        TempControlLine.Copy(TempConfigurationLine, true);
+        TempControlLine.Reset();
+        TempControlLine.SetFilter(Operation, '%1|%2', Enum::"BJF MN Config Operation"::"Linked Field", Enum::"BJF MN Config Operation"::"Lookup Field");
+        if TempControlLine.FindSet() then
+            repeat
+                PageServices.Get(TempControlLine."Page ID", ServiceName);
+                PageServices.Get(TempControlLine."Target Page ID", TargetServiceName);
+                if TempControlLine.Operation = Enum::"BJF MN Config Operation"::"Linked Field" then
+                    Configured := this.RelationManagement.ConfigureLink(CopyStr(ServiceName, 1, 100), CopyStr(TargetServiceName, 1, 100), TempControlLine, TempConfigurationLine)
+                else
+                    Configured := this.RelationManagement.ConfigureLookup(CopyStr(ServiceName, 1, 100), CopyStr(TargetServiceName, 1, 100), TempControlLine, TempConfigurationLine);
+                if not Configured then
+                    Error(this.FieldMissingErr, TempControlLine."Control Name", ServiceName);
+            until TempControlLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    /// <summary>Page filters, flow filters, saved filters and operations, per page that declares any.</summary>
+    local procedure ApplyPageRows(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+        PageId: Integer;
+    begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, StrSubstNo('%1|%2', Enum::"BJF MN Config Operation"::"User Scope", Enum::"BJF MN Config Operation"::"Page Filter")) do begin
+            PageServices.Get(PageId, ServiceName);
+            this.FilterManagement.ApplyPageFilters(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
+        end;
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Flow Filter");
         if TempConfigurationLine.FindSet() then
             repeat
                 PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
-                PageServices.Get(TempConfigurationLine."Target Page ID", TargetServiceName);
-                if not this.FieldManagement.ConfigureLinkedField(
-                    CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name",
-                    CopyStr(TargetServiceName, 1, 75), TempConfigurationLine."Target Filter Field",
-                    TempConfigurationLine."Source Field", TempConfigurationLine.Importance)
-                then
-                    Error(this.FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
+                this.FilterManagement.ApplyFlowFilter(CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name");
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::"Saved Filter")) do begin
+            PageServices.Get(PageId, ServiceName);
+            this.FilterManagement.ApplySavedFilters(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
+        end;
+        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::Operation)) do begin
+            PageServices.Get(PageId, ServiceName);
+            this.FilterManagement.ApplyOperations(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
+        end;
+    end;
+
+    local procedure ApplyGroupsAndOrder(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+        PageId: Integer;
+    begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::"Field Order")) do begin
+            PageServices.Get(PageId, ServiceName);
+            this.GroupManagement.ApplyDeclaredOrder(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
+        end;
+        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::Group)) do begin
+            PageServices.Get(PageId, ServiceName);
+            this.GroupManagement.ApplyGroups(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
+        end;
+    end;
+
+    local procedure ApplyAppearance(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+    begin
+        TempConfigurationLine.SetFilter(Operation, '%1|%2', Enum::"BJF MN Config Operation"::Caption, Enum::"BJF MN Config Operation"::"Menu Picture");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
+                if TempConfigurationLine.Operation = Enum::"BJF MN Config Operation"::Caption then
+                    this.AppearanceManagement.SetCaption(CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name", TempConfigurationLine."Language Code", TempConfigurationLine.Description)
+                else
+                    this.AppearanceManagement.SetMenuPicture(CopyStr(ServiceName, 1, 100), TempConfigurationLine);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure ApplyProfilePageSettings(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text;
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Profile Page");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                PageServices.Get(TempConfigurationLine."Page ID", ServiceName);
+                this.ProfileManagement.ConfigureProfilePage(
+                    CopyStr(ServiceName, 1, 100), TempConfigurationLine.Profile,
+                    TempConfigurationLine.Disabled, TempConfigurationLine."Auto Refresh On Open", TempConfigurationLine."Multi Select");
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationLine.Reset();
+    end;
+
+    local procedure ApplyLayouts(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        TempLayoutLine: Record "BJF MN Config Line" temporary;
+        ServiceName: Text;
+    begin
+        TempLayoutLine.Copy(TempConfigurationLine, true);
+        TempLayoutLine.Reset();
+        TempLayoutLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Layout);
+        if TempLayoutLine.FindSet() then
+            repeat
+                PageServices.Get(TempLayoutLine."Page ID", ServiceName);
+                this.LayoutManagement.ApplyLayout(CopyStr(ServiceName, 1, 100), TempLayoutLine, TempConfigurationLine);
+            until TempLayoutLine.Next() = 0;
+    end;
+
+    /// <summary>The distinct pages that have a line of the given operations, in first-declared order.</summary>
+    local procedure PagesWith(var TempConfigurationLine: Record "BJF MN Config Line" temporary; OperationFilter: Text) PageIds: List of [Integer]
+    begin
+        TempConfigurationLine.Reset();
+        TempConfigurationLine.SetFilter(Operation, OperationFilter);
+        if TempConfigurationLine.FindSet() then
+            repeat
+                if not PageIds.Contains(TempConfigurationLine."Page ID") then
+                    PageIds.Add(TempConfigurationLine."Page ID");
             until TempConfigurationLine.Next() = 0;
         TempConfigurationLine.Reset();
     end;
@@ -369,6 +500,12 @@ codeunit 77784 "BJF MN Config Application"
         FieldManagement: Codeunit "BJF MN Field Mgt.";
         ProfileManagement: Codeunit "BJF MN Profile Mgt.";
         PropertyManagement: Codeunit "BJF MN Property Mgt.";
+        RelationManagement: Codeunit "BJF MN Relation Mgt.";
+        FilterManagement: Codeunit "BJF MN Filter Mgt.";
+        GroupManagement: Codeunit "BJF MN Group Mgt.";
+        AppearanceManagement: Codeunit "BJF MN Appearance Mgt.";
+        MasterDataManagement: Codeunit "BJF MN Master Data Mgt.";
+        LayoutManagement: Codeunit "BJF MN Layout Mgt.";
         StageManagement: Codeunit "BJF MN Stage Mgt.";
         PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
         FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';

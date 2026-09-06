@@ -84,6 +84,12 @@ page 77781 "BJF MN Doctor"
         CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Apply State");
         CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Properties");
         CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Staging");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Relations");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Page Rows");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Groups");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Layouts");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Master Data");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Appearance");
     end;
 
     var

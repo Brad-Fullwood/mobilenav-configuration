@@ -9,8 +9,7 @@ namespace BradFullwood.MobileNAV.Configuration;
 codeunit 77790 "BJF MN Stage Mgt."
 {
     Access = Internal;
-    Permissions = tabledata "MobileNAV Master Data" = rim,
-        tabledata "MobileNAV Service Setup" = rimd;
+    Permissions = tabledata "MobileNAV Service Setup" = rimd;
 
     /// <summary>Applies the page's Staging, Stage and Stage Field lines.</summary>
     procedure ApplyPageStaging(ServiceName: Text[100]; var ConfigurationLine: Record "BJF MN Config Line" temporary; PageId: Integer)
@@ -126,31 +125,15 @@ codeunit 77790 "BJF MN Stage Mgt."
         exit(Mask.ToText());
     end;
 
-    /// <summary>
-    /// Stage ids double as MobileNAV category codes, whose descriptions caption the wizard
-    /// steps on the device.
-    /// </summary>
+    /// <summary>Stage ids double as MobileNAV category codes, whose descriptions caption the wizard steps on the device.</summary>
     local procedure EnsureStageCategory(StageId: Code[100]; Description: Text[250])
-    var
-        MasterData: Record "MobileNAV Master Data";
     begin
-        if MasterData.Get(MasterData.Type::Category, CopyStr(StageId, 1, MaxStrLen(MasterData.Code)), 0, '', MasterData.Area::Normal) then begin
-            if (Description <> '') and (MasterData.Description <> Description) then begin
-                MasterData.Validate(Description, CopyStr(Description, 1, MaxStrLen(MasterData.Description)));
-                MasterData.Modify(false);
-            end;
-            exit;
-        end;
-
-        MasterData.Init();
-        MasterData.Validate(Type, MasterData.Type::Category);
-        MasterData.Validate(Code, CopyStr(StageId, 1, MaxStrLen(MasterData.Code)));
-        MasterData.Validate(Description, CopyStr(Description, 1, MaxStrLen(MasterData.Description)));
-        MasterData.Insert(false);
+        this.MasterDataManagement.EnsureCategory(CopyStr(StageId, 1, 20), Description);
     end;
 
     var
         Lookup: Codeunit "BJF MN Service Lookup";
+        MasterDataManagement: Codeunit "BJF MN Master Data Mgt.";
         PageManagement: Codeunit "BJF MN Page Mgt.";
         StageFieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 when assigning wizard stages.', Comment = '%1 = control name, %2 = MobileNAV service name';
 }

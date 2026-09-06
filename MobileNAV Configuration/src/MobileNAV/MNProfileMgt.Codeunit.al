@@ -79,6 +79,28 @@ codeunit 77791 "BJF MN Profile Mgt."
             until MasterData.Next() = 0;
     end;
 
+    /// <summary>
+    /// Sets a page's per-profile switches. Their triggers cascade through the hierarchy and
+    /// can confirm, so they are assigned directly, as IncludePageInProfile does.
+    /// </summary>
+    procedure ConfigureProfilePage(ServiceName: Text[100]; ProfileCode: Code[30]; Excluded: Boolean; Online: Boolean; LookupOnly: Boolean)
+    var
+        ProfileSetup: Record "MobileNAV Profile Setup";
+    begin
+        if not this.FindPageRow(ServiceName, ProfileCode, ProfileSetup) then begin
+            this.IncludePageInProfile(ServiceName, ProfileCode);
+            this.FindPageRow(ServiceName, ProfileCode, ProfileSetup);
+        end;
+        if (ProfileSetup."Exclude from Profile" = Excluded) and (ProfileSetup."Use as Online" = Online) and (ProfileSetup."Lookup Only" = LookupOnly) then
+            exit;
+#pragma warning disable PC0037
+        ProfileSetup."Exclude from Profile" := Excluded;
+        ProfileSetup."Use as Online" := Online;
+        ProfileSetup."Lookup Only" := LookupOnly;
+#pragma warning restore PC0037
+        ProfileSetup.Modify(false);
+    end;
+
     local procedure IncludePageInProfile(ServiceName: Text[100]; Profile: Code[30])
     var
         ProfileSetup: Record "MobileNAV Profile Setup";
@@ -179,7 +201,7 @@ codeunit 77791 "BJF MN Profile Mgt."
     end;
 
     /// <summary>Finds a profile's Page row, filtering "Control ID" = 0 (the field left blank on a partial-key Get).</summary>
-    local procedure FindPageRow(ServiceName: Text[100]; Profile: Code[30]; var ProfileSetup: Record "MobileNAV Profile Setup"): Boolean
+    procedure FindPageRow(ServiceName: Text[100]; Profile: Code[30]; var ProfileSetup: Record "MobileNAV Profile Setup"): Boolean
     begin
         ProfileSetup.Reset();
         ProfileSetup.SetRange("Profile Type", ProfileSetup."Profile Type"::Page);

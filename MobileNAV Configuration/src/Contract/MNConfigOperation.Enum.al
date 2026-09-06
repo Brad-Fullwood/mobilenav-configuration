@@ -52,4 +52,92 @@ enum 77781 "BJF MN Config Operation"
     {
         Caption = 'User Scope';
     }
+    value(10; Group)
+    {
+        Caption = 'Group';
+    }
+    value(11; "Field Order")
+    {
+        Caption = 'Field Order';
+    }
+    value(12; "Lookup Field")
+    {
+        Caption = 'Lookup Field';
+    }
+    value(13; "Relation Filter")
+    {
+        Caption = 'Relation Filter';
+    }
+    value(14; "Relation Condition")
+    {
+        Caption = 'Relation Condition';
+    }
+    value(15; "Additional Code Field")
+    {
+        Caption = 'Additional Code Field';
+    }
+    value(16; "Propagated Field")
+    {
+        Caption = 'Propagated Field';
+    }
+    value(17; "Parent Action")
+    {
+        Caption = 'Parent Action';
+    }
+    value(18; "Page Filter")
+    {
+        Caption = 'Page Filter';
+    }
+    value(19; "Flow Filter")
+    {
+        Caption = 'Flow Filter';
+    }
+    value(20; Layout)
+    {
+        Caption = 'Layout';
+    }
+    value(21; "Layout Condition")
+    {
+        Caption = 'Layout Condition';
+    }
+    value(22; "Layout Action")
+    {
+        Caption = 'Layout Action';
+    }
+    value(23; Category)
+    {
+        Caption = 'Category';
+    }
+    value(24; "Category Translation")
+    {
+        Caption = 'Category Translation';
+    }
+    value(25; Profile)
+    {
+        Caption = 'Profile';
+    }
+    value(26; "Profile Page")
+    {
+        Caption = 'Profile Page';
+    }
+    value(27; "Saved Filter")
+    {
+        Caption = 'Saved Filter';
+    }
+    value(28; "Saved Filter Field")
+    {
+        Caption = 'Saved Filter Field';
+    }
+    value(29; Operation)
+    {
+        Caption = 'Operation';
+    }
+    value(30; Caption)
+    {
+        Caption = 'Caption';
+    }
+    value(31; "Menu Picture")
+    {
+        Caption = 'Menu Picture';
+    }
 }

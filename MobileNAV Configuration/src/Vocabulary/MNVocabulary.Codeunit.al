@@ -68,6 +68,42 @@ codeunit 77783 "BJF MN Vocabulary"
         exit(this.ValueName(FieldCategory.Names(), FieldCategory.Ordinals(), FieldCategory.AsInteger()));
     end;
 
+    procedure ComparisonName(Comparison: Enum "BJF MN Comparison"): Text[30]
+    begin
+        exit(this.ValueName(Comparison.Names(), Comparison.Ordinals(), Comparison.AsInteger()));
+    end;
+
+    procedure FilterScopeName(FilterScope: Enum "BJF MN Filter Scope"): Text[30]
+    begin
+        exit(this.ValueName(FilterScope.Names(), FilterScope.Ordinals(), FilterScope.AsInteger()));
+    end;
+
+    procedure PropagationName(Propagation: Enum "BJF MN Propagation"): Text[30]
+    begin
+        exit(this.ValueName(Propagation.Names(), Propagation.Ordinals(), Propagation.AsInteger()));
+    end;
+
+    procedure SearchTypeName(SearchType: Enum "BJF MN Search Type"): Text[30]
+    begin
+        exit(this.ValueName(SearchType.Names(), SearchType.Ordinals(), SearchType.AsInteger()));
+    end;
+
+    procedure OperationTypeName(OperationType: Enum "BJF MN Operation Type"): Text[30]
+    begin
+        exit(this.ValueName(OperationType.Names(), OperationType.Ordinals(), OperationType.AsInteger()));
+    end;
+
+    procedure ColorName(Color: Enum "BJF MN Color"): Text[30]
+    begin
+        exit(this.ValueName(Color.Names(), Color.Ordinals(), Color.AsInteger()));
+    end;
+
+    /// <summary>MobileNAV's dynamic-layout action type that colors the given area.</summary>
+    procedure LayoutAreaActionName(LayoutArea: Enum "BJF MN Layout Area"): Text[30]
+    begin
+        exit(CopyStr(this.ValueName(LayoutArea.Names(), LayoutArea.Ordinals(), LayoutArea.AsInteger()) + this.ColorSuffixTok, 1, 30));
+    end;
+
     /// <summary>MobileNAV's MobileType for the barcode-scannable input a Scan control renders as.</summary>
     procedure BarcodeMobileTypeName(): Text[30]
     begin
@@ -90,5 +126,6 @@ codeunit 77783 "BJF MN Vocabulary"
         StandardImportanceTok: Label 'None', Locked = true;
 #pragma warning restore LC0086
         BarcodeTok: Label 'Barcode', Locked = true;
+        ColorSuffixTok: Label 'Color', Locked = true;
         ReportPageTypeTok: Label 'Report', Locked = true;
 }

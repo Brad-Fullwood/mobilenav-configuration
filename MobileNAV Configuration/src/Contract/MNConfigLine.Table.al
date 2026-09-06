@@ -131,6 +131,102 @@ table 77780 "BJF MN Config Line"
             Caption = 'Report Service Name';
             // The web service the function codeunit is published under.
         }
+        field(30; "Group Code"; Code[20])
+        {
+            Caption = 'Group Code';
+            // Controls: the field group (a MobileNAV category) the control sits in.
+        }
+        field(31; "Filter Type"; Text[30])
+        {
+            Caption = 'Filter Type';
+            // MobileNAV FilterType member: FIELD, CONST or FILTER.
+        }
+        field(32; Comparison; Text[30])
+        {
+            Caption = 'Comparison';
+            // MobileNAV Filter Comparsion Type member: Equal, NotEqual, Less, ..., Own, NotOwn.
+        }
+        field(33; "Filter Value"; Text[250])
+        {
+            Caption = 'Filter Value';
+        }
+        field(34; "Filter Scope"; Text[30])
+        {
+            Caption = 'Filter Scope';
+            // MobileNAV Filter Scope member: Online, Offline or Both.
+        }
+        field(35; "Multi Select"; Boolean)
+        {
+            Caption = 'Multi Select';
+        }
+        field(36; "Auto Refresh On Open"; Boolean)
+        {
+            Caption = 'Auto Refresh On Open';
+        }
+        field(37; "Propagation Type"; Text[30])
+        {
+            Caption = 'Propagation Type';
+        }
+        field(38; "Action Type"; Text[30])
+        {
+            Caption = 'Action Type';
+            // MobileNAV D. L. Action Type member.
+        }
+        field(39; Color; Text[30])
+        {
+            Caption = 'Color';
+            // MobileNAV color area member.
+        }
+        field(40; Icon; Code[20])
+        {
+            Caption = 'Icon';
+        }
+        field(41; "Language Code"; Code[10])
+        {
+            Caption = 'Language Code';
+        }
+        field(42; Disabled; Boolean)
+        {
+            Caption = 'Disabled';
+        }
+        field(43; "Search Type"; Text[30])
+        {
+            Caption = 'Search Type';
+            // MobileNAV Search Type member: BeginMatch, Equal or AnyMatch.
+        }
+        field(44; "Own Filter Set"; Boolean)
+        {
+            Caption = 'Own Filter Set';
+        }
+        field(45; "View Type"; Text[30])
+        {
+            Caption = 'View Type';
+            // MobileNAV View Type member: List or Map.
+        }
+        field(46; "Operation Type"; Text[30])
+        {
+            Caption = 'Operation Type';
+        }
+        field(47; "Related Code Field"; Text[100])
+        {
+            Caption = 'Related Code Field';
+        }
+        field(48; "Related Description Field"; Text[100])
+        {
+            Caption = 'Related Description Field';
+        }
+        field(49; Description; Text[250])
+        {
+            Caption = 'Description';
+        }
+        field(50; Picture; Blob)
+        {
+            Caption = 'Picture';
+        }
+        field(51; "Picture Extension"; Text[10])
+        {
+            Caption = 'Picture Extension';
+        }
     }
 
     keys

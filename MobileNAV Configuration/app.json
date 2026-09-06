@@ -23,6 +23,10 @@
   "target": "Cloud",
   "idRanges": [
     {
+      "from": 77700,
+      "to": 77739
+    },
+    {
       "from": 77760,
       "to": 77799
     }

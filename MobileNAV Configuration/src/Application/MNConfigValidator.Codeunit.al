@@ -77,6 +77,8 @@ codeunit 77785 "BJF MN Config Validator"
                     StrSubstNo(
                         this.StageFieldKeyTok, ConfigurationLine."Page ID",
                         LowerCase(ConfigurationLine."Stage Id"), LowerCase(ConfigurationLine."Control Name")));
+            else
+                exit(this.NamedTargetKeyOf(ConfigurationLine));
         end;
     end;
 
@@ -89,6 +91,28 @@ codeunit 77785 "BJF MN Config Validator"
         this.EnsureUnique(
             DefinedTargets,
             StrSubstNo(this.StageKeyTok, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Stage Id")));
+    end;
+
+    /// <summary>The key of a line identified by a code, profile or language rather than a control.</summary>
+    local procedure NamedTargetKeyOf(ConfigurationLine: Record "BJF MN Config Line" temporary): Text
+    begin
+        case ConfigurationLine.Operation of
+            Enum::"BJF MN Config Operation"::Group,
+            Enum::"BJF MN Config Operation"::"Flow Filter",
+            Enum::"BJF MN Config Operation"::Layout,
+            Enum::"BJF MN Config Operation"::"Saved Filter",
+            Enum::"BJF MN Config Operation"::Category,
+            Enum::"BJF MN Config Operation"::"Field Order",
+            Enum::"BJF MN Config Operation"::"Menu Picture":
+                exit(StrSubstNo(this.NamedKeyTok, ConfigurationLine.Operation, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name"), LowerCase(ConfigurationLine."Group Code")));
+            Enum::"BJF MN Config Operation"::Profile,
+            Enum::"BJF MN Config Operation"::"Profile Page":
+                exit(StrSubstNo(this.NamedKeyTok, ConfigurationLine.Operation, ConfigurationLine."Page ID", LowerCase(ConfigurationLine.Profile), ''));
+            Enum::"BJF MN Config Operation"::Caption,
+            Enum::"BJF MN Config Operation"::"Category Translation":
+                exit(StrSubstNo(this.NamedKeyTok, ConfigurationLine.Operation, ConfigurationLine."Page ID", LowerCase(ConfigurationLine."Control Name"), LowerCase(ConfigurationLine."Language Code")));
+        end;
+        exit('');
     end;
 
     /// <summary>
@@ -145,4 +169,5 @@ codeunit 77785 "BJF MN Config Validator"
         StageKeyTok: Label 'STAGE|%1|%2', Locked = true;
         StageFieldKeyTok: Label 'STAGEFIELD|%1|%2|%3', Locked = true;
         PropertyKeyTok: Label 'PROPERTY|%1|%2|%3', Locked = true;
+        NamedKeyTok: Label '%1|%2|%3|%4', Locked = true;
 }

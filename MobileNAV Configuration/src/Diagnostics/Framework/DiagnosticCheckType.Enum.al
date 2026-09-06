@@ -66,4 +66,34 @@ enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
         Caption = 'Config: Wizards';
         Implementation = "BJF Diagnostic Check" = "BJF Check Config Staging";
     }
+    value(207; "Config Relations")
+    {
+        Caption = 'Config: Links & Lookups';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Relations";
+    }
+    value(208; "Config Page Rows")
+    {
+        Caption = 'Config: Filters & Operations';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Page Rows";
+    }
+    value(209; "Config Groups")
+    {
+        Caption = 'Config: Groups & Order';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Groups";
+    }
+    value(210; "Config Layouts")
+    {
+        Caption = 'Config: Dynamic Layouts';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Layouts";
+    }
+    value(211; "Config Master Data")
+    {
+        Caption = 'Config: Categories & Profiles';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Master Data";
+    }
+    value(212; "Config Appearance")
+    {
+        Caption = 'Config: Captions & Pictures';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Appearance";
+    }
 }
