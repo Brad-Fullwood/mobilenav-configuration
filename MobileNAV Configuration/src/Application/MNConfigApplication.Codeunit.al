@@ -351,7 +351,7 @@ codeunit 77784 "BJF MN Config Application"
         ServiceName: Text;
         PageId: Integer;
     begin
-        foreach PageId in this.PagesWith(TempConfigurationLine, StrSubstNo('%1|%2', Enum::"BJF MN Config Operation"::"User Scope", Enum::"BJF MN Config Operation"::"Page Filter")) do begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, Enum::"BJF MN Config Operation"::"User Scope", Enum::"BJF MN Config Operation"::"Page Filter") do begin
             PageServices.Get(PageId, ServiceName);
             this.FilterManagement.ApplyPageFilters(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
         end;
@@ -362,11 +362,11 @@ codeunit 77784 "BJF MN Config Application"
                 this.FilterManagement.ApplyFlowFilter(CopyStr(ServiceName, 1, 100), TempConfigurationLine."Control Name");
             until TempConfigurationLine.Next() = 0;
         TempConfigurationLine.Reset();
-        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::"Saved Filter")) do begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, Enum::"BJF MN Config Operation"::"Saved Filter", Enum::"BJF MN Config Operation"::"Saved Filter") do begin
             PageServices.Get(PageId, ServiceName);
             this.FilterManagement.ApplySavedFilters(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
         end;
-        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::Operation)) do begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, Enum::"BJF MN Config Operation"::Operation, Enum::"BJF MN Config Operation"::Operation) do begin
             PageServices.Get(PageId, ServiceName);
             this.FilterManagement.ApplyOperations(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
         end;
@@ -377,11 +377,11 @@ codeunit 77784 "BJF MN Config Application"
         ServiceName: Text;
         PageId: Integer;
     begin
-        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::"Field Order")) do begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, Enum::"BJF MN Config Operation"::"Field Order", Enum::"BJF MN Config Operation"::"Field Order") do begin
             PageServices.Get(PageId, ServiceName);
             this.GroupManagement.ApplyDeclaredOrder(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
         end;
-        foreach PageId in this.PagesWith(TempConfigurationLine, Format(Enum::"BJF MN Config Operation"::Group)) do begin
+        foreach PageId in this.PagesWith(TempConfigurationLine, Enum::"BJF MN Config Operation"::Group, Enum::"BJF MN Config Operation"::Group) do begin
             PageServices.Get(PageId, ServiceName);
             this.GroupManagement.ApplyGroups(CopyStr(ServiceName, 1, 100), TempConfigurationLine, PageId);
         end;
@@ -433,11 +433,11 @@ codeunit 77784 "BJF MN Config Application"
             until TempLayoutLine.Next() = 0;
     end;
 
-    /// <summary>The distinct pages that have a line of the given operations, in first-declared order.</summary>
-    local procedure PagesWith(var TempConfigurationLine: Record "BJF MN Config Line" temporary; OperationFilter: Text) PageIds: List of [Integer]
+    /// <summary>The distinct pages that have a line of either operation, in first-declared order.</summary>
+    local procedure PagesWith(var TempConfigurationLine: Record "BJF MN Config Line" temporary; FirstOperation: Enum "BJF MN Config Operation"; SecondOperation: Enum "BJF MN Config Operation") PageIds: List of [Integer]
     begin
         TempConfigurationLine.Reset();
-        TempConfigurationLine.SetFilter(Operation, OperationFilter);
+        TempConfigurationLine.SetFilter(Operation, '%1|%2', FirstOperation, SecondOperation);
         if TempConfigurationLine.FindSet() then
             repeat
                 if not PageIds.Contains(TempConfigurationLine."Page ID") then

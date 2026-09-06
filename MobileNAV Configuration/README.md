@@ -6,7 +6,7 @@ You declare what a device shows in a few fluent lines: pages, fields, buttons, l
 
 ## Quick start
 
-1. Add **MobileNAV Configuration 4.0.0.0** to the consumer's `app.json` dependencies.
+1. Add **MobileNAV Configuration 4.1.0.0** to the consumer's `app.json` dependencies.
 2. Implement `"BJF MN Config Provider"` in one codeunit and register it through an `enumextension` of `"BJF MN Config Provider"`:
 
 ```al
@@ -73,7 +73,7 @@ Configuration.Page(Page::"MobileNAV WhseShipment")
     .Button('AUKPrintDespatch');
 ```
 
-A modifier refines the control declared last. A modifier that does not apply to that control's kind (`Filterable()` on a button, `Validation()` on a plain field) fails immediately, naming the modifier, the control and its kind.
+A modifier refines the thing declared last: a control, a link or lookup, a page filter, a saved filter or a layout. A modifier that does not apply to that control's kind (`Filterable()` on a button, `Validation()` on a plain field) fails immediately, naming the modifier, the control and its kind.
 
 ### Page context
 
@@ -85,6 +85,12 @@ A modifier refines the control declared last. A modifier that does not apply to 
 | `Functions(CodeunitId, ServiceName)` | Gives a dialog page its own function codeunit, published as a web service under `ServiceName`. MobileNAV runs a dialog's buttons through a codeunit service, by default its own report-function codeunit, which knows nothing of your buttons. Each `Button` then names its procedure with `FunctionName`; the procedure's parameters are filled from the dialog's controls of the same name and it returns MobileNAV's function result text. Needs `PublishAsDialog` first. |
 | `MainMenuAction(Action)` | What the page's tile does when tapped: `Create` (new record) or `Open` (the single existing one). Needs `Publish` or `PublishAsDialog` first. |
 | `MineOnly(UserIdControlName)` | Scopes the page to the signed-in device user through MobileNAV's own "Mine" mechanism. Required for a per-user parameter table; without it every device lists every user's row and a card cannot resolve one. |
+| `MenuCategory(CategoryCode)` | Puts the page's tile under a category heading. Declare the category with `Category`. |
+| `Caption(LanguageCode, Text)` | Captions the page in one language, or the control declared last when one has been. MobileNAV keeps captions per language. |
+| `MenuPicture(PngBase64)` | A picture for the tile, as PNG bytes in base64. Rewritten, with MobileNAV's version counter bumped, only when the bytes change. |
+| `OrderAsDeclared()` | Shows the declared controls first, in declaration order; the page's other controls follow. |
+| `Group(CategoryCode)` ... `EndGroup()` | The controls declared in between sit together on the card under the category's description. |
+| `ExcludeFromProfile(Profile)`, `OnlineInProfile(Profile)`, `LookupOnlyInProfile(Profile)` | Per-profile page switches: keep the page out of a profile's menu, open it online rather than from offline data, or offer it only as a lookup. |
 
 ### Page settings
 
@@ -116,6 +122,8 @@ Each applies to the page in context, published or MobileNAV's own.
 | `Button(ControlName)` | Visible, editable, `MobileType` Normal, `FunctionType` Normal, function name derived, drawn as a menu entry | Runs Business Central code when tapped. See [Buttons end to end](#buttons-end-to-end). |
 | `Link(ControlName, TargetPageId, TargetFilterField, SourceField)` | Visible, read-only | Opens another page filtered to the current record. The target becomes reachable from this page in every profile, so the button is drawn. A page of your own as the target needs its own `Page(...).Publish(...)`. |
 | `Scan(ControlName)` | Visible, editable, `MobileType` Barcode | An input the device fills from its scanner. |
+| `Lookup(ControlName, TargetPageId, CodeField, DescriptionField)` | Visible, editable | The device fills the field by picking a record from the target page; the picked code lands in the field and the description shows beside it. |
+| `FlowFilter(FieldName)` | Visible as filter | One of the source table's flow filters (for example `'Date Filter'`) offered in the filter pane. Not a control of the page; the field name is the table's. |
 
 ### Modifiers
 
@@ -154,6 +162,73 @@ Each applies to the page in context, published or MobileNAV's own.
 | `ValidateAlways()` | Field, Scan | Runs the field's validation even when the value did not change. |
 
 Every page and control setting is checked by the doctor's **Page & Control Settings** check and rewritten by its fix.
+
+### Link and lookup details
+
+Each refines the `Link` or `Lookup` declared last. MobileNAV keeps them as rows under the relation; the framework rebuilds those rows on every apply.
+
+| Method | Applies to | Does |
+|---|---|---|
+| `Filter(TargetField, SourceField)` | Link, Lookup | The target's field must equal this page's field. A `Link` already has one from its own arguments; repeat for more. |
+| `FilterValue(TargetField, Value)` | Link, Lookup | The target's field must equal a fixed value. |
+| `FilterExpression(TargetField, FilterText)` | Link, Lookup | The target's field must match a Business Central filter expression. |
+| `OnlyWhen(SourceField, Value)` | Link, Lookup | Offered only while this page's field holds the value. |
+| `RefreshOnOpen()` | Link, Lookup | Reloads the target's data when it opens. |
+| `MultiSelect()` | Lookup | Several records can be picked at once. |
+| `AdditionalCode(SourceField, DestinationField)` | Lookup | Copies one more field of the picked record into this page. |
+| `Propagate(What, DestinationField)` | Lookup | Shows the picked record's barcode or cached image on this page. |
+| `ParentAction(ButtonControlName)` | Link, Lookup | Shows one of this page's buttons on the page the relation opens. |
+
+### Page filters
+
+| Method | Does |
+|---|---|
+| `PageFilter(ControlName, Comparison, Value)` | Filters the page's records by comparing the control with a fixed value. |
+| `PageFilterExpression(ControlName, FilterText)` | Filters with a Business Central filter expression, for example `'<>0'`. |
+| `Scope(FilterScope)` | Limits the page filter declared last to online or offline use; the default is both. |
+
+`MineOnly` is a page filter too (MobileNAV's `Own` comparison); all of a page's filters are rewritten together.
+
+### Saved filters
+
+| Method | Does |
+|---|---|
+| `SavedFilter(Name)` | A named, ready-made filter the device offers on the list. |
+| `Where(ControlName, Match, Criteria)` | One field the saved filter declared last filters on: begins with, whole word or contains. Repeatable. |
+| `Mine()` | Only the device user's own records. |
+| `AsMap()` | Shown on a map instead of a list. |
+
+### Offline operations
+
+| Method | Does |
+|---|---|
+| `Operation(Kind, SourceField, DestinationField)` | An operation over an offline page's records between two fields: transfer, sum, min, max, average, count, multiplication, adjustment. Declared after a control, it runs for that field; otherwise for the page. |
+| `OperationValue(Kind, SourceField, Value)` | The same with a fixed value. |
+
+### Dynamic layouts
+
+A layout is a rule that changes the page's look while its conditions hold. Everything after `Layout` until the next `Layout`, control or page refines it.
+
+| Method | Does |
+|---|---|
+| `Layout(Code, Description)` | Starts a rule. |
+| `WhenValue(ControlName, Comparison, Value)`, `WhenField(ControlName, Comparison, OtherControlName)`, `WhenFilter(ControlName, FilterText)` | Conditions; all must hold. |
+| `Disabled()` | Keeps the rule without running it. |
+| `HidesField(ControlName)`, `LocksField(ControlName)`, `LocksPage()` | Hide a control, make it read-only, or make the whole page read-only. |
+| `CaptionsField(ControlName, CategoryCode)` | Captions a control with a category's description. |
+| `CaptionColor(ControlName, Color)`, `ValueColor(ControlName, Color)`, `AreaColor(Area, Color)` | Color a control's caption or value, or a part of the row or card, with a color from MobileNAV's color setup. |
+| `RowIcon(IconCode)`, `ToolbarIcon(IconCode)` | Show an icon from MobileNAV's icon set on the row or in the toolbar. |
+| `HidesStage(StageId)`, `ValidatesStage(StageId)`, `ValidatesField(ControlName)` | Skip a wizard stage, or mark a stage or control validated. |
+
+### Master data
+
+Declared without a page context.
+
+| Method | Does |
+|---|---|
+| `Category(Code, Description)` | A MobileNAV category: a menu heading (`MenuCategory`) and a field group caption (`Group`). |
+| `CategoryTranslation(Code, LanguageCode, Description)` | The category's description in one language. |
+| `Profile(Code, Description)` | A MobileNAV profile, the menu and visibility set a device user logs in against. Assigning users to it stays with the administrator. |
 
 ### Wizard
 
@@ -271,7 +346,7 @@ The hash fingerprints the definition's content, canonically ordered, so reorderi
 
 **MobileNAV Doctor** (Administration) is the single place to check and repair MobileNAV setup:
 
-- **Run config checks** compares every provider's declaration with MobileNAV's live data: **Services & Web Services** (page, companion and dialog function-codeunit registration), **Fields & Importance** (controls hidden at Additional, rows that contradict the declaration), **Profiles** (missing page, parent and field rows), **Relations & Page Rules** (lookup bindings on links, missing `Own` scope, editable pages without Page Update), **Page & Control Settings** (every property verb), **Wizards** (staging switches, stage rows, stage masks) and **Apply State** (providers outdated or with a pending device handover).
+- **Run config checks** compares every provider's declaration with MobileNAV's live data: **Services & Web Services** (page, companion and dialog function-codeunit registration), **Fields & Importance** (controls hidden at Additional, rows that contradict the declaration), **Profiles** (missing page, parent and field rows), **Relations & Page Rules** (lookup bindings on links, missing `Own` scope, editable pages without Page Update), **Page & Control Settings** (every property verb), **Wizards** (staging switches, stage rows, stage masks), **Links & Lookups** (relation rows and their filters, conditions, additional code fields, propagated fields and parent actions), **Filters & Operations** (page filters, flow filters, saved filters, offline operations), **Groups & Order**, **Dynamic Layouts**, **Categories & Profiles** (with per-profile page switches), **Captions & Pictures** and **Apply State** (providers outdated or with a pending device handover). Every finding of these checks carries a fix that rewrites the rows from the declaration.
 - **Run all diagnostics** adds the general checks below and every check other extensions register in `"BJF Diagnostic Check Type"`.
 
 Findings show a **Severity** (Blocker, Warning, Info), the **Check** that produced them and a message. **Apply Fix** dispatches to the owning check's `ApplyFix` for any finding recorded with a fix, then re-runs every check; **Open Related Record** jumps to the record the finding is about.
@@ -295,6 +370,36 @@ Both are off by default; enable only where the underlying gap bites.
 ### Contributing a check from another extension
 
 Implement `"BJF Diagnostic Check"` (`RunCheck` records findings through `Finding.Add` and `Finding.AddWithFix`; `ApplyFix` repairs one, or raises an error when the check has no automatic fix) and register it with an `enumextension` of `"BJF Diagnostic Check Type"`. Values 100 to 199 are reserved for satellite apps; [MobileNAV Configuration WMS](../MobileNAV%20Configuration%20WMS/README.md) is one.
+
+## Coverage
+
+What the MobileNAV administration pages can configure, and how this framework covers it. Everything in the first group is declared in code, applied, checked by the doctor and repaired by its fix.
+
+| Administration page | Covered by |
+|---|---|
+| Page Setup: page type, menu action, insert/update/delete, list limit, default drill-down, on-open and on-close functions, toolbar buttons, title prefixes, auto refresh, filter panel, unread count, mine filter, assign-to-me, page style, filter by parent, chunk size, check for changes, menu category, menu picture | `Publish`, `PublishAsDialog`, `MainMenuAction` and the page settings verbs; `MenuCategory`; `MenuPicture` |
+| Field Setup: visibility, editability, importance, visible as filter, display in menu, mobile type, function name and type, validation behavior, allow skip, decimal places, quantity increment and field to increase, min and max, quick edit, promoted on group header, field category, hide drill-down, validate if not changed, regular expressions, groups, order | `Field`, `Button`, `Scan`, `Lookup` and their modifiers; the control settings verbs; `Group`, `OrderAsDeclared` |
+| Relation Setup, Filter Setup, Condition Setup, Add. Code Field Setup, Propagated Field Setup, parent actions | `Link`, `Lookup` and the link and lookup details |
+| PageFilter Setup, FlowFilter Setup | `PageFilter`, `PageFilterExpression`, `Scope`, `MineOnly`, `FlowFilter` |
+| Saved Filter Card | `SavedFilter`, `Where`, `Mine`, `AsMap` |
+| Operation Setup | `Operation`, `OperationValue` |
+| Stage Configurator, Page Stage List | `Wizard`, `Stage`, `Show`, `ShowReadOnly`, `RestartsHere`, `AutoNext`, `HideBackNext`, `Behavior` |
+| Dynamic Layout Setup with its conditions, actions and action lines | `Layout` and the layout verbs |
+| Categories, Category Translations, Profiles | `Category`, `CategoryTranslation`, `Profile` |
+| Main Menu Editor, Profiled Page Editor, Profiled Field List | Automatic profile rows for every control and published page; `OnlyInProfile`, `ExceptInProfile`, `NotInProfiles`; `ExcludeFromProfile`, `OnlineInProfile`, `LookupOnlyInProfile` |
+| Caption translations | `Caption` |
+| Web services and function companions | `Publish`, `Functions`, automatic companion registration |
+
+Left to the administrator, on purpose:
+
+| Administration page | Why |
+|---|---|
+| User Setup, No. Series Setup, User Key Selection, per-user flow filter values | Per-user data, not configuration. |
+| Offline JavaScript templates, HTML and ZPL print templates | Binary assets edited in their own tools; import them on the Page Setup page. |
+| Icon and color setup, fonts, general setup | Environment-wide look and connection settings, one per tenant. |
+| Menu position of a page within a profile | MobileNAV renumbers positions per profile from its editor; a declared position would fight it. |
+| Line format builder (card cell formats) | An expression grammar of MobileNAV's own; the field order and groups cover the common layout needs. |
+| Report-type pages' parameter binding | Dialog pages are covered through `PublishAsDialog` and `Functions`; report parameter mapping is not. |
 
 ## The MobileNAV rules the framework encodes
 

@@ -2,7 +2,7 @@
   "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
   "name": "MobileNAV Configuration",
   "publisher": "Brad Fullwood",
-  "version": "4.0.0.0",
+  "version": "4.1.0.0",
   "brief": "Declarative configuration, diagnostics and repair framework for MobileNAV.",
   "description": "Lets a Business Central developer declare what a MobileNAV device shows in a few fluent lines, applies it correctly across MobileNAV's services and profiles, routes device button taps to one framework event, and diagnoses and repairs MobileNAV configuration and posting problems from one doctor page.",
   "privacyStatement": "",
