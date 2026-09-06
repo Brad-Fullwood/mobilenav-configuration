@@ -55,6 +55,7 @@ codeunit 50100 "CTO MN Config Provider" implements "BJF MN Config Provider"
     procedure DefineConfiguration(var Configuration: Codeunit "BJF MN Config Builder")
     begin
         DefineDespatchNote(Configuration);
+        DefineItemCard(Configuration);
         DefineCustomSerialNumbers(Configuration);
     end;
 
@@ -71,6 +72,30 @@ codeunit 50100 "CTO MN Config Provider" implements "BJF MN Config Provider"
             .Field('CTOPackingInstructions')
             .Field('Shipment Date').Filterable()
             .Button('CTOPrintDespatch');
+    end;
+
+    /// <summary>
+    /// The item card the pickers see: a lookup to choose the bin, the tracking fields grouped
+    /// under one heading, only items with stock, and a red caption while the quantity is zero.
+    /// </summary>
+    /// <param name="Configuration">The builder collecting this provider's declarations.</param>
+    local procedure DefineItemCard(var Configuration: Codeunit "BJF MN Config Builder")
+    begin
+        Configuration
+            .Category('TRACKING', 'Tracking')
+            .Page(Page::"MobileNAV Item")
+                .OrderAsDeclared()
+                .Lookup('CTODefaultBin', Page::"MobileNAV Bin", 'Code', 'Description')
+                    .Filter('Location Code', 'CTOLocation')
+                .Group('TRACKING')
+                    .Field('CTOLotNo').Editable().FieldCategory(Enum::"BJF MN Field Category"::LotNo)
+                    .Field('CTOExpiry').Editable()
+                .EndGroup()
+                .PageFilter('Inventory', Enum::"BJF MN Comparison"::Greater, '0')
+                .Layout('NOSTOCK', 'Out of stock')
+                    .WhenValue('Inventory', Enum::"BJF MN Comparison"::Equal, '0')
+                    .CaptionColor('Inventory', Enum::"BJF MN Color"::CardMandatoryCaption)
+                    .LocksField('CTODefaultBin');
     end;
 
     /// <summary>

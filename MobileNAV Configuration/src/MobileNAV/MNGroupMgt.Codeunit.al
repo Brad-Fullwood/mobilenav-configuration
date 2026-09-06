@@ -36,11 +36,14 @@ codeunit 77761 "BJF MN Group Mgt."
     var
         TempGroupLine: Record "BJF MN Config Line" temporary;
     begin
-        this.DeleteGroupRows(ServiceName);
         TempGroupLine.Copy(TempLine, true);
         TempGroupLine.Reset();
         TempGroupLine.SetRange("Page ID", PageId);
         TempGroupLine.SetRange(Operation, Enum::"BJF MN Config Operation"::Group);
+        if TempGroupLine.FindSet() then
+            repeat
+                this.DeleteGroupRows(ServiceName, TempGroupLine."Group Code");
+            until TempGroupLine.Next() = 0;
         if TempGroupLine.FindSet() then
             repeat
                 this.ApplyGroup(ServiceName, TempLine, PageId, TempGroupLine."Group Code");
@@ -171,15 +174,15 @@ codeunit 77761 "BJF MN Group Mgt."
         GroupRow.Insert(true);
     end;
 
-    local procedure DeleteGroupRows(ServiceName: Text[100])
+    /// <summary>Removes the declared group's own marker rows; an administrator's groups stay.</summary>
+    local procedure DeleteGroupRows(ServiceName: Text[100]; GroupCode: Code[20])
     var
         GroupRow: Record "MobileNAV Service Setup";
     begin
-        GroupRow.SetRange("Service Name", ServiceName);
-        GroupRow.SetRange("Line Type", GroupRow."Line Type"::Field);
-        GroupRow.SetFilter(FieldClass, '%1|%2', GroupRow.FieldClass::GroupStart, GroupRow.FieldClass::GroupEnd);
-        GroupRow.SetFilter(FieldName, this.OwnGroupFilterTok);
-        GroupRow.DeleteAll(false);
+        if this.FindGroupRow(ServiceName, GroupCode, true, GroupRow) then
+            GroupRow.Delete(false);
+        if this.FindGroupRow(ServiceName, GroupCode, false, GroupRow) then
+            GroupRow.Delete(false);
     end;
 
     /// <summary>Dense Order over every field row, normal fields before flow filters, by (Order, Page Line No.); the placed rows keep their leading positions.</summary>
@@ -245,5 +248,4 @@ codeunit 77761 "BJF MN Group Mgt."
         Lookup: Codeunit "BJF MN Service Lookup";
         StartNameTok: Label '_%1_Start', Comment = '%1 = group code', Locked = true;
         EndNameTok: Label '_%1_End', Comment = '%1 = group code', Locked = true;
-        OwnGroupFilterTok: Label '_*_Start|_*_End', Locked = true;
 }

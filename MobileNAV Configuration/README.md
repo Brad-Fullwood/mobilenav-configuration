@@ -187,7 +187,7 @@ Each refines the `Link` or `Lookup` declared last. MobileNAV keeps them as rows 
 | `PageFilterExpression(ControlName, FilterText)` | Filters with a Business Central filter expression, for example `'<>0'`. |
 | `Scope(FilterScope)` | Limits the page filter declared last to online or offline use; the default is both. |
 
-`MineOnly` is a page filter too (MobileNAV's `Own` comparison); all of a page's filters are rewritten together.
+`MineOnly` is a page filter too (MobileNAV's `Own` comparison). A page that declares any page filter owns all of them: the framework rewrites the page's filter rows from the declaration on every apply. The same holds for a page's saved filters and operations, and for a link's or lookup's detail rows.
 
 ### Saved filters
 
@@ -415,6 +415,11 @@ Left to the administrator, on purpose:
 10. Configuration changes reach devices **only** through MobileNAV's construction window plus a page-hierarchy rebuild and an enforced major config change.
 11. A wizard **stage id** is a category code, at most 20 characters.
 12. A stage marked `RestartsHere` can never be the **first** stage of a wizard.
+13. A relation is a **lookup** when its code field is set and a **link** (an action that opens the page) when it is empty; the same row kind serves both.
+14. Fields show in the order of MobileNAV's dense **Order** number, not their line numbers; a **group** is two marker rows squeezed in around its first and last member, so members have to sit together.
+15. A **flow filter** is a field row of its own with class FlowFilter; it only shows in the filter pane when both Visible and Visible as Filter are set.
+16. A **dynamic layout** keeps one action row per action type and one action line per field or stage it targets; the layout runs while every condition holds.
+17. Captions live per **language** in MobileNAV's caption table, not on the field row; MobileNAV regenerates them from page metadata on a metadata refresh, which the doctor's caption check catches.
 
 ## Build
 
