@@ -61,4 +61,9 @@ enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
         Caption = 'Config: Page & Control Settings';
         Implementation = "BJF Diagnostic Check" = "BJF Check Config Properties";
     }
+    value(206; "Config Staging")
+    {
+        Caption = 'Config: Wizards';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Config Staging";
+    }
 }

@@ -30,11 +30,21 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
         PageManagement: Codeunit "BJF MN Page Mgt.";
         Kind: Text;
         Args: List of [Text];
+        CodeunitId: Integer;
     begin
         this.Support.UnpackFix(Finding."Fix Context", Kind, Args);
-        if Kind <> this.CompanionFixTok then
-            Error(this.NoAutomaticFixErr);
-        PageManagement.PublishFunctionCompanion(CopyStr(Args.Get(1), 1, 100));
+        case Kind of
+            this.CompanionFixTok:
+                PageManagement.PublishFunctionCompanion(CopyStr(Args.Get(1), 1, 100));
+            this.FunctionServiceFixTok:
+                begin
+                    Evaluate(CodeunitId, Args.Get(3));
+                    PageManagement.PublishFunctionService(CodeunitId, CopyStr(Args.Get(2), 1, 100));
+                    PageManagement.SetReportService(CopyStr(Args.Get(1), 1, 100), CopyStr(Args.Get(2), 1, 100));
+                end;
+            else
+                Error(this.NoAutomaticFixErr);
+        end;
     end;
 
     local procedure CheckProvider(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary)
@@ -71,8 +81,11 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
         TempPageLine.Copy(TempLine, true);
         TempPageLine.SetRange("Page ID", PageId);
         TempPageLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Published Page");
-        if not TempPageLine.IsEmpty() then
+        if TempPageLine.FindFirst() then begin
             this.CheckPublished(Finding, TempProvider, ServiceName);
+            if TempPageLine."Function Codeunit ID" <> 0 then
+                this.CheckFunctionService(Finding, TempProvider, ServiceName, TempPageLine);
+        end;
 
         TempPageLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Function Field");
         if TempPageLine.FindSet() then begin
@@ -91,6 +104,29 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
             exit;
         Finding.Add(Finding."Check Type"::"Config Services", Finding.Severity::Blocker,
             this.Support.Prefix(TempProvider, StrSubstNo(this.NotPublishedMsg, ServiceName)));
+    end;
+
+    /// <summary>A dialog's function codeunit must be published under its service name, and the Main row must point at it.</summary>
+    local procedure CheckFunctionService(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; ServiceName: Text[100]; PageLine: Record "BJF MN Config Line" temporary)
+    var
+        TenantWebService: Record "Tenant Web Service";
+        MainRow: Record "MobileNAV Service Setup";
+        Args: List of [Text];
+        Healthy: Boolean;
+    begin
+        Healthy := TenantWebService.Get(TenantWebService."Object Type"::Codeunit, PageLine."Report Service Name") and
+            TenantWebService.Published and (TenantWebService."Object ID" = PageLine."Function Codeunit ID");
+        if Healthy and this.Lookup.FindMainRow(ServiceName, MainRow) then
+            Healthy := MainRow.OptionValues2 = PageLine."Report Service Name";
+        if Healthy then
+            exit;
+        Args.Add(ServiceName);
+        Args.Add(PageLine."Report Service Name");
+        Args.Add(Format(PageLine."Function Codeunit ID", 0, 9));
+        Finding.AddWithFix(Finding."Check Type"::"Config Services", Finding.Severity::Blocker,
+            this.Support.Prefix(TempProvider, StrSubstNo(this.NoFunctionServiceMsg, ServiceName, PageLine."Report Service Name", PageLine."Function Codeunit ID")),
+            Finding."Related Record ID", StrSubstNo(this.FunctionServiceFixMsg, PageLine."Report Service Name", ServiceName),
+            this.Support.PackFix(this.FunctionServiceFixTok, Args));
     end;
 
     local procedure CheckCompanion(var Finding: Record "BJF Diagnostic Finding"; TempProvider: Record "BJF MN Provider Buffer" temporary; ServiceName: Text[100])
@@ -141,5 +177,8 @@ codeunit 77794 "BJF Check Config Services" implements "BJF Diagnostic Check"
         NoDispatcherMsg: Label 'Button %1 on %2 has no MobileNAV function for table %3. Name one with FunctionName() in the provider.', Comment = '%1 = control, %2 = service, %3 = table no.';
         FunctionMismatchMsg: Label 'Button %1 on %2 calls function ''%3'' but the provider expects ''%4''. Apply the provider.', Comment = '%1 = control, %2 = service, %3 = live name, %4 = expected name';
         NoAutomaticFixErr: Label 'This finding has no automatic fix.';
+        NoFunctionServiceMsg: Label 'Dialog %1 should run its buttons through codeunit %3 published as %2, but that service is missing, unpublished, points elsewhere, or the page does not name it.', Comment = '%1 = service name, %2 = function service name, %3 = codeunit id';
+        FunctionServiceFixMsg: Label 'Publish the function codeunit as %1 and point %2 at it.', Comment = '%1 = function service name, %2 = service name';
         CompanionFixTok: Label 'COMPANION', Locked = true;
+        FunctionServiceFixTok: Label 'FUNCTIONSERVICE', Locked = true;
 }

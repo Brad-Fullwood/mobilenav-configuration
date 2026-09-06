@@ -12,6 +12,7 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF Check Config Profiles" = X,
         codeunit "BJF Check Config Properties" = X,
         codeunit "BJF Check Config Services" = X,
+        codeunit "BJF Check Config Staging" = X,
         codeunit "BJF Check Item Tracking Codes" = X,
         codeunit "BJF Check Leftover Jnl. Lines" = X,
         codeunit "BJF Check Movement Journals" = X,
