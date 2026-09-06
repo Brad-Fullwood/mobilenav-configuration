@@ -1,11 +1,29 @@
 {
     "folders": [
-        { "name": "MobileNAV Configuration", "path": "MobileNAV Configuration" },
-        { "name": "MobileNAV Configuration WMS", "path": "MobileNAV Configuration WMS" }
+        {
+            "name": "MobileNAV Configuration",
+            "path": "MobileNAV Configuration"
+        },
+        {
+            "name": "MobileNAV Configuration WMS",
+            "path": "MobileNAV Configuration WMS"
+        },
+        {
+            "name": "MobileNAV Configuration Showcase",
+            "path": "MobileNAV Configuration Showcase"
+        }
     ],
     "settings": {
         "al.enableCodeAnalysis": true,
-        "al.codeAnalyzers": ["${CodeCop}", "${UICop}", "${PerTenantExtensionCop}"],
-        "files.exclude": { "**/.alpackages": true, "**/.alcache": true, "**/.snapshots": true }
+        "al.codeAnalyzers": [
+            "${CodeCop}",
+            "${UICop}",
+            "${PerTenantExtensionCop}"
+        ],
+        "files.exclude": {
+            "**/.alpackages": true,
+            "**/.alcache": true,
+            "**/.snapshots": true
+        }
     }
 }
