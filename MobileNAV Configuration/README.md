@@ -86,6 +86,28 @@ A modifier refines the control declared last. A modifier that does not apply to 
 | `MainMenuAction(Action)` | What the page's tile does when tapped: `Create` (new record) or `Open` (the single existing one). Needs `Publish` or `PublishAsDialog` first. |
 | `MineOnly(UserIdControlName)` | Scopes the page to the signed-in device user through MobileNAV's own "Mine" mechanism. Required for a per-user parameter table; without it every device lists every user's row and a card cannot resolve one. |
 
+### Page settings
+
+Each applies to the page in context, published or MobileNAV's own.
+
+| Method | Does |
+|---|---|
+| `PageType(Shape)` | `ListCard`, `List`, `Card`, `Report` (a dialog), `Offline`, `OfflineCard`. |
+| `Insertable()`, `Updatable()`, `Deletable()` | Lets the device create, change or delete records. `Editable()` on a control already makes the page updatable. |
+| `ListLimit(MaxRecords)` | Caps how many records a list fetches. |
+| `DefaultDrillDown(ControlName)` | The control whose related page opens when a record is tapped. |
+| `OnOpen(PageFunction)`, `OnClose(PageFunction)` | MobileNAV page functions the device calls when the page opens or closes. |
+| `HideButton(ToolbarButton)` | Removes a standard toolbar button (card refresh, list sort, list filter, ...). Repeatable. |
+| `HideTitlePrefix(Prefix)` | Removes "New", the page name on a card, or the parent on a drill-down from the title. Repeatable. |
+| `AutoRefresh(Moment)` | Reloads on open, on child update (card or list), or on update (list). Repeatable. |
+| `AutoOpenSingleRecord()` | Opens the record straight away when a list holds exactly one. |
+| `ShowFilterPanel()` | Shows the filter panel instead of the empty-list placeholder. |
+| `ShowUnreadCount()` | Puts an unread-record badge on the tile. Not with an assign-to-me control. |
+| `MineFilter(Views)`, `AssignToMe(Placement)` | The "assigned to me" views a list offers, and where the assign-to-me control sits. |
+| `Style(PageStyleCode)` | A MobileNAV page style from its master data. |
+| `FilterByParent()` | Filters a child page to the record that opened it. |
+| `ChunkSize(Records)`, `CheckForChanges(Hours)` | Offline download batch size and change-polling interval. |
+
 ### Controls
 
 | Method | Default | Notes |
@@ -114,6 +136,24 @@ A modifier refines the control declared last. A modifier that does not apply to 
 | `NotInProfiles()` | Field, Button, Link, Scan | Writes no profile rows at all. The control is not drawn until a profile row exists for it some other way. |
 
 `Importance` values: `Standard` (the card's main section, MobileNAV's own `None`), `RequiredForInsert`, `Mandatory`, `Additional` (behind the card's "show more" section, where a device user never finds a button). Every control defaults to `Standard` explicitly, because MobileNAV itself defaults a new field to `Additional`.
+
+### Control settings
+
+| Method | Applies to | Does |
+|---|---|---|
+| `DecimalPlaces('2:2')` | Field | Business Central DecimalPlaces notation for a decimal. |
+| `Quantity(Increment)` | Field | Draws the field as a quantity with plus/minus steppers. |
+| `Increases(QuantityControlName)` | Field, Button, Scan | A scan into this control adds to the named quantity ("scan to add"). |
+| `Range(Min, Max)` | Field | Bounds a numeric field. |
+| `QuickEdit()` | Field | Editable from the list row without opening the card. One per page. |
+| `PromotedOnGroupHeader()` | Field | Shown on a collapsed group header when the list is grouped. |
+| `AllowSkip()` | Button, Scan | Lets the user skip a required scan. Needs `Validation()` first. |
+| `RegEx(Pattern, Results)` | Field, Scan | Validates and parses the scanned or typed value; `Results` lists the capture groups that form the value. |
+| `FieldCategory(Role)` | Field, Scan | The role MobileNAV's warehouse features key on: bin, lot, serial, item, quantity, ... |
+| `HideDrillDown()` | Field | Keeps the field from opening its related page from the card. |
+| `ValidateAlways()` | Field, Scan | Runs the field's validation even when the value did not change. |
+
+Every page and control setting is checked by the doctor's **Page & Control Settings** check and rewritten by its fix.
 
 ### Wizard
 
@@ -231,7 +271,7 @@ The hash fingerprints the definition's content, canonically ordered, so reorderi
 
 **MobileNAV Doctor** (Administration) is the single place to check and repair MobileNAV setup:
 
-- **Run config checks** compares every provider's declaration with MobileNAV's live data: **Services & Web Services** (page and companion registration), **Fields & Importance** (controls hidden at Additional, rows that contradict the declaration), **Profiles** (missing page, parent and field rows), **Relations & Page Rules** (lookup bindings on links, missing `Own` scope, editable pages without Page Update) and **Apply State** (providers outdated or with a pending device handover).
+- **Run config checks** compares every provider's declaration with MobileNAV's live data: **Services & Web Services** (page, companion and dialog function-codeunit registration), **Fields & Importance** (controls hidden at Additional, rows that contradict the declaration), **Profiles** (missing page, parent and field rows), **Relations & Page Rules** (lookup bindings on links, missing `Own` scope, editable pages without Page Update), **Page & Control Settings** (every property verb), **Wizards** (staging switches, stage rows, stage masks) and **Apply State** (providers outdated or with a pending device handover).
 - **Run all diagnostics** adds the general checks below and every check other extensions register in `"BJF Diagnostic Check Type"`.
 
 Findings show a **Severity** (Blocker, Warning, Info), the **Check** that produced them and a message. **Apply Fix** dispatches to the owning check's `ApplyFix` for any finding recorded with a fix, then re-runs every check; **Open Related Record** jumps to the record the finding is about.
