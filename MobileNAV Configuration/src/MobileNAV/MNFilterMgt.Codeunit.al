@@ -256,7 +256,7 @@ codeunit 77765 "BJF MN Filter Mgt."
         OperationRow.Validate("Line No.", LineNo);
 #pragma warning disable PC0037
         OperationRow."Object ID" := MainRow."Object ID";
-        OperationRow.RelatedPageName := MainRow."Service Name";
+        OperationRow.RelatedPageName := CopyStr(MainRow."Service Name", 1, MaxStrLen(OperationRow.RelatedPageName));
         OperationRow."Related Table No." := MainRow."Table No.";
         OperationRow.ControlID := FieldRow.ControlID;
         OperationRow.FieldName := FieldRow.FieldName;
