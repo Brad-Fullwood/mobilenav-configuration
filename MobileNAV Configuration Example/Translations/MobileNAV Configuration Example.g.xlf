@@ -1,0 +1,449 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 xliff-core-1.2-transitional.xsd">
+  <file datatype="xml" source-language="en-US" target-language="en-US" original="MobileNAV Configuration Example">
+    <body>
+      <group id="body">
+        <trans-unit id="Table 2626427109 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock Count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 2814799924 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the bin the item was counted in.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Bin Code - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 2814799924 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Bin Code</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Bin Code - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 4095824225 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies when the count was taken.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Counted At - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 4095824225 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Counted At</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Counted At - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 1216590499 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies how many were counted.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Counted Quantity - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 1216590499 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Counted Quantity</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Counted Quantity - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 883711285 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the number of the count.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Entry No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 883711285 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Entry No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Entry No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 568743302 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the item, scanned or typed.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Item No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 568743302 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Item No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Item No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 1482668068 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the lot, scanned or typed.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Lot No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 1482668068 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Lot No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Lot No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 2922682000 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the photo the device user took of the counted stock.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Photo - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 2922682000 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Photo</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Photo - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 35450067 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies whether the count has been posted.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Posted - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 35450067 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Posted</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Posted - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 3765202864 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the signature of the person who confirmed the count.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Signature - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 3765202864 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Signature</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field Signature - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 2708250016 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies who took the count. The device shows each user only their own counts.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field User ID - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2626427109 - Field 2708250016 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>User ID</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count - Field User ID - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock Count Line</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 625060196 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the stock count the line belongs to.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Count Entry No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 625060196 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Count Entry No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Count Entry No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 3320823955 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the number of the line.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Line No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 3320823955 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Line No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Line No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 1482668068 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the lot that was counted.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Lot No. - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 1482668068 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Lot No.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Lot No. - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 2704404533 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies how many of the lot were counted.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Quantity - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Table 2585432279 - Field 2704404533 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Quantity</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Table Example Stock Count Line - Field Quantity - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 360018575 - NamedType 3366960126" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Bin %1 holds %2 items.</source>
+          <note from="Developer" annotates="general" priority="2">%1 = bin code, %2 = number of items with stock in the bin</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example Bin Handler - NamedType BinItemsMsg</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2871748863 - NamedType 3464746593" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Warehouse notes</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example Captions - NamedType ExampleNotesCaptionLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2871748863 - NamedType 1013634401" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock Count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example Captions - NamedType StockCountCaptionLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2244029551 - NamedType 1093534085" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Item %1 is flagged for reorder.</source>
+          <note from="Developer" annotates="general" priority="2">%1 = item no.</note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example Item Handler - NamedType FlaggedMsg</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 4284252591" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Count it</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType CountStageLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 93958866" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Beispiel</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType ExampleCategoryDeuLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 1876576950" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Example</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType ExampleCategoryLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 2408886403" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Example profile</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType ExampleProfileLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 1208554433" maxwidth="100" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Hide the reorder button while there is stock</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType InStockLayoutLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 2254098453" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Lines</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType LinesStageLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 1345515072" maxwidth="100" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Colour the quantity while out of stock</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType NoStockColorLayoutLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 3602178399" maxwidth="100" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Out of stock</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType OutOfStockFilterLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 4255519566" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Take a photo</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType PhotoStageLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 3579001737" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Print</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType PrintStageLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 2900025103" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Item and bin pages, a stock count sheet and a quick adjust dialog, in fifteen levels: the example to copy into a customer app.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType ProviderDescriptionLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 2892012120" maxwidth="100" size-unit="char" translate="yes" xml:space="preserve">
+          <source>MobileNAV Configuration Example</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType ProviderNameLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 520727099" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Scan the item</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType ScanStageLbl</note>
+        </trans-unit>
+        <trans-unit id="Codeunit 2126051542 - NamedType 3699541823" maxwidth="250" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Sign the count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Codeunit Example MN Provider - NamedType SignStageLbl</note>
+        </trans-unit>
+        <trans-unit id="Page 547362068 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Quick Adjust</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Quick Adjust - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 547362068 - Control 3504419391 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Adjust</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Quick Adjust - Control Adjust - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 547362068 - Control 3138874653 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the device button that posts the count. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Quick Adjust - Control PostCount - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 547362068 - Control 3138874653 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Post</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Quick Adjust - Control PostCount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock Count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 1300919661 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Count - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 3114292722 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the device button that opens the lines of the count. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control ExampleCountLines - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 3114292722 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Lines</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control ExampleCountLines - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 2922682000 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the device control that takes and shows the photo of the count. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Photo - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 2922682000 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Photo</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Photo - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 2879840458 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the size of the photo, which tells the device whether there is one to show.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Photo_Size - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 2879840458 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Photo Size</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Photo_Size - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 1387286054 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the device button that prints the count as a PDF. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control PrintCount - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 1387286054 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Print</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control PrintCount - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 3765202864 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the device control where the count is signed. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Signature - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 3765202864 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Signature</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Signature - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 4238668074 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Specifies the size of the signature, which tells the device whether there is one to show.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Signature_Size - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Control 4238668074 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Signature Size</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Control Signature_Size - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Action 3471137671 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Open the lines of the count.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Action Lines - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="Page 2626427109 - Action 3471137671 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Lines</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count - Action Lines - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Page 1630327842 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock Count Lines</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Page Example Stock Count Lines - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Report 2626427109 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock Count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Report Example Stock Count - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="Report 2626427109 - ReportLayout 1332706211 - Property 2166945456" size-unit="char" translate="yes" xml:space="preserve">
+          <source>The count and its lines on one page.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Report Example Stock Count - ReportLayout StockCountLayout - Property Summary</note>
+        </trans-unit>
+        <trans-unit id="Report 2626427109 - ReportLayout 1332706211 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve">
+          <source>Stock count</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">Report Example Stock Count - ReportLayout StockCountLayout - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 547490232 - Control 2904839565 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 285595896">
+          <source>Specifies the device button that tells the user how many items the bin holds. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Bin - Control ExampleBinItems - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 547490232 - Control 2904839565 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 285595896">
+          <source>Items in Bin</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Bin - Control ExampleBinItems - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 547490232 - Control 1377710415 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 285595896">
+          <source>Specifies the MobileNAV field control value. Not for use in the client.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Bin - Control FieldControl - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 547490232 - Control 1377710415 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 285595896">
+          <source>FieldControl</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Bin - Control FieldControl - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 643939680 - Control 4080035631 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 4060773664">
+          <source>Specifies the device button that flags the item for reorder. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Item - Control ExampleFlagReorder - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 643939680 - Control 4080035631 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 4060773664">
+          <source>Flag for Reorder</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Item - Control ExampleFlagReorder - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 643939680 - Control 3910495564 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 4060773664">
+          <source>Specifies the device button that opens your stock counts of the item. The provider declares it.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Item - Control ExampleStockCounts - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="PageExtension 643939680 - Control 3910495564 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Page 4060773664">
+          <source>Stock Counts</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PageExtension Example MobileNAV Item - Control ExampleStockCounts - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1480192231 - Field 3686934250 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 3276313895">
+          <source>Specifies the bin the item is normally kept in.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension Example Item - Field Example Default Bin - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1480192231 - Field 3686934250 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 3276313895">
+          <source>Default Bin</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension Example Item - Field Example Default Bin - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1480192231 - Field 765080389 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 3276313895">
+          <source>Specifies a note for the warehouse.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension Example Item - Field Example Notes - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1480192231 - Field 765080389 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 3276313895">
+          <source>Notes</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension Example Item - Field Example Notes - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1480192231 - Field 1283496133 - Property 1295455071" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 3276313895">
+          <source>Specifies whether a device user flagged the item for reorder.</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension Example Item - Field Example Reorder Flagged - Property ToolTip</note>
+        </trans-unit>
+        <trans-unit id="TableExtension 1480192231 - Field 1283496133 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Table 3276313895">
+          <source>Reorder Flagged</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">TableExtension Example Item - Field Example Reorder Flagged - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="EnumExtension 1772364611 - EnumValue 4285200796 - Property 2879900210" size-unit="char" translate="yes" xml:space="preserve" al-object-target="Enum 3446324802">
+          <source>MobileNAV Configuration Example</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">EnumExtension Example MN Providers - EnumValue Example - Property Caption</note>
+        </trans-unit>
+        <trans-unit id="PermissionSet 631435515 - Property 2879900210" maxwidth="30" size-unit="char" translate="yes" xml:space="preserve">
+          <source>MobileNAV Example</source>
+          <note from="Developer" annotates="general" priority="2"></note>
+          <note from="Xliff Generator" annotates="general" priority="3">PermissionSet Example MN Config - Property Caption</note>
+        </trans-unit>
+      </group>
+    </body>
+  </file>
+</xliff>

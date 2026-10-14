@@ -1,0 +1,1 @@
+# OK app=/tmp/mnconfig-cleanup/I5/out/MobileNAV_Configuration_Example/Brad Fullwood_MobileNAV Configuration Example_2.0.0.0.app diagnostics=0 full_list=/tmp/mnconfig-cleanup/I5/out/MobileNAV_Configuration_Example/diagnostics.txt

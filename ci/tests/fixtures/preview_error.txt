@@ -1,0 +1,4 @@
+previewing EXAMPLE (MobileNAV Configuration Example) ... the apply runs and is rolled back, this takes several minutes
+The apply would stop with: Button Scan on MNItem names function Nope, which MobileNAV Page Functions does not have for table 27.
+no changes recorded before the error
+{"provider": "EXAMPLE", "errors": ["Button Scan on MNItem names function Nope, which MobileNAV Page Functions does not have for table 27."], "fields": 0, "records": 0}

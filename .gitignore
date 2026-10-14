@@ -1,0 +1,19 @@
+## AL build artifacts
+.alpackages/
+.alcache/
+build/
+*.app
+
+## Local launch and RAD settings (any app folder)
+**/.vscode/launch.json
+**/.vscode/rad.json
+**/.vscode/bcbd.json
+
+## Editor and OS files
+.vs/
+.snapshots/
+~$*
+*~
+
+## Python bytecode
+__pycache__/

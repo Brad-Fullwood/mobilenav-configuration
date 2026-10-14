@@ -1,0 +1,417 @@
+namespace BradFullwood.MobileNAV.Configuration.WMS;
+
+using BradFullwood.MobileNAV.Configuration;
+using Microsoft.Inventory.Journal;
+using Microsoft.Inventory.Ledger;
+using Microsoft.Inventory.Posting;
+using Microsoft.Inventory.Tracking;
+using Microsoft.Warehouse.Ledger;
+
+/// <summary>
+/// Finds packages whose stock is spread over more than one bin or location. The WMS package
+/// integrity check (MUL WMS Package Tracking.PerformIntegrityCheck) runs after every posting
+/// and errors when a package it touched spans bins, so a split package silently blocks every
+/// posting that references it - including production output whose flushed consumption picks
+/// the package. Splits usually come from a partial move out of a receipt bin or from reusing
+/// a package number across receipts into different bins.
+///
+/// The fix posts an item reclassification that consolidates the package into the bin holding
+/// most of its quantity, carrying lot/serial/package tracking. The posting itself re-runs the
+/// vendor integrity check, which then passes and repairs the MUL WMS Package bin fields.
+/// Checks each package individually; nested package families that place parent and children
+/// in different bins are not detected.
+/// </summary>
+codeunit 77742 "BJF Check Split Packages" implements "BJF Diagnostic Check"
+{
+    Access = Internal;
+    Permissions = tabledata "Item Journal Batch" = ri,
+        tabledata "Item Journal Line" = rid,
+        tabledata "Item Journal Template" = r,
+        tabledata "MUL WMS Package" = ri,
+        tabledata "Warehouse Entry" = r;
+
+    procedure RunCheck(var Finding: Record "BJF Diagnostic Finding")
+    var
+        BinPlacements: Dictionary of [Text, List of [Text]];
+        LocationPlacements: Dictionary of [Text, List of [Text]];
+        FindingCount: Integer;
+    begin
+        this.CollectLocationPlacements(LocationPlacements);
+        this.CollectBinPlacements(BinPlacements);
+        this.ReportLocationSplits(Finding, LocationPlacements, FindingCount);
+        this.ReportBinSplits(Finding, BinPlacements, LocationPlacements, FindingCount);
+        if FindingCount > this.MaxFindings() then
+            Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
+                StrSubstNo(this.MoreFindingsMsg, FindingCount - this.MaxFindings()));
+    end;
+
+    /// <summary>Location splits need a transfer order, so they are reported without a fix.</summary>
+    /// <param name="Finding">Receives one finding per split package.</param>
+    /// <param name="LocationPlacements">Locations holding each package.</param>
+    /// <param name="FindingCount">Running count of split packages found.</param>
+    local procedure ReportLocationSplits(var Finding: Record "BJF Diagnostic Finding"; LocationPlacements: Dictionary of [Text, List of [Text]]; var FindingCount: Integer)
+    var
+        PackageNo: Text;
+    begin
+        foreach PackageNo in LocationPlacements.Keys() do
+            if LocationPlacements.Get(PackageNo).Count() > 1 then begin
+                FindingCount += 1;
+                if FindingCount <= this.MaxFindings() then
+                    Finding.Add(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
+                        StrSubstNo(this.SplitLocationMsg, PackageNo, this.JoinPlacements(LocationPlacements.Get(PackageNo))));
+            end;
+    end;
+
+    /// <summary>
+    /// The package number rides in Fix Context; the Related Record ID is only for navigation
+    /// and may be blank, since the fix creates a missing MUL WMS Package record itself.
+    /// </summary>
+    /// <param name="Finding">Receives one finding with a fix per split package.</param>
+    /// <param name="BinPlacements">Bins holding each package.</param>
+    /// <param name="LocationPlacements">Locations holding each package, to skip packages that span locations.</param>
+    /// <param name="FindingCount">Running count of split packages found.</param>
+    local procedure ReportBinSplits(var Finding: Record "BJF Diagnostic Finding"; BinPlacements: Dictionary of [Text, List of [Text]]; LocationPlacements: Dictionary of [Text, List of [Text]]; var FindingCount: Integer)
+    var
+        WMSPackage: Record "MUL WMS Package";
+        PackageNo: Text;
+    begin
+        foreach PackageNo in BinPlacements.Keys() do
+            if (BinPlacements.Get(PackageNo).Count() > 1) and not this.IsMultiLocation(LocationPlacements, PackageNo) then begin
+                FindingCount += 1;
+                if FindingCount <= this.MaxFindings() then begin
+                    Clear(WMSPackage);
+                    WMSPackage.SetLoadFields("Package No.");
+                    if WMSPackage.Get(CopyStr(PackageNo, 1, MaxStrLen(WMSPackage."Package No."))) then; // A missing record gives a blank RecordId.
+                    Finding.AddWithFix(Enum::"BJF Diagnostic Check Type"::"Split Packages", Enum::"BJF Diagnostic Severity"::Blocker,
+                        StrSubstNo(this.SplitBinMsg, PackageNo, this.JoinPlacements(BinPlacements.Get(PackageNo))),
+                        WMSPackage.RecordId(),
+                        StrSubstNo(this.ConsolidateFixLbl, PackageNo),
+                        PackageNo);
+                end;
+            end;
+    end;
+
+    procedure ApplyFix(var Finding: Record "BJF Diagnostic Finding")
+    var
+        PackageNo: Code[50];
+    begin
+        PackageNo := CopyStr(Finding."Fix Context", 1, MaxStrLen(PackageNo));
+        if PackageNo = '' then
+            Error(this.NoAutomaticFixErr);
+        this.ConsolidatePackage(PackageNo);
+    end;
+
+    /// <summary>
+    /// Open item ledger entries per package and location. Location splits need a transfer
+    /// order, so they are reported without a fix; this also covers locations without bins,
+    /// which leave no warehouse entries.
+    /// </summary>
+    /// <param name="LocationPlacements">Receives the locations holding each package.</param>
+    local procedure CollectLocationPlacements(var LocationPlacements: Dictionary of [Text, List of [Text]])
+    var
+        PackageLocations: Query "BJF Package Locations";
+    begin
+        PackageLocations.Open();
+        while PackageLocations.Read() do
+            this.AddPlacement(LocationPlacements, PackageLocations.PackageNo, PackageLocations.LocationCode);
+        PackageLocations.Close();
+    end;
+
+    /// <summary>
+    /// Net warehouse quantity per package, location and bin; a package with two or more bins
+    /// carrying stock is what the vendor integrity check errors on.
+    /// </summary>
+    /// <param name="BinPlacements">Receives the bins holding each package.</param>
+    local procedure CollectBinPlacements(var BinPlacements: Dictionary of [Text, List of [Text]])
+    var
+        PackageBinQuantities: Query "BJF Package Bin Quantities";
+    begin
+        PackageBinQuantities.Open();
+        while PackageBinQuantities.Read() do
+            if PackageBinQuantities.QtyBase <> 0 then
+                this.AddPlacement(
+                    BinPlacements, PackageBinQuantities.PackageNo,
+                    PackageBinQuantities.LocationCode + '/' + PackageBinQuantities.BinCode + ': ' + Format(PackageBinQuantities.QtyBase));
+        PackageBinQuantities.Close();
+    end;
+
+    /// <summary>
+    /// Consolidates the package into the bin holding its largest quantity by posting an item
+    /// reclassification per item/variant/lot/serial from every other bin, mirroring how MUL
+    /// WMS Packing Order Mgt. posts tracked reclassifications. Uses a dedicated batch on the
+    /// first Transfer-type template so nothing else is swept into the posting.
+    /// </summary>
+    /// <param name="PackageNo">The package to consolidate.</param>
+    local procedure ConsolidatePackage(PackageNo: Code[50])
+    var
+        WMSPackage: Record "MUL WMS Package";
+        ItemJournalBatch: Record "Item Journal Batch";
+        ItemJournalLine: Record "Item Journal Line";
+        ItemJnlPostBatch: Codeunit "Item Jnl.-Post Batch";
+        GroupQty: Dictionary of [Text, Decimal];
+        BinQty: Dictionary of [Text, Decimal];
+        TargetBin: Text;
+    begin
+        this.CollectPackageGroups(PackageNo, GroupQty, BinQty);
+        TargetBin := this.FindTargetBin(BinQty);
+        if TargetBin = '' then
+            Error(this.NothingToConsolidateErr, PackageNo);
+
+        // The vendor integrity check hard-gets this record after the posting below; create
+        // it when missing (validating Package No. computes location, bin and hierarchy).
+        if not WMSPackage.Get(PackageNo) then begin
+            WMSPackage.Init();
+            WMSPackage.Validate("Package No.", PackageNo);
+            WMSPackage.Insert(false);
+        end;
+
+        this.PrepareFixBatch(ItemJournalBatch);
+        if this.InsertReclassLines(ItemJournalLine, ItemJournalBatch, PackageNo, GroupQty, TargetBin) = 0 then
+            Error(this.NothingToConsolidateErr, PackageNo);
+
+        // Posting re-runs the vendor package integrity check, which now passes and rewrites
+        // the MUL WMS Package and Package No. Information bin fields to the target bin.
+        ItemJnlPostBatch.SetSuppressCommit(true);
+        ItemJnlPostBatch.Run(ItemJournalLine);
+    end;
+
+    /// <summary>One reclassification line per group outside the target bin; returns how many were inserted.</summary>
+    /// <param name="ItemJournalLine">Receives the reclassification lines.</param>
+    /// <param name="ItemJournalBatch">The batch the lines belong to.</param>
+    /// <param name="PackageNo">The package being consolidated.</param>
+    /// <param name="GroupQty">Quantity per location, bin, item, variant, lot and serial key.</param>
+    /// <param name="TargetBin">The bin the stock moves to.</param>
+    /// <returns>The number of lines inserted.</returns>
+    local procedure InsertReclassLines(var ItemJournalLine: Record "Item Journal Line"; ItemJournalBatch: Record "Item Journal Batch"; PackageNo: Code[50]; GroupQty: Dictionary of [Text, Decimal]; TargetBin: Text) LineCount: Integer
+    var
+        GroupParts: List of [Text];
+        GroupKey: Text;
+    begin
+        foreach GroupKey in GroupQty.Keys() do begin
+            GroupParts := GroupKey.Split(this.Separator());
+            if GroupParts.Get(2) <> TargetBin then begin
+                if GroupQty.Get(GroupKey) < 0 then
+                    Error(this.NegativeStockErr, PackageNo, GroupParts.Get(2));
+                if GroupQty.Get(GroupKey) > 0 then begin
+                    LineCount += 1;
+                    this.InsertReclassLine(ItemJournalLine, ItemJournalBatch, LineCount * 10000, PackageNo, GroupParts, TargetBin, GroupQty.Get(GroupKey));
+                end;
+            end;
+        end;
+        exit(LineCount);
+    end;
+
+    /// <summary>
+    /// Sums the package's warehouse quantity per location/bin/item/variant/lot/serial. Errors
+    /// when the package spans locations - that consolidation needs a transfer order.
+    /// </summary>
+    /// <param name="PackageNo">The package to read.</param>
+    /// <param name="GroupQty">Receives the quantity per location, bin, item, variant, lot and serial key.</param>
+    /// <param name="BinQty">Receives the quantity per bin.</param>
+    local procedure CollectPackageGroups(PackageNo: Code[50]; var GroupQty: Dictionary of [Text, Decimal]; var BinQty: Dictionary of [Text, Decimal])
+    var
+        WarehouseEntry: Record "Warehouse Entry";
+        LocationCode: Code[10];
+        GroupKey: Text;
+        KeySeparator: Text;
+        Qty: Decimal;
+    begin
+        KeySeparator := this.Separator();
+        LocationCode := '';
+        WarehouseEntry.SetLoadFields("Location Code", "Bin Code", "Item No.", "Variant Code", "Lot No.", "Serial No.", "Qty. (Base)");
+        WarehouseEntry.SetRange("Package No.", PackageNo);
+        if WarehouseEntry.FindSet() then
+            repeat
+                if LocationCode = '' then
+                    LocationCode := WarehouseEntry."Location Code";
+                if LocationCode <> WarehouseEntry."Location Code" then
+                    Error(this.MultiLocationErr, PackageNo, LocationCode, WarehouseEntry."Location Code");
+                GroupKey :=
+                    WarehouseEntry."Location Code" + KeySeparator + WarehouseEntry."Bin Code" +
+                    KeySeparator + WarehouseEntry."Item No." + KeySeparator + WarehouseEntry."Variant Code" +
+                    KeySeparator + WarehouseEntry."Lot No." + KeySeparator + WarehouseEntry."Serial No.";
+                Qty := 0;
+                if GroupQty.Get(GroupKey, Qty) then; // Qty stays 0 for a new group.
+                GroupQty.Set(GroupKey, Qty + WarehouseEntry."Qty. (Base)");
+                Qty := 0;
+                if BinQty.Get(WarehouseEntry."Bin Code", Qty) then; // Qty stays 0 for a new bin.
+                BinQty.Set(WarehouseEntry."Bin Code", Qty + WarehouseEntry."Qty. (Base)");
+            until WarehouseEntry.Next() = 0;
+    end;
+
+    local procedure FindTargetBin(BinQty: Dictionary of [Text, Decimal]): Text
+    var
+        BinCode: Text;
+        TargetBin: Text;
+        LargestQty: Decimal;
+    begin
+        LargestQty := 0;
+        foreach BinCode in BinQty.Keys() do
+            if BinQty.Get(BinCode) > LargestQty then begin
+                LargestQty := BinQty.Get(BinCode);
+                TargetBin := BinCode;
+            end;
+        exit(TargetBin);
+    end;
+
+    local procedure PrepareFixBatch(var ItemJournalBatch: Record "Item Journal Batch")
+    var
+        ItemJournalTemplate: Record "Item Journal Template";
+        StaleLine: Record "Item Journal Line";
+        ReservationManagement: Codeunit "Reservation Management";
+    begin
+        ItemJournalTemplate.SetLoadFields(Name);
+        ItemJournalTemplate.SetRange(Type, ItemJournalTemplate.Type::Transfer);
+        if not ItemJournalTemplate.FindFirst() then
+            Error(this.NoTransferTemplateErr);
+
+        if not ItemJournalBatch.Get(ItemJournalTemplate.Name, this.FixBatchTok) then begin
+            ItemJournalBatch.Init();
+            ItemJournalBatch.Validate("Journal Template Name", ItemJournalTemplate.Name);
+            ItemJournalBatch.Validate(Name, this.FixBatchTok);
+            ItemJournalBatch.Validate(Description, this.FixBatchDescriptionLbl);
+            ItemJournalBatch.Insert(true);
+        end;
+
+        // The batch is owned by this fix, so anything left in it is a previous failed run.
+        StaleLine.SetRange("Journal Template Name", ItemJournalBatch."Journal Template Name");
+        StaleLine.SetRange("Journal Batch Name", ItemJournalBatch.Name);
+        while StaleLine.FindFirst() do begin
+            Clear(ReservationManagement);
+            ReservationManagement.SetReservSource(StaleLine);
+            ReservationManagement.SetItemTrackingHandling(1); // Allow deletion
+            ReservationManagement.DeleteReservEntries(true, 0);
+            StaleLine.Delete(true);
+        end;
+    end;
+
+    local procedure InsertReclassLine(var ItemJournalLine: Record "Item Journal Line"; ItemJournalBatch: Record "Item Journal Batch"; LineNo: Integer; PackageNo: Code[50]; GroupParts: List of [Text]; TargetBin: Text; QtyBase: Decimal)
+    begin
+        ItemJournalLine.Init();
+        ItemJournalLine.Validate("Journal Template Name", ItemJournalBatch."Journal Template Name");
+        ItemJournalLine.Validate("Journal Batch Name", ItemJournalBatch.Name);
+        ItemJournalLine.Validate("Line No.", LineNo);
+        ItemJournalLine.Validate("Entry Type", ItemJournalLine."Entry Type"::Transfer);
+        ItemJournalLine.Validate("Posting Date", WorkDate());
+        ItemJournalLine.Validate("Document No.", this.FixDocumentTok);
+        ItemJournalLine.Validate("Item No.", CopyStr(GroupParts.Get(3), 1, 20));
+        ItemJournalLine.Validate("Variant Code", CopyStr(GroupParts.Get(4), 1, 10));
+        ItemJournalLine.Validate("Location Code", CopyStr(GroupParts.Get(1), 1, 10));
+        ItemJournalLine.Validate("New Location Code", CopyStr(GroupParts.Get(1), 1, 10));
+        ItemJournalLine.Validate("Bin Code", CopyStr(GroupParts.Get(2), 1, 20));
+        ItemJournalLine.Validate("New Bin Code", CopyStr(TargetBin, 1, 20));
+        ItemJournalLine.Validate(Quantity, QtyBase);
+        ItemJournalLine.Insert(false);
+        this.CreateTrackingEntry(
+            ItemJournalLine, PackageNo, CopyStr(GroupParts.Get(5), 1, 50), CopyStr(GroupParts.Get(6), 1, 50));
+    end;
+
+    /// <summary>
+    /// Attaches lot/serial/package tracking to the reclassification line, keeping the same
+    /// tracking on the new side. Mirrors MUL WMS Packing Order Mgt.CreateResEntry.
+    /// </summary>
+    /// <param name="ItemJournalLine">The reclassification line to track.</param>
+    /// <param name="PackageNo">Package number carried on both sides.</param>
+    /// <param name="LotNo">Lot number carried on both sides.</param>
+    /// <param name="SerialNo">Serial number carried on both sides.</param>
+    local procedure CreateTrackingEntry(ItemJournalLine: Record "Item Journal Line"; PackageNo: Code[50]; LotNo: Code[50]; SerialNo: Code[50])
+    var
+        TempReservationEntry: Record "Reservation Entry" temporary;
+        TempTrackingSpecification: Record "Tracking Specification" temporary;
+        CreateReservEntry: Codeunit "Create Reserv. Entry";
+        ReservationStatus: Enum "Reservation Status";
+    begin
+        // Pass-through buffers for CreateReservEntry: assigned, as the standard codeunits do.
+        TempReservationEntry.Init();
+        TempReservationEntry."Entry No." := 1;
+        TempReservationEntry."Lot No." := LotNo;
+        TempReservationEntry."Serial No." := SerialNo;
+        TempReservationEntry."Package No." := PackageNo;
+        TempReservationEntry.Quantity := ItemJournalLine.Quantity;
+        TempReservationEntry.Insert(false);
+
+        TempTrackingSpecification.Init();
+        TempTrackingSpecification."Serial No." := SerialNo;
+        TempTrackingSpecification."Lot No." := LotNo;
+        TempTrackingSpecification."Package No." := PackageNo;
+        TempTrackingSpecification."New Serial No." := SerialNo;
+        TempTrackingSpecification."New Lot No." := LotNo;
+        TempTrackingSpecification."New Package No." := PackageNo;
+        TempTrackingSpecification."Quantity (Base)" := ItemJournalLine."Quantity (Base)";
+        TempTrackingSpecification.Insert(false);
+
+        CreateReservEntry.CreateReservEntryFor(
+            Database::"Item Journal Line", ItemJournalLine."Entry Type".AsInteger(),
+            ItemJournalLine."Journal Template Name", ItemJournalLine."Journal Batch Name", 0, ItemJournalLine."Line No.",
+            ItemJournalLine."Qty. per Unit of Measure", ItemJournalLine.Quantity, ItemJournalLine."Quantity (Base)",
+            TempReservationEntry);
+        CreateReservEntry.SetNewTrackingFromNewTrackingSpecification(TempTrackingSpecification);
+        CreateReservEntry.CreateEntry(
+            ItemJournalLine."Item No.", ItemJournalLine."Variant Code", ItemJournalLine."Location Code",
+            '', 0D, 0D, 0, ReservationStatus::Prospect);
+    end;
+
+    local procedure AddPlacement(var Placements: Dictionary of [Text, List of [Text]]; PackageNo: Text; Placement: Text)
+    var
+        PlacementList: List of [Text];
+    begin
+        if Placements.Get(PackageNo, PlacementList) then begin
+            if not PlacementList.Contains(Placement) then
+                PlacementList.Add(Placement);
+        end else begin
+            PlacementList.Add(Placement);
+            Placements.Set(PackageNo, PlacementList);
+        end;
+    end;
+
+    local procedure IsMultiLocation(LocationPlacements: Dictionary of [Text, List of [Text]]; PackageNo: Text): Boolean
+    var
+        Locations: List of [Text];
+    begin
+        if not LocationPlacements.Get(PackageNo, Locations) then
+            exit(false);
+        exit(Locations.Count() > 1);
+    end;
+
+    local procedure JoinPlacements(Placements: List of [Text]): Text
+    var
+        Placement: Text;
+        Result: TextBuilder;
+    begin
+        foreach Placement in Placements do begin
+            if Result.Length() > 0 then
+                Result.Append(', ');
+            Result.Append(Placement);
+        end;
+        exit(Result.ToText());
+    end;
+
+    /// <summary>The unit separator cannot occur in a Code field, so keys can be joined and split on it.</summary>
+    /// <returns>The unit separator character as text.</returns>
+    local procedure Separator(): Text
+    var
+        UnitSeparator: Char;
+    begin
+        UnitSeparator := 31;
+        exit(Format(UnitSeparator));
+    end;
+
+    local procedure MaxFindings(): Integer
+    begin
+        exit(25);
+    end;
+
+    var
+        FixBatchTok: Label 'BJFPKGFIX', Locked = true;
+        FixDocumentTok: Label 'PKGFIX', Locked = true;
+        FixBatchDescriptionLbl: Label 'Split package repair (MobileNAV Doctor)', MaxLength = 100;
+        SplitBinMsg: Label 'Package %1 has stock in more than one bin (%2). The WMS package integrity check fails every posting that touches this package - including production output that flush-consumes it.', Comment = '%1 = package no., %2 = bin: quantity list';
+        SplitLocationMsg: Label 'Package %1 has open item ledger entries in more than one location (%2). Consolidating across locations needs a transfer order; no automatic fix.', Comment = '%1 = package no., %2 = location list';
+        ConsolidateFixLbl: Label 'Post an item reclassification consolidating package %1 into the bin holding its largest quantity.', Comment = '%1 = package no.';
+        MoreFindingsMsg: Label '... and %1 more split packages.', Comment = '%1 = count';
+        NoAutomaticFixErr: Label 'This finding has no automatic fix.';
+        NoTransferTemplateErr: Label 'No Transfer-type item journal template exists to post the consolidating reclassification.';
+        MultiLocationErr: Label 'Package %1 has warehouse entries in locations %2 and %3. Consolidate across locations with a transfer order; the automatic fix only handles bins within one location.', Comment = '%1 = package no., %2/%3 = locations';
+        NegativeStockErr: Label 'Package %1 has negative net stock in bin %2. Inspect the warehouse entries; the automatic fix cannot consolidate negative quantities.', Comment = '%1 = package no., %2 = bin';
+        NothingToConsolidateErr: Label 'Package %1 has no positive quantity outside its main bin - nothing to consolidate. Re-run the diagnostics.', Comment = '%1 = package no.';
+}

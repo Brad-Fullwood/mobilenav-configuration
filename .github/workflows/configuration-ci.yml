@@ -1,0 +1,63 @@
+# Configuration CI for the Example app: build with the full cop set, upload to the sandbox, preview
+# and apply the provider, run the Doctor. ci/README.md explains the secrets and the sandbox.
+# Copy this file and ci/check.py to a customer repo and change the app folder on the last line.
+name: Configuration CI
+
+on:
+  pull_request:
+
+# One run at a time: every run uploads to the same sandbox.
+concurrency:
+  group: configuration-ci
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    # Pull requests from forks get no secrets.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      BC_TENANT: ${{ secrets.BC_TENANT }}
+      BC_ENVIRONMENT: ${{ secrets.BC_ENVIRONMENT }}
+      BC_CLIENT_ID: ${{ secrets.BC_CLIENT_ID }}
+      BC_CLIENT_SECRET: ${{ secrets.BC_CLIENT_SECRET }}
+      BC_TOOLS: ${{ github.workspace }}/tools
+    steps:
+      - uses: actions/checkout@v4
+
+      # bcbd.py and mnconfig.py live in a private repo, so reading it needs a token (TOOLS_TOKEN).
+      - uses: actions/checkout@v4
+        with:
+          repository: Brad-Fullwood/tools
+          token: ${{ secrets.TOOLS_TOKEN }}
+          path: tools
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # The AL compiler of the current marketplace release targets .NET 10.
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Tests of the CI script
+        run: python -m unittest discover -s ci/tests
+
+      # Downloads the AL extension (vsix) from the Visual Studio Marketplace into ~/.vscode/extensions,
+      # where bcbd.py looks for alc.dll, and the ALCops analyzers from NuGet next to it.
+      - name: Install the AL compiler
+        run: python ci/check.py setup
+
+      # The revision is the run number, so each run is a higher version than the last upload.
+      # Add --device to check.py all when a harness device is configured in the sandbox.
+      - name: Check the Example app
+        run: >
+          python ci/check.py all
+          --app "MobileNAV Configuration Example"
+          --with "MobileNAV Configuration"
+          --stamp-revision ${{ github.run_number }}

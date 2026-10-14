@@ -1,0 +1,6 @@
+page                 control  check    expected  device
+-------------------  -------  -------  --------  -------
+MNExampleStockCount  LotNo    visible  yes       no
+MNExampleQuickAdjust PostCount wired   PostCount in the SOAP service  missing from the page's SOAP service
+75 of 77 checks passed, 2 failed, provider EXAMPLE, capture 20261014-101500
+{"provider": "EXAMPLE", "capture": "20261014-101500", "checks": 77, "failed": 2, "failures": [{"page": "MNExampleStockCount", "control": "LotNo", "check": "visible", "expected": "yes", "actual": "no"}, {"page": "MNExampleQuickAdjust", "control": "PostCount", "check": "wired", "expected": "PostCount in the SOAP service", "actual": "missing from the page's SOAP service"}], "notes": []}

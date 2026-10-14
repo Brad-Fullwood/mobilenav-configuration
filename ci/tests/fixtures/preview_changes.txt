@@ -1,0 +1,8 @@
+previewing EXAMPLE (MobileNAV Configuration Example) ... the apply runs and is rolled back, this takes several minutes
+3 field changes in 2 records:
+Modify  MobileNAV Service Setup Line: MNItem,Description
+          Visible: No -> Yes
+          Editable: No -> Yes
+Insert  MobileNAV Service Setup Line: MNItem,ExampleNote
+          Field Name: ExampleNote
+{"provider": "EXAMPLE", "errors": [], "fields": 3, "records": 2}

@@ -1,0 +1,3 @@
+previewing EXAMPLE (MobileNAV Configuration Example) ... the apply runs and is rolled back, this takes several minutes
+no changes: MobileNAV already matches the declaration
+{"provider": "EXAMPLE", "errors": [], "fields": 0, "records": 0}

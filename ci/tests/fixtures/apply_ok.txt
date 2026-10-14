@@ -1,0 +1,3 @@
+applying EXAMPLE (MobileNAV Configuration Example) ... this takes several minutes
+  -> Applied appliedAt=2026-10-14T01:20:00Z
+{"providers": [{"providerId": "EXAMPLE", "state": "Applied", "appliedAt": "2026-10-14T01:20:00Z"}]}

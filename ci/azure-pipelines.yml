@@ -1,0 +1,74 @@
+# Configuration CI as an Azure Pipelines step template. The steps are the ones in
+# .github/workflows/configuration-ci.yml. A customer repo copies this file and ci/check.py, then
+# uses the template from its own azure-pipelines.yml:
+#
+#   trigger: none
+#   pr: [main]
+#   resources:
+#     repositories:
+#       - repository: tools                 # bcbd.py and mnconfig.py
+#         type: github
+#         endpoint: github-tools            # a GitHub service connection with read access
+#         name: Brad-Fullwood/tools
+#   pool:
+#     vmImage: ubuntu-latest
+#   variables:
+#     - group: bc-sandbox                   # BC_TENANT, BC_ENVIRONMENT, BC_CLIENT_ID, BC_CLIENT_SECRET (secret)
+#   steps:
+#     - template: ci/azure-pipelines.yml
+#       parameters:
+#         app: .
+#         withArguments: ""       # --with "Library" when the repo has a second app
+#
+# Not run on Azure Pipelines yet. The same commands run in the GitHub workflow.
+parameters:
+  - name: app                    # folder of the AL app, relative to the repository root
+    type: string
+    default: .
+  - name: withArguments          # apps in this repository that the app depends on, built and uploaded first, for example: --with "Library"
+    type: string
+    default: ''
+
+  - name: failOn                 # Doctor severity that fails the run: Blocker, Warning or Info
+    type: string
+    default: Warning
+  - name: extraArguments         # for example --no-deploy or --no-apply
+    type: string
+    default: ''
+
+steps:
+  - checkout: self
+  - checkout: tools
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.12'
+
+  - task: UseDotNet@2
+    inputs:
+      packageType: sdk
+      version: 10.x
+
+  - script: python ci/check.py setup
+    displayName: Install the AL compiler
+    workingDirectory: $(Build.Repository.LocalPath)
+    env:
+      BC_TOOLS: $(Pipeline.Workspace)/s/tools
+
+  # A secret variable reaches a script only when it is mapped under env.
+  # Add --device to check.py all when a harness device is configured in the sandbox.
+  - script: >
+      python ci/check.py all
+      --app "${{ parameters.app }}"
+      ${{ parameters.withArguments }}
+      --fail-on ${{ parameters.failOn }}
+      --stamp-revision $(Build.BuildId)
+      ${{ parameters.extraArguments }}
+    displayName: Check the app
+    workingDirectory: $(Build.Repository.LocalPath)
+    env:
+      BC_TOOLS: $(Pipeline.Workspace)/s/tools
+      BC_TENANT: $(BC_TENANT)
+      BC_ENVIRONMENT: $(BC_ENVIRONMENT)
+      BC_CLIENT_ID: $(BC_CLIENT_ID)
+      BC_CLIENT_SECRET: $(BC_CLIENT_SECRET)

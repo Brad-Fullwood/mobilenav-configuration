@@ -1,0 +1,7 @@
+COMPILE ERRORS:
+  src/Foo.Codeunit.al(12): error AL0118: The name 'Bar' does not exist in the current context
+  src/Foo.Codeunit.al(30): error AL0132: 'Record Item' does not contain a definition for 'Nope'
+ANALYZER CRASHES: 2 (usually ALCops.Common.dll missing next to the analyzers)
+analyzers not found: ALCops.LinterCop.dll, ALCops.Common.dll
+# FAILED app=- diagnostics=0 full_list=/tmp/x/diagnostics.txt
+{"ok": false, "app": null, "diagnostics": 0, "list_file": "/tmp/x/diagnostics.txt", "errors": ["src/Foo.Codeunit.al(12): error AL0118: The name 'Bar' does not exist in the current context", "src/Foo.Codeunit.al(30): error AL0132: 'Record Item' does not contain a definition for 'Nope'"], "crashes": 2, "missing_analyzers": ["ALCops.LinterCop.dll", "ALCops.Common.dll"]}

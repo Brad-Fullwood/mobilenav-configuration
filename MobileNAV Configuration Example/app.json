@@ -1,0 +1,45 @@
+{
+  "id": "5b2f0c1e-7d3a-4f6b-9c0e-2a1d8e4f6b73",
+  "name": "MobileNAV Configuration Example",
+  "publisher": "Brad Fullwood",
+  "version": "2.2.0.0",
+  "brief": "MobileNAV device configuration in AL: one provider, fifteen levels, from three lines to a full flow.",
+  "description": "An example app for Business Central developers who have not worked with MobileNAV. One provider codeunit declares what the device shows, in fifteen levels: fields on MobileNAV's item page, a button with code behind it, lookups, groups, filters and layout rules, a stock count page of your own with a scan wizard, a dialog that runs your own procedure, profiles, categories, captions and saved filters, a button and a coloured line on MobileNAV's bin page, and a MobileNAV page reached through MobileNAV's own links. Install it, apply it from MobileNAV Configuration, and copy the pattern into a customer app.",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "https://github.com/Brad-Fullwood/mobilenav-configuration",
+  "dependencies": [
+    {
+      "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
+      "name": "MobileNAV Configuration",
+      "publisher": "Brad Fullwood",
+      "version": "4.6.0.0"
+    },
+    {
+      "id": "fd09b53c-ff32-4d9c-91ce-6a82a87b8c9c",
+      "name": "MobileNAV",
+      "publisher": "MULTISOFT KFT",
+      "version": "11.0.0.0"
+    }
+  ],
+  "platform": "1.0.0.0",
+  "application": "26.0.0.0",
+  "runtime": "16.0",
+  "target": "Cloud",
+  "idRanges": [
+    {
+      "from": 50100,
+      "to": 50149
+    }
+  ],
+  "features": [
+    "TranslationFile",
+    "NoImplicitWith"
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  }
+}

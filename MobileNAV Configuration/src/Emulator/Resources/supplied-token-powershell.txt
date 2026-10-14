@@ -1,0 +1,81 @@
+<#
+.SYNOPSIS
+Signs in to Business Central with the device code flow and gives the token to the MobileNAV device emulator.
+
+.DESCRIPTION
+The sign-in script shows a code and a web address. Open the address, enter the code and sign in as the user whose
+emulator screens you want. The script then calls the supplyToken action of the emulator setup API, which stores the
+token for that user for about an hour. Run the script again when the emulator reports no token.
+No secret is stored in this file. The app registration must allow public client flows.
+
+The parameters have defaults for this environment, filled in when the script was downloaded. Pass a parameter only
+to use another value.
+
+.PARAMETER TenantId
+The Microsoft Entra tenant ID of the Business Central environment.
+
+.PARAMETER ClientId
+The application (client) ID of a Microsoft Entra app registration with Allow public client flows set to Yes and
+the delegated permission Dynamics 365 Business Central, user_impersonation. The default is the O365 App ID of
+MobileNAV Master Data, or the Client ID of the emulator setup when that is empty.
+
+.PARAMETER CompanyName
+The company that holds the MobileNAV device emulator setup.
+
+.PARAMETER EnvironmentName
+The Business Central environment name, for example Production or Sandbox. Used only when ApiBaseUrl is empty.
+
+.PARAMETER ApiBaseUrl
+The base address of the emulator setup API, which holds the supplyToken action.
+#>
+param(
+    [string]$TenantId = '<<TenantId>>',
+    [string]$ClientId = '<<ClientId>>',
+    [string]$CompanyName = '<<CompanyName>>',
+    [string]$EnvironmentName = '<<EnvironmentName>>',
+    [string]$ApiBaseUrl = '<<ApiBaseUrl>>'
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $ClientId) { throw 'The client ID is empty. Pass -ClientId with an app registration that allows public client flows.' }
+$scope = 'https://api.businesscentral.dynamics.com/user_impersonation'
+$login = "https://login.microsoftonline.com/$TenantId/oauth2/v2.0"
+if ($ApiBaseUrl) {
+    $api = $ApiBaseUrl.TrimEnd('/')
+} else {
+    $api = "https://api.businesscentral.dynamics.com/v2.0/$TenantId/$EnvironmentName/api/bjf/mobilenav/v1.0"
+}
+
+$device = Invoke-RestMethod -Method Post -Uri "$login/devicecode" -Body @{ client_id = $ClientId; scope = $scope }
+Write-Host $device.message
+
+$interval = [int]$device.interval
+$deadline = (Get-Date).AddSeconds([int]$device.expires_in)
+$token = $null
+while ($null -eq $token) {
+    if ((Get-Date) -gt $deadline) { throw 'The device code expired. Run the script again.' }
+    Start-Sleep -Seconds $interval
+    try {
+        $token = Invoke-RestMethod -Method Post -Uri "$login/token" -Body @{
+            grant_type = 'urn:ietf:params:oauth:grant-type:device_code'
+            client_id = $ClientId
+            device_code = $device.device_code
+        }
+    } catch {
+        $err = $_.ErrorDetails.Message | ConvertFrom-Json
+        if ($err.error -eq 'authorization_pending') { continue }
+        if ($err.error -eq 'slow_down') { $interval += 5; continue }
+        throw "Sign-in failed: $($err.error_description)"
+    }
+}
+
+$headers = @{ Authorization = "Bearer $($token.access_token)" }
+$company = (Invoke-RestMethod -Uri "$api/companies" -Headers $headers).value | Where-Object { $_.name -eq $CompanyName }
+if (-not $company) { throw "Company '$CompanyName' was not found at $api." }
+$setup = (Invoke-RestMethod -Uri "$api/companies($($company.id))/emulatorSetups" -Headers $headers).value | Select-Object -First 1
+if (-not $setup) { throw 'The MobileNAV device emulator setup was not found. Open the emulator page once, then run the script again.' }
+
+$body = @{ accessToken = $token.access_token; expiresIn = [int]$token.expires_in } | ConvertTo-Json
+$action = "$api/companies($($company.id))/emulatorSetups($($setup.id))/Microsoft.NAV.supplyToken"
+Invoke-RestMethod -Method Post -Uri $action -Headers $headers -ContentType 'application/json' -Body $body | Out-Null
+Write-Host "The token is stored for the signed-in user. The emulator can use it for about an hour."

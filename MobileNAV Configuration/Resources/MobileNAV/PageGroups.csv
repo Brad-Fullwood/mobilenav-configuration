@@ -1,0 +1,89 @@
+PageId,GroupName,Caption,Level,Sequence
+42012822,General,General,1,1
+42012822,Control59,,2,2
+42012822,Control87,,2,3
+42012822,Group_PageStyle,Page Style,1,4
+42012822,Group_CellContents,Cell Contents,1,5
+42012822,Line Format,Line Format,1,6
+42012822,Relation,Relation,1,7
+42012822,Behavior,Behavior,1,8
+42012822,Control62,,2,9
+42012822,Offline,Offline,1,10
+42012822,Visibility,Visibility,1,11
+42012829,License Information,License Information,1,1
+42012829,Control4,,2,2
+42012829,Control5,,2,3
+42012829,Control10,,2,4
+42012829,Control6,,2,5
+42012829,Control11,,2,6
+42012841,General,General,1,1
+42012841,Offline Administration,Offline Administration,1,2
+42012841,GPS Tracking,GPS Tracking,1,3
+42012841,Picture,Picture,1,4
+42012841,Azure Notification Hub,Azure Notification Hub,1,5
+42012841,Debug,Debug,1,6
+42012841,Control72,,2,7
+42012841,Version Information,Version Information,1,8
+42012861,GroupName,,1,1
+42012863,General,,1,1
+42012867,General,,1,1
+42012869,General,Original Value,1,1
+42012869,TextEditor,New Value,1,2
+42012869,BooleanEditor,New Value,1,3
+42012869,DateEditor,New Value,1,4
+42012869,TimeEditor,New Value,1,5
+42012869,DateTimeEditor,New Value,1,6
+42012869,DecimalEditor,New Value,1,7
+42012869,IntegerEditor,New Value,1,8
+42012869,ShortTextEditor,New Value,1,9
+42013145,Group_Font,Fonts,1,1
+42013146,Group_List,List,1,1
+42013146,Group_Card,Card,1,2
+42013146,Group_Menu,Home Menu,1,3
+42013147,Group_AlterColor,List Alternating Color,1,1
+42013147,Group_CellFonts,List Cell Fonts,1,2
+42013147,Group_GlobalCellProps,List Global Cell properties,1,3
+42013147,Group_CardFonts,Card Element Fonts,1,4
+42013150,Summary,Summary,1,1
+42013150,Details,Details,1,2
+42013152,General,,1,1
+42013156,Control9,,1,1
+42013164,Control5,,1,1
+42013166,Group_General,General,1,1
+42013166,Group_PageInfo,Basic Information,2,2
+42013166,Group_ProfiledProperties,Profile-dependent Settings of the Page,2,3
+42013169,Control20,,1,1
+42013169,Welcome to MobileNAV Setup,Welcome to MobileNAV Setup,2,2
+42013169,Control18,,3,3
+42013169,Let's go!,Let's go!,2,4
+42013169,Control22,,3,5
+42013169,Control2,,1,6
+42013169,Control6,,1,7
+42013169,Control34,,1,8
+42013169,Control12,,1,9
+42013169,Control38,,1,10
+42013169,Control27,,1,11
+42013169,Control9,,2,12
+42013169,Control23,,2,13
+42013169,Control35,,3,14
+42013169,Control36,,3,15
+42013169,Control17,,1,16
+42013169,Control25,,2,17
+42013170,General,General,1,1
+42013170,Control25,,2,2
+42013170,User_PW,User / Password,1,3
+42013170,O365,O365,1,4
+42013170,Connection,Connection,1,5
+42013170,Control26,,2,6
+42013176,General,,1,1
+42013181,Group_General,General,1,1
+42013181,Group_Font,Fonts,1,2
+42013181,Group_PaddSep,Paddings and Separators,1,3
+42013181,Group_List,List,2,4
+42013181,Group_Card,Card,2,5
+42013181,Group_Menu,Home Menu,2,6
+42013195,General,,1,1
+42013195,Control4,,2,2
+42013195,Control9,,2,3
+42013195,Control10,,2,4
+42013197,General,General,1,1

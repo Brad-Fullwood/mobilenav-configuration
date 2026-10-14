@@ -1,0 +1,5 @@
+upload accepted; polling for MobileNAV Configuration Example 2.0.0.0 started after 2026-10-14T01:00:00
+InProgress
+Failed
+{"status": "Failed", "statuses": ["InProgress", "Failed"], "completed": false, "installed": []}
+Deployment did not complete. The Automation API gives no reason; usual causes: the app id is currently published as Dev (run: uninstall <app id>), a dropped field without --schema ForceSync, a dependency version mismatch, or a version not higher than the last PTE upload.

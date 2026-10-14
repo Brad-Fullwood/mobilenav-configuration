@@ -1,0 +1,6 @@
+upload accepted; polling for MobileNAV Configuration Example 2.0.0.77 started after 2026-10-14T01:00:00
+InProgress
+InProgress
+Completed
+installed MobileNAV Configuration Example 2.0.0.77 (PTE)
+{"status": "Completed", "statuses": ["InProgress", "InProgress", "Completed"], "completed": true, "installed": ["MobileNAV Configuration Example 2.0.0.77 (PTE)"]}

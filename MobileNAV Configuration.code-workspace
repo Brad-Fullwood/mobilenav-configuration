@@ -1,0 +1,39 @@
+{
+    "folders": [
+        {
+            "name": "MobileNAV Configuration",
+            "path": "MobileNAV Configuration"
+        },
+        {
+            "name": "MobileNAV Configuration WMS",
+            "path": "MobileNAV Configuration WMS"
+        },
+        {
+            "name": "MobileNAV Configuration Example",
+            "path": "MobileNAV Configuration Example"
+        },
+        {
+            "name": "MobileNAV Configuration Example Tests",
+            "path": "MobileNAV Configuration Example Tests"
+        }
+    ],
+    "settings": {
+        "al.enableCodeAnalysis": true,
+        "al.codeAnalyzers": [
+            "${CodeCop}",
+            "${UICop}",
+            "${PerTenantExtensionCop}",
+            "${analyzerFolder}ALCops.ApplicationCop.dll",
+            "${analyzerFolder}ALCops.DocumentationCop.dll",
+            "${analyzerFolder}ALCops.FormattingCop.dll",
+            "${analyzerFolder}ALCops.LinterCop.dll",
+            "${analyzerFolder}ALCops.PlatformCop.dll",
+            "${analyzerFolder}ALCops.Common.dll"
+        ],
+        "files.exclude": {
+            "**/.alpackages": true,
+            "**/.alcache": true,
+            "**/.snapshots": true
+        }
+    }
+}

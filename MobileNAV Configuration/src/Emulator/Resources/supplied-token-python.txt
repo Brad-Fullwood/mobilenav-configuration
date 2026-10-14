@@ -1,0 +1,116 @@
+"""Signs in to Business Central with the device code flow and gives the token to the MobileNAV device emulator.
+
+The sign-in script shows a code and a web address. Open the address, enter the code and sign in as the user whose
+emulator screens you want. The script then calls the supplyToken action of the emulator setup API, which stores the
+token for that user for about an hour. Run the script again when the emulator reports no token.
+No secret is stored in this file. The app registration must allow public client flows.
+
+The options have defaults for this environment, filled in when the script was downloaded. Pass an option only to use
+another value.
+
+Options:
+  --tenant-id          The Microsoft Entra tenant ID of the Business Central environment.
+  --client-id          The application (client) ID of an app registration with Allow public client flows set to Yes
+                       and the delegated permission Dynamics 365 Business Central, user_impersonation. The default is
+                       the O365 App ID of MobileNAV Master Data, or the Client ID of the emulator setup when that is empty.
+  --company            The company that holds the MobileNAV device emulator setup.
+  --environment        The Business Central environment name. Used only when --api-base-url is empty.
+  --api-base-url       The base address of the emulator setup API, which holds the supplyToken action.
+
+Uses only the Python standard library.
+"""
+
+import argparse
+import json
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+SCOPE = "https://api.businesscentral.dynamics.com/user_impersonation"
+
+DEFAULT_TENANT_ID = "<<TenantId>>"
+DEFAULT_CLIENT_ID = "<<ClientId>>"
+DEFAULT_COMPANY = "<<CompanyName>>"
+DEFAULT_ENVIRONMENT = "<<EnvironmentName>>"
+DEFAULT_API_BASE_URL = "<<ApiBaseUrl>>"
+
+
+def post_form(url, fields):
+    data = urllib.parse.urlencode(fields).encode("utf-8")
+    request = urllib.request.Request(url, data=data, method="POST")
+    with urllib.request.urlopen(request) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def call_json(url, token, method="GET", payload=None):
+    data = None if payload is None else json.dumps(payload).encode("utf-8")
+    request = urllib.request.Request(url, data=data, method=method)
+    request.add_header("Authorization", "Bearer " + token)
+    if payload is not None:
+        request.add_header("Content-Type", "application/json")
+    with urllib.request.urlopen(request) as response:
+        body = response.read().decode("utf-8")
+        return json.loads(body) if body else {}
+
+
+def sign_in(tenant_id, client_id):
+    login = "https://login.microsoftonline.com/" + tenant_id + "/oauth2/v2.0"
+    device = post_form(login + "/devicecode", {"client_id": client_id, "scope": SCOPE})
+    print(device["message"])
+    interval = int(device.get("interval", 5))
+    deadline = time.time() + int(device["expires_in"])
+    while time.time() < deadline:
+        time.sleep(interval)
+        try:
+            return post_form(login + "/token", {
+                "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+                "client_id": client_id,
+                "device_code": device["device_code"],
+            })
+        except urllib.error.HTTPError as error:
+            reply = json.loads(error.read().decode("utf-8"))
+            if reply.get("error") == "authorization_pending":
+                continue
+            if reply.get("error") == "slow_down":
+                interval += 5
+                continue
+            sys.exit("Sign-in failed: " + reply.get("error_description", reply.get("error", "unknown")))
+    sys.exit("The device code expired. Run the script again.")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--tenant-id", default=DEFAULT_TENANT_ID)
+    parser.add_argument("--client-id", default=DEFAULT_CLIENT_ID)
+    parser.add_argument("--company", default=DEFAULT_COMPANY)
+    parser.add_argument("--environment", default=DEFAULT_ENVIRONMENT)
+    parser.add_argument("--api-base-url", default=DEFAULT_API_BASE_URL)
+    args = parser.parse_args()
+
+    if not args.client_id:
+        sys.exit("The client ID is empty. Pass --client-id with an app registration that allows public client flows.")
+    api = args.api_base_url.rstrip("/") if args.api_base_url else (
+        "https://api.businesscentral.dynamics.com/v2.0/" + args.tenant_id + "/" + args.environment
+        + "/api/bjf/mobilenav/v1.0")
+
+    token = sign_in(args.tenant_id, args.client_id)
+    access = token["access_token"]
+
+    companies = call_json(api + "/companies", access)["value"]
+    company = next((c for c in companies if c["name"] == args.company), None)
+    if company is None:
+        sys.exit("Company '" + args.company + "' was not found at " + api + ".")
+    setups = call_json(api + "/companies(" + company["id"] + ")/emulatorSetups", access)["value"]
+    if not setups:
+        sys.exit("The MobileNAV device emulator setup was not found. Open the emulator page once, then run the script again.")
+
+    action = api + "/companies(" + company["id"] + ")/emulatorSetups(" + setups[0]["id"] + ")/Microsoft.NAV.supplyToken"
+    call_json(action, access, method="POST",
+              payload={"accessToken": access, "expiresIn": int(token["expires_in"])})
+    print("The token is stored for the signed-in user. The emulator can use it for about an hour.")
+
+
+if __name__ == "__main__":
+    main()

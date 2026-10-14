@@ -1,0 +1,4 @@
+by rule: AA0247=1, DC0007=1, DC0004=1, LC0092=1, AA0215=1, AC0010=1, AA0137=1
+by file: Example/src/Bad.Codeunit.al=7
+# OK app=/tmp/mnconfig-cleanup/I5/out3/MobileNAV_Configuration_Example/Brad Fullwood_MobileNAV Configuration Example_2.0.0.0.app diagnostics=7 full_list=/tmp/mnconfig-cleanup/I5/out3/MobileNAV_Configuration_Example/diagnostics.txt
+{"ok": true, "app": "/tmp/mnconfig-cleanup/I5/out3/MobileNAV_Configuration_Example/Brad Fullwood_MobileNAV Configuration Example_2.0.0.0.app", "diagnostics": 7, "list_file": "/tmp/mnconfig-cleanup/I5/out3/MobileNAV_Configuration_Example/diagnostics.txt", "errors": [], "crashes": 0, "missing_analyzers": []}

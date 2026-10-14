@@ -1,0 +1,50 @@
+{
+  "id": "4f8319bc-9fa8-4ce0-8e9e-47fc43e7433f",
+  "name": "MobileNAV Configuration Example Tests",
+  "publisher": "Brad Fullwood",
+  "version": "1.1.0.2",
+  "brief": "Unit test for the example provider, through BJF MN Provider Assert.",
+  "description": "Checks that every page, control and button function the example provider declares exists in Business Central. The test reads no MobileNAV data, so it runs in a container without MobileNAV configuration.",
+  "privacyStatement": "",
+  "EULA": "",
+  "help": "",
+  "url": "https://github.com/Brad-Fullwood/mobilenav-configuration",
+  "dependencies": [
+    {
+      "id": "fd09b53c-ff32-4d9c-91ce-6a82a87b8c9c",
+      "name": "MobileNAV",
+      "publisher": "MULTISOFT KFT",
+      "version": "11.0.0.0"
+    },
+    {
+      "id": "8943817b-00dd-4a15-b70a-209b96da80e2",
+      "name": "MobileNAV Configuration",
+      "publisher": "Brad Fullwood",
+      "version": "4.6.0.0"
+    },
+    {
+      "id": "5b2f0c1e-7d3a-4f6b-9c0e-2a1d8e4f6b73",
+      "name": "MobileNAV Configuration Example",
+      "publisher": "Brad Fullwood",
+      "version": "2.0.0.0"
+    }
+  ],
+  "platform": "1.0.0.0",
+  "application": "26.0.0.0",
+  "runtime": "16.0",
+  "target": "Cloud",
+  "idRanges": [
+    {
+      "from": 50150,
+      "to": 50159
+    }
+  ],
+  "features": [
+    "NoImplicitWith"
+  ],
+  "resourceExposurePolicy": {
+    "allowDebugging": true,
+    "allowDownloadingSource": true,
+    "includeSourceInSymbolFile": true
+  }
+}
