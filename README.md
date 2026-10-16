@@ -11,3 +11,9 @@ Three Business Central apps in one repository. Open `MobileNAV Configuration.cod
 Build each app from its own folder (see its README). The WMS and Example apps compile against the framework's `.app` in their `.alpackages`.
 
 Tools: `MobileNAV Configuration/tools/generate_table_functions.py` regenerates the table function codeunits from the MobileNAV symbols after a MobileNAV upgrade. The framework README's Build section has the command.
+
+## License
+
+Copyright (c) 2026 Brad Fullwood.
+
+Licensed under the Mozilla Public License 2.0. See [LICENSE](LICENSE). You may use, modify and distribute this code, including in commercial products. Changes to these files must be published under the same license, and copyright notices must be kept.
