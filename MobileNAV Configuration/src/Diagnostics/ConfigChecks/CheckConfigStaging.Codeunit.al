@@ -156,7 +156,10 @@ codeunit 77769 "BJF Check Config Staging" implements "BJF Diagnostic Check"
                 Mask := FieldRow.Stage;
                 Tokens := Mask.Split(',');
                 Expected := this.StageManagement.ExpectedToken(TempLine);
-                if (Tokens.Count() < StageIndex) or (Tokens.Get(StageIndex) <> Expected) then
+                // AL evaluates both sides of an or, so the count is checked before Get.
+                if Tokens.Count() < StageIndex then
+                    exit(StrSubstNo(this.MaskLbl, TempLine."Control Name", TempLine."Stage Id"));
+                if Tokens.Get(StageIndex) <> Expected then
                     exit(StrSubstNo(this.MaskLbl, TempLine."Control Name", TempLine."Stage Id"));
             until TempLine.Next() = 0;
         exit('');
