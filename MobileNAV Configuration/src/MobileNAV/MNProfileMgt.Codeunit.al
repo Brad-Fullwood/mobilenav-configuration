@@ -318,6 +318,8 @@ codeunit 77791 "BJF MN Profile Mgt."
         if not this.FindPageRow(ParentId, Profile, ParentRow) then
             exit;
 
+        this.CopyRootsFromParent(ChildId, ParentId, Profile);
+
         Link.SetRange("Profile Type", Link."Profile Type"::"Parent Page");
         Link.SetRange(ID, ChildId);
         Link.SetRange(Profile, Profile);
@@ -343,6 +345,51 @@ codeunit 77791 "BJF MN Profile Mgt."
         Link."Use as Online" := ParentRow."Use as Online";
 #pragma warning restore PC0037
         Link.Insert(false);
+    end;
+
+    /// <summary>
+    /// Gives the child every Root Page row the parent has. MobileNAV keeps one Root Page row per
+    /// menu page a page is reached from, and deletes a page without a menu tile that has none when
+    /// its Display in Menu is cleared. A Parent Page row alone does not add them.
+    /// </summary>
+    /// <param name="ChildId">The child page's service name.</param>
+    /// <param name="ParentId">The parent page's service name.</param>
+    /// <param name="Profile">The profile.</param>
+    local procedure CopyRootsFromParent(ChildId: Text[100]; ParentId: Text[100]; Profile: Code[30])
+    var
+        ParentRoot: Record "MobileNAV Profile Setup";
+        ChildRoot: Record "MobileNAV Profile Setup";
+        NextControlId: Integer;
+    begin
+        ParentRoot.SetLoadFields(Parent);
+        ParentRoot.SetRange("Profile Type", ParentRoot."Profile Type"::"Root Page");
+        ParentRoot.SetRange(ID, ParentId);
+        ParentRoot.SetRange(Profile, Profile);
+        if not ParentRoot.FindSet() then
+            exit;
+        repeat
+            ChildRoot.Reset();
+            ChildRoot.SetRange("Profile Type", ChildRoot."Profile Type"::"Root Page");
+            ChildRoot.SetRange(ID, ChildId);
+            ChildRoot.SetRange(Profile, Profile);
+            ChildRoot.SetRange(Parent, ParentRoot.Parent);
+            if ChildRoot.IsEmpty() then begin
+                // Control ID sequences within child and profile, as MobileNAV's AddRoot numbers it.
+                ChildRoot.SetRange(Parent);
+                NextControlId := 1;
+                if ChildRoot.FindLast() then
+                    NextControlId := ChildRoot."Control ID" + 1;
+                ChildRoot.Init();
+#pragma warning disable PC0037
+                ChildRoot."Control ID" := NextControlId;
+                ChildRoot."Profile Type" := ChildRoot."Profile Type"::"Root Page";
+                ChildRoot.ID := ChildId;
+                ChildRoot.Profile := Profile;
+                ChildRoot.Parent := ParentRoot.Parent;
+#pragma warning restore PC0037
+                ChildRoot.Insert(false);
+            end;
+        until ParentRoot.Next() = 0;
     end;
 
     /// <summary>
