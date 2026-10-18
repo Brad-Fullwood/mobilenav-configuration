@@ -353,6 +353,7 @@ codeunit 50100 "Example MN Provider" implements "BJF MN Config Provider"
             .Stage(this.PrintStageTok, this.PrintStageLbl)
                 .Show('PrintCount');
     end;
+
     var
         ProviderIdTok: Label 'EXAMPLE', Locked = true;
         ProviderNameLbl: Label 'MobileNAV Configuration Example', MaxLength = 100;

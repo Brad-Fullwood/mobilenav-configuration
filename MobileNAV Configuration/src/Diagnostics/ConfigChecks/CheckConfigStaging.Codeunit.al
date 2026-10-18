@@ -151,6 +151,8 @@ codeunit 77769 "BJF Check Config Staging" implements "BJF Diagnostic Check"
                 if not this.Lookup.FindFieldRow(ServiceName, TempLine."Control Name", FieldRow) then
                     exit(StrSubstNo(this.FieldMissingLbl, TempLine."Control Name"));
                 StageIndex := StageIds.IndexOf(TempLine."Stage Id");
+                if StageIndex = 0 then
+                    exit(StrSubstNo(this.StageUndeclaredLbl, TempLine."Control Name", TempLine."Stage Id"));
                 Mask := FieldRow.Stage;
                 Tokens := Mask.Split(',');
                 Expected := this.StageManagement.ExpectedToken(TempLine);
@@ -182,6 +184,7 @@ codeunit 77769 "BJF Check Config Staging" implements "BJF Diagnostic Check"
         StageOrderLbl: Label 'stage %1 should be %2 but is %3.', Comment = '%1 = position, %2 = declared stage id, %3 = live stage id';
         RestartLbl: Label 'the restart-from flag on stage %1 is wrong.', Comment = '%1 = stage id';
         FieldMissingLbl: Label 'control %1 has no field row.', Comment = '%1 = control name';
+        StageUndeclaredLbl: Label 'control %1 is shown in stage %2, which the page does not declare.', Comment = '%1 = control name, %2 = stage id';
         MaskLbl: Label 'control %1 is not shown as declared in stage %2.', Comment = '%1 = control name, %2 = stage id';
         PageGoneErr: Label 'Page %1 is no longer registered in MobileNAV.', Comment = '%1 = page id';
         StagingFixTok: Label 'STAGING', Locked = true;
