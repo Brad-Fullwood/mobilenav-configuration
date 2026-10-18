@@ -124,11 +124,15 @@ codeunit 77765 "BJF MN Filter Mgt."
     procedure ApplySavedFilters(ServiceName: Text[100]; var TempLine: Record "BJF MN Config Line" temporary; PageId: Integer)
     var
         HeadRow: Record "MobileNAV Service Setup";
+        MobileNAVCore: Codeunit "MobileNAV Core Functions";
     begin
         this.SetSavedFilterRange(ServiceName, HeadRow);
         HeadRow.DeleteAll(false);
         HeadRow.Reset();
         this.BuildSavedFilters(ServiceName, TempLine, PageId, HeadRow);
+        // Devices download saved filters only when this version number changes, as MobileNAV's
+        // Saved Filter Card does after an edit.
+        MobileNAVCore.UpdateSavedFiltersVersion(0);
     end;
 
     /// <summary>Writes the saved filter rows into SavedFilterRow: the real table on apply, a temporary copy when the Doctor compares.</summary>
