@@ -546,6 +546,14 @@ The general setup row is rebuilt from the XML: device activation, login timeout,
 
 `mnconfig.py` wraps these as `snapshots`, `snapshot-take`, `snapshot-export`, `config-import` and `config-copy`.
 
+## Copying the MobileNAV licence between environments
+
+MobileNAV keeps its licence in one row of the MobileNAV License Setup table, shared by all companies of an environment. The licence string is that row as base64 text, the same text **Change License** on MobileNAV's License Setup page takes. MobileNAV issues the licence for the Microsoft Entra tenant, so its string works in every environment of the same tenant, for example from production to a new sandbox.
+
+Search for **MobileNAV Licence Transfer**, or choose **MobileNAV licence** on the MobileNAV Configuration page. The **MobileNAV Licence** page (77702) shows the licence id, this tenant's licence id, the licensed and assigned devices, the expiry date and the licence string to copy. **Install licence string** in the target environment asks for the string and installs it through MobileNAV's `SaveLicenseKey`. The installed string replaces the target's licence, and with it the number of licensed devices. A string issued for another tenant is refused and the target's licence stays as it was.
+
+The `mobilenavLicences` API (page 77705, `api/bjf/mobilenav/v1.0/companies({id})/mobilenavLicences`) has one row with `licenceId`, `licensedDevices`, `assignedDevices`, `expiryDate` and `licenceString`. A GET returns the string. A POST with `{"licenceString": "..."}`, or a PATCH of `licenceString` on the row, installs it and answers with the new licence. Installing writes MobileNAV License Setup through MobileNAV's own code, so the caller needs a MobileNAV permission set that writes that table as well as `"BJF MN Configuration"`. `mnconfig.py` wraps the API as `licence` and `licence-copy`.
+
 ## Doctor and diagnostics
 
 **MobileNAV Doctor** (Administration) is the single place to check and repair MobileNAV setup:

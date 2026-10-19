@@ -74,6 +74,14 @@ page 77780 "BJF MN Config Providers"
                 RunObject = page "BJF MN Doctor";
                 ToolTip = 'Opens the MobileNAV Doctor, which checks every provider''s configuration against MobileNAV''s live data and fixes what it can.';
             }
+            action(OpenLicence)
+            {
+                ApplicationArea = All;
+                Caption = 'MobileNAV licence';
+                Image = Certificate;
+                RunObject = page "BJF MN Licence";
+                ToolTip = 'Opens the MobileNAV Licence page, which shows the installed licence and copies it to another environment of this tenant as a licence string.';
+            }
             action(ExportSnapshot)
             {
                 ApplicationArea = All;
@@ -166,6 +174,9 @@ page 77780 "BJF MN Config Providers"
                 {
                 }
                 actionref(OpenDoctor_Promoted; OpenDoctor)
+                {
+                }
+                actionref(OpenLicence_Promoted; OpenLicence)
                 {
                 }
             }
