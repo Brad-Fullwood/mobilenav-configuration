@@ -2,7 +2,7 @@
   "id": "a7e0d38d-9896-45a5-b337-dc130656dd5f",
   "name": "MobileNAV Configuration WMS",
   "publisher": "Brad Fullwood",
-  "version": "2.3.0.0",
+  "version": "2.4.0.0",
   "brief": "WMS MobileNAV checks for the MobileNAV Configuration doctor, and WMS workarounds.",
   "description": "Contributes the checks that need WMS MobileNAV - inventory setup for package tracking, package record consistency and split packages with an automatic consolidation fix - to the MobileNAV Doctor in MobileNAV Configuration, and fills a scanned tote into the other lines of a tote pick so a single line can be registered from the device. Kept as a separate app so the framework installs in environments without WMS MobileNAV.",
   "privacyStatement": "",

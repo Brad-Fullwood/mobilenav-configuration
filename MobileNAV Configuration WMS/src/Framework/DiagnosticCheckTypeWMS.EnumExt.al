@@ -39,4 +39,9 @@ enumextension 77740 "BJF Diagnostic Check Type WMS" extends "BJF Diagnostic Chec
         Caption = 'Leftover Move Lines';
         Implementation = "BJF Diagnostic Check" = "BJF Check Leftover Move Lines";
     }
+    value(77746; "WMS Licence")
+    {
+        Caption = 'WMS Licence';
+        Implementation = "BJF Diagnostic Check" = "BJF Check WMS Licence";
+    }
 }
