@@ -285,6 +285,7 @@ codeunit 77784 "BJF MN Config Application"
         this.ApplyFunctionFields(TempConfigurationLine, TempConfigurationProperty, PageServices);
         this.ApplyScanFields(TempConfigurationLine, TempConfigurationProperty, PageServices);
         this.ApplyRelations(TempConfigurationLine, PageServices);
+        this.ApplyLookupFields(TempConfigurationLine, TempConfigurationProperty, PageServices);
         this.ApplyProperties(TempConfigurationProperty, PageServices, false);
         this.ApplyUserScopes(TempConfigurationLine, PageServices);
         this.ApplyPageRows(TempConfigurationLine, PageServices);
@@ -513,6 +514,36 @@ codeunit 77784 "BJF MN Config Application"
                     '', false)
                 then
                     Error(this.FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
+            until TempConfigurationLine.Next() = 0;
+        TempConfigurationProperty.Reset();
+        TempConfigurationLine.Reset();
+    end;
+
+    /// <summary>
+    /// Writes the mobile type and validation behavior of every lookup that declares them, after
+    /// ApplyRelations has written the lookup's field row and relation. MobileNAV configures
+    /// Bin_Code, Lot_No and Serial_No this way: a lookup the device can also fill from its scanner.
+    /// </summary>
+    /// <param name="TempConfigurationLine">The provider's declared lines.</param>
+    /// <param name="TempConfigurationProperty">The provider's property rows. Filtered to the line's page while each control is written.</param>
+    /// <param name="PageServices">The service name of each page, by page id.</param>
+    local procedure ApplyLookupFields(var TempConfigurationLine: Record "BJF MN Config Line" temporary; var TempConfigurationProperty: Record "BJF MN Config Property" temporary; var PageServices: Dictionary of [Integer, Text])
+    var
+        ServiceName: Text[100];
+    begin
+        TempConfigurationLine.SetRange(Operation, Enum::"BJF MN Config Operation"::"Lookup Field");
+        if TempConfigurationLine.FindSet() then
+            repeat
+                if (TempConfigurationLine."Mobile Type" <> '') or (TempConfigurationLine."Validation Behavior" <> '') then begin
+                    ServiceName := this.ServiceOf(PageServices, TempConfigurationLine."Page ID");
+                    TempConfigurationProperty.SetRange("Page ID", TempConfigurationLine."Page ID");
+                    // ConfigureLookup has already made the page updatable.
+                    if not this.FieldManagement.ConfigureControl(
+                        ServiceName, TempConfigurationLine."Control Name", TempConfigurationProperty,
+                        '', false)
+                    then
+                        Error(this.FieldMissingErr, TempConfigurationLine."Control Name", ServiceName);
+                end;
             until TempConfigurationLine.Next() = 0;
         TempConfigurationProperty.Reset();
         TempConfigurationLine.Reset();

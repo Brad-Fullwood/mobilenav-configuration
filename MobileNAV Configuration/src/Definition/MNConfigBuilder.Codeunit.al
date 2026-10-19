@@ -561,23 +561,27 @@ codeunit 77781 "BJF MN Config Builder"
         exit(this);
     end;
 
-    /// <summary>Sets how the device validates the button or scan declared last.</summary>
+    /// <summary>Sets how the device validates the button, scan or lookup declared last.</summary>
     /// <param name="ValidationBehavior">Validation behavior; Default keeps MobileNAV's own.</param>
     /// <returns>The builder, for chaining.</returns>
     procedure Validation(ValidationBehavior: Enum "BJF MN Validation Behavior"): Codeunit "BJF MN Config Builder"
     begin
-        this.RequireControl(this.ValidationTok, this.ButtonAndScanKinds());
+        this.RequireControl(this.ValidationTok, this.PropertyCatalog.ControlKinds(Enum::"BJF MN Property"::FieldValidationBehavior));
         this.TempConfigurationLine.Validate("Validation Behavior", this.Vocabulary.ValidationBehaviorName(ValidationBehavior));
         this.TempConfigurationLine.Modify(false);
         exit(this);
     end;
 
-    /// <summary>Renders the button declared last as a special control, for example a signature pad or image capture.</summary>
-    /// <param name="ControlType">How the device renders the button.</param>
+    /// <summary>
+    /// Renders the button declared last as a special control, for example a signature pad or
+    /// image capture, or sets the mobile type of the lookup declared last, for example Barcode
+    /// for a lookup the device can also fill from its scanner.
+    /// </summary>
+    /// <param name="ControlType">How the device renders the control.</param>
     /// <returns>The builder, for chaining.</returns>
     procedure MobileType(ControlType: Enum "BJF MN Mobile Type"): Codeunit "BJF MN Config Builder"
     begin
-        this.RequireControl(this.MobileTypeTok, this.ButtonKind());
+        this.RequireControl(this.MobileTypeTok, this.ButtonAndLookupKinds());
         this.TempConfigurationLine.Validate("Mobile Type", this.Vocabulary.MobileTypeName(ControlType));
         this.TempConfigurationLine.Modify(false);
         exit(this);
@@ -1945,9 +1949,10 @@ codeunit 77781 "BJF MN Config Builder"
     end;
 
     /// <summary>
-    /// Appends the field settings of the declared Field, Function Field and Scan Field lines as
-    /// property rows, so the apply and the checks read them like every other setting. The rows
-    /// follow the order MNFieldMgt wrote them in, and they come after the builder's own properties.
+    /// Appends the field settings of the declared Field, Function Field, Scan Field and Lookup
+    /// Field lines as property rows, so the apply and the checks read them like every other
+    /// setting. The rows follow the order MNFieldMgt wrote them in, and they come after the
+    /// builder's own properties.
     /// </summary>
     /// <param name="TargetProperty">Receives the rows.</param>
     local procedure ExpandFieldSettings(var TargetProperty: Record "BJF MN Config Property" temporary)
@@ -1958,20 +1963,31 @@ codeunit 77781 "BJF MN Config Builder"
         if TargetProperty.FindLast() then
             EntryNo := TargetProperty."Entry No.";
         this.TempConfigurationLine.Reset();
-        this.TempConfigurationLine.SetFilter(Operation, '%1|%2|%3',
-            Enum::"BJF MN Config Operation"::Field, Enum::"BJF MN Config Operation"::"Function Field", Enum::"BJF MN Config Operation"::"Scan Field");
+        this.TempConfigurationLine.SetFilter(Operation, '%1|%2|%3|%4',
+            Enum::"BJF MN Config Operation"::Field, Enum::"BJF MN Config Operation"::"Function Field", Enum::"BJF MN Config Operation"::"Scan Field",
+            Enum::"BJF MN Config Operation"::"Lookup Field");
         if this.TempConfigurationLine.FindSet() then
             repeat
-                case this.TempConfigurationLine.Operation of
-                    Enum::"BJF MN Config Operation"::Field:
-                        this.ExpandFieldLine(TargetProperty, EntryNo);
-                    Enum::"BJF MN Config Operation"::"Function Field":
-                        this.ExpandFunctionFieldLine(TargetProperty, EntryNo);
-                    Enum::"BJF MN Config Operation"::"Scan Field":
-                        this.ExpandScanFieldLine(TargetProperty, EntryNo);
-                end;
+                this.ExpandControlLine(TargetProperty, EntryNo);
             until this.TempConfigurationLine.Next() = 0;
         this.TempConfigurationLine.Reset();
+    end;
+
+    /// <summary>Appends the field settings of the control line the builder is on, by its kind.</summary>
+    /// <param name="TargetProperty">Receives the rows.</param>
+    /// <param name="EntryNo">Entry number of the last row. The new rows take the next ones.</param>
+    local procedure ExpandControlLine(var TargetProperty: Record "BJF MN Config Property" temporary; var EntryNo: Integer)
+    begin
+        case this.TempConfigurationLine.Operation of
+            Enum::"BJF MN Config Operation"::Field:
+                this.ExpandFieldLine(TargetProperty, EntryNo);
+            Enum::"BJF MN Config Operation"::"Function Field":
+                this.ExpandFunctionFieldLine(TargetProperty, EntryNo);
+            Enum::"BJF MN Config Operation"::"Scan Field":
+                this.ExpandScanFieldLine(TargetProperty, EntryNo);
+            Enum::"BJF MN Config Operation"::"Lookup Field":
+                this.ExpandLookupFieldLine(TargetProperty, EntryNo);
+        end;
     end;
 
     /// <summary>Appends the field settings of the Field line the builder is on.</summary>
@@ -2012,6 +2028,21 @@ codeunit 77781 "BJF MN Config Builder"
         this.AddFieldSetting(TargetProperty, EntryNo, Enum::"BJF MN Property"::FieldEditable, this.TrueTok);
         this.AddFieldSetting(TargetProperty, EntryNo, Enum::"BJF MN Property"::FieldImportance, this.TempConfigurationLine.Importance);
         this.AddFieldSetting(TargetProperty, EntryNo, Enum::"BJF MN Property"::FieldMobileType, this.TempConfigurationLine."Mobile Type");
+        if this.TempConfigurationLine."Validation Behavior" <> '' then
+            this.AddFieldSetting(TargetProperty, EntryNo, Enum::"BJF MN Property"::FieldValidationBehavior, this.TempConfigurationLine."Validation Behavior");
+    end;
+
+    /// <summary>
+    /// Appends the mobile type and validation behavior of the Lookup Field line the builder is on,
+    /// when the lookup declares them. "BJF MN Relation Mgt.".ConfigureLookup writes the lookup's
+    /// visibility, editability, placement and relation.
+    /// </summary>
+    /// <param name="TargetProperty">Receives the rows.</param>
+    /// <param name="EntryNo">Entry number of the last row. The new rows take the next ones.</param>
+    local procedure ExpandLookupFieldLine(var TargetProperty: Record "BJF MN Config Property" temporary; var EntryNo: Integer)
+    begin
+        if this.TempConfigurationLine."Mobile Type" <> '' then
+            this.AddFieldSetting(TargetProperty, EntryNo, Enum::"BJF MN Property"::FieldMobileType, this.TempConfigurationLine."Mobile Type");
         if this.TempConfigurationLine."Validation Behavior" <> '' then
             this.AddFieldSetting(TargetProperty, EntryNo, Enum::"BJF MN Property"::FieldValidationBehavior, this.TempConfigurationLine."Validation Behavior");
     end;
@@ -2255,10 +2286,10 @@ codeunit 77781 "BJF MN Config Builder"
         Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
     end;
 
-    local procedure ButtonAndScanKinds() Kinds: List of [Enum "BJF MN Config Operation"]
+    local procedure ButtonAndLookupKinds() Kinds: List of [Enum "BJF MN Config Operation"]
     begin
         Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
-        Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+        Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
     end;
 
     var

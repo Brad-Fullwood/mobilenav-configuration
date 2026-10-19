@@ -16,6 +16,7 @@ permissionset 50150 "Example MN Tests"
         codeunit "Example Device Preview Test" = X,
         codeunit "Example Provider Test" = X,
         codeunit "Example Test Runner" = X,
+        codeunit "Lookup Scan Builder Test" = X,
         codeunit "New Provider Scaffold Test" = X,
         codeunit "Provider Writer Test" = X,
         page "Example Test Run API" = X;

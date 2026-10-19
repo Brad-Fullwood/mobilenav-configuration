@@ -1003,7 +1003,10 @@ codeunit 77718 "BJF MN Provider Writer"
         Importance: Text;
     begin
         Behavior := this.ServiceOption(TempFieldLine.FieldNo("Validation Behavior"), TempFieldLine."Validation Behavior", '');
-        this.AddModIf(Mods, (Behavior <> '') and (Kind in ['Button', 'Scan']), '.Validation(Enum::"BJF MN Validation Behavior"::' + Behavior + ')');
+        this.AddModIf(Mods, (Behavior <> '') and (Kind in ['Button', 'Scan', 'Lookup']), '.Validation(Enum::"BJF MN Validation Behavior"::' + Behavior + ')');
+        // A Button states its mobile type in ButtonVerb.
+        this.AddModIf(Mods, (Kind = 'Lookup') and not this.Vocabulary.IsMobileType(this.MobileTypeName(TempFieldLine), Enum::"BJF MN Mobile Type"::Normal),
+            '.MobileType(Enum::"BJF MN Mobile Type"::' + this.MobileTypeName(TempFieldLine) + ')');
         Importance := this.ServiceOption(TempFieldLine.FieldNo(Mandatory), TempFieldLine.Mandatory, '');
         this.AddModIf(Mods, TempFieldLine.Mandatory <> TempFieldLine.Mandatory::None, '.Importance(Enum::"BJF MN Importance"::' + Importance + ')');
         exit(Mods);

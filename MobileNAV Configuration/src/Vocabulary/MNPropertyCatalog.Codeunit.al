@@ -305,10 +305,12 @@ codeunit 77719 "BJF MN Property Catalog"
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
                 end;
-            Enum::"BJF MN Property"::AllowSkip:
+            Enum::"BJF MN Property"::AllowSkip,
+            Enum::"BJF MN Property"::FieldValidationBehavior:
                 begin
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
                 end;
             Enum::"BJF MN Property"::RegExPattern,
             Enum::"BJF MN Property"::RegExResults,
@@ -324,22 +326,23 @@ codeunit 77719 "BJF MN Property Catalog"
             Enum::"BJF MN Property"::FieldVisible,
             Enum::"BJF MN Property"::FieldEditable,
             Enum::"BJF MN Property"::FieldDisplayInMenu,
-            Enum::"BJF MN Property"::FieldImportance,
-            Enum::"BJF MN Property"::FieldMobileType:
+            Enum::"BJF MN Property"::FieldImportance:
                 begin
                     Kinds.Add(Enum::"BJF MN Config Operation"::Field);
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
                 end;
+            Enum::"BJF MN Property"::FieldMobileType:
+                begin
+                    Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
+                end;
             Enum::"BJF MN Property"::FieldFilterable:
                 Kinds.Add(Enum::"BJF MN Config Operation"::Field);
             Enum::"BJF MN Property"::FieldFunctionType:
                 Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
-            Enum::"BJF MN Property"::FieldValidationBehavior:
-                begin
-                    Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
-                    Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
-                end;
         end;
         exit(Kinds);
     end;
