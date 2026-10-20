@@ -4,7 +4,7 @@ using BradFullwood.MobileNAV.Configuration;
 
 /// <summary>
 /// Checks the builder rules for a lookup that also takes a scan, as MobileNAV configures Bin_Code,
-/// Lot_No and Serial_No: Validation() and MobileType() are accepted on a Lookup and become the
+/// Lot_No and Serial_No: Validation(), MobileType() and RegEx() are accepted on a Lookup and become the
 /// field settings the apply writes and the doctor compares. The tests read no MobileNAV data.
 /// </summary>
 codeunit 50159 "Lookup Scan Builder Test"
@@ -37,6 +37,30 @@ codeunit 50159 "Lookup Scan Builder Test"
 
         this.AssertSetting(TempProperty, Enum::"BJF MN Property"::FieldMobileType, this.BarcodeTok);
         this.AssertSetting(TempProperty, Enum::"BJF MN Property"::FieldValidationBehavior, this.ScanOrManualEntryTok);
+    end;
+
+    /// <summary>
+    /// A lookup with RegEx gives the pattern and RegEx Results settings. A Barcode field with a
+    /// lookup and no pattern makes the device ask which field takes the scan.
+    /// </summary>
+    [Test]
+    procedure LookupCarriesRegEx()
+    var
+        TempLine: Record "BJF MN Config Line" temporary;
+        TempProperty: Record "BJF MN Config Property" temporary;
+        Configuration: Codeunit "BJF MN Config Builder";
+    begin
+        Configuration.Page(Page::"MobileNAV Item")
+            .Lookup(this.ControlTok, Page::"MobileNAV Bin", this.CodeFieldTok, this.DescriptionFieldTok)
+                .Validation(Enum::"BJF MN Validation Behavior"::ScanOrManualEntry)
+                .MobileType(Enum::"BJF MN Mobile Type"::Barcode)
+                .RegEx(this.AnyValuePatternTok, this.FirstGroupTok)
+                .Filter(this.CodeFieldTok, this.CodeFieldTok);
+        Configuration.GetDefinition(TempLine, TempProperty);
+
+        this.AssertSetting(TempProperty, Enum::"BJF MN Property"::RegExPattern, this.AnyValuePatternTok);
+        this.AssertSetting(TempProperty, Enum::"BJF MN Property"::RegExResults, this.FirstGroupTok);
+        this.AssertSetting(TempProperty, Enum::"BJF MN Property"::FieldMobileType, this.BarcodeTok);
     end;
 
     /// <summary>A lookup without Validation or MobileType declares neither setting, so MobileNAV's own values stay.</summary>
@@ -88,6 +112,8 @@ codeunit 50159 "Lookup Scan Builder Test"
         DescriptionFieldTok: Label 'Description', Locked = true;
         BarcodeTok: Label 'Barcode', Locked = true;
         ScanOrManualEntryTok: Label 'ScanOrManualEntry', Locked = true;
+        AnyValuePatternTok: Label '^(.*)$', Locked = true;
+        FirstGroupTok: Label '1', Locked = true;
         NotApplicableTok: Label 'does not apply to', Locked = true;
         LookupLineCountErr: Label 'Expected one lookup line, found %1.', Comment = '%1 = number of lines';
         ScanLineErr: Label 'The lookup also produced a scan line.';

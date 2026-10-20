@@ -129,7 +129,7 @@ Each applies to the page in context, published or MobileNAV's own.
 | `Button(ControlName)` | Visible, editable, `MobileType` Normal, `FunctionType` Normal, function name derived, drawn as a menu entry | Runs Business Central code when tapped. See [Buttons end to end](#buttons-end-to-end). |
 | `Link(ControlName, TargetPageId, TargetFilterField, SourceField)` | Visible, read-only | Opens another page filtered to the current record. The target becomes reachable from this page in every profile, so the button is drawn. A page of your own as the target needs its own `Page(...).Publish(...)`. |
 | `Scan(ControlName)` | Visible, editable, `MobileType` Barcode | An input the device fills from its scanner. |
-| `Lookup(ControlName, TargetPageId, CodeField, DescriptionField)` | Visible, editable | The device fills the field by picking a record from the target page; the picked code lands in the field and the description shows beside it. A lookup can also carry `Validation` and `MobileType`, so the device can scan into it as well, see [Link and lookup details](#link-and-lookup-details). |
+| `Lookup(ControlName, TargetPageId, CodeField, DescriptionField)` | Visible, editable | The device fills the field by picking a record from the target page; the picked code lands in the field and the description shows beside it. A lookup can also carry `Validation`, `MobileType` and `RegEx`, so the device can scan into it as well, see [Link and lookup details](#link-and-lookup-details). |
 | `FlowFilter(FieldName)` | Visible as filter | One of the source table's flow filters (for example `'Date Filter'`) offered in the filter pane. Not a control of the page; the field name is the table's. |
 | `FieldControl(ControlName)` | Hidden, editable, `MobileType` FieldControl | MobileNAV's field-control channel, which carries dialogs and refresh directives to the device and returns the answer through the field's OnValidate. MobileNAV's own pages ship with one. A page of your own, or a page extension that adds one, needs it declared or the device never shows the dialog. Wire the control to "BJF MN Field Control", see [Field control](#field-control). |
 
@@ -164,8 +164,8 @@ Each applies to the page in context, published or MobileNAV's own.
 | `QuickEdit()` | Field | Editable from the list row without opening the card. One per page. |
 | `PromotedOnGroupHeader()` | Field | Shown on a collapsed group header when the list is grouped. |
 | `AllowSkip()` | Button, Scan, Lookup | Lets the user skip a required scan. Needs `Validation()` first. |
-| `RegEx(Pattern, Results)` | Field, Scan | Validates and parses the scanned or typed value; `Results` lists the capture groups that form the value. |
-| `NoRegEx()` | Field, Scan | Clears the control's pattern, its RegEx Results and the inherited flag. A control filled from another control's pattern reaches the device as Normal, with no scan icon, even when it is declared as a scan; WMS MobileNAV does this to Serial No. on warehouse pick lines. |
+| `RegEx(Pattern, Results)` | Field, Scan, Lookup | Validates and parses the scanned or typed value; `Results` lists the capture groups that form the value. |
+| `NoRegEx()` | Field, Scan, Lookup | Clears the control's pattern, its RegEx Results and the inherited flag. A control filled from another control's pattern reaches the device as Normal, with no scan icon, even when it is declared as a scan; WMS MobileNAV does this to Serial No. on warehouse pick lines. |
 | `FieldCategory(Role)` | Field, Scan | The role MobileNAV's warehouse features key on: bin, lot, serial, item, quantity, ... |
 | `HideDrillDown()` | Field | Keeps the field from opening its related page from the card. |
 | `ValidateAlways()` | Field, Scan | Runs the field's validation even when the value did not change. |
@@ -188,17 +188,18 @@ Each refines the `Link` or `Lookup` declared last. MobileNAV keeps them as rows 
 | `Propagate(What, DestinationField)` | Lookup | Shows the picked record's barcode or cached image on this page. |
 | `ParentAction(ButtonControlName)` | Link, Lookup | Shows one of this page's buttons on the page the relation opens. |
 
-From 4.9.0.0 a lookup can also take a scan. MobileNAV configures its own Bin_Code, Lot_No and Serial_No fields this way: one control with a validation behavior, a mobile type and a relation to the page the user picks from. Declare it as one `Lookup` with `Validation` and `MobileType`. Declaring `Scan` and `Lookup` on the same control stops the apply, because both write the same field row.
+From 4.9.0.0 a lookup can also take a scan. MobileNAV configures its own Bin_Code, Lot_No and Serial_No fields this way: one control with a validation behavior, a mobile type and a relation to the page the user picks from. Declare it as one `Lookup` with `Validation` and `MobileType`, and from 4.9.0.1 `RegEx`. Give a scanned lookup a `RegEx` as well: when a Barcode field has a lookup, the device collects the Barcode fields of the lookup's page as extra targets and asks the user which field takes the scan, and a field with its own pattern takes the scan itself. `RegEx('^(.*)$', '1')` accepts any value and keeps capture group 1 whole. Declaring `Scan` and `Lookup` on the same control stops the apply, because both write the same field row.
 
 ```al
 Configuration.Page(Page::"MobileNAV WarehouseMovement L.")
     .Lookup('AzzBarcode', Page::"MobileNAV Item", 'No', 'Description')
         .Validation(Enum::"BJF MN Validation Behavior"::ScanOrManualEntry)
         .MobileType(Enum::"BJF MN Mobile Type"::Barcode)
+        .RegEx('^(.*)$', '1')
         .Filter('No', 'Item_No');
 ```
 
-The apply writes the mobile type and validation behavior to the lookup's field row after its relation. The doctor's **Page & Control Settings** check compares them with the live row and its fix rewrites them. A lookup without `Validation` or `MobileType` leaves MobileNAV's own values alone.
+The apply writes the mobile type, validation behavior, RegEx Text and RegEx Results to the lookup's field row after its relation. The doctor's **Page & Control Settings** check compares them with the live row and its fix rewrites them. A lookup without `Validation`, `MobileType` or `RegEx` leaves MobileNAV's own values alone.
 
 ### Page filters
 

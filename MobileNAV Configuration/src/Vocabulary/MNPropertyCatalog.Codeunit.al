@@ -316,7 +316,12 @@ codeunit 77719 "BJF MN Property Catalog"
             Enum::"BJF MN Property"::RegExResults,
             Enum::"BJF MN Property"::NoRegExPattern,
             Enum::"BJF MN Property"::NoRegExResults,
-            Enum::"BJF MN Property"::NoRegExInherited,
+            Enum::"BJF MN Property"::NoRegExInherited:
+                begin
+                    Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
+                end;
             Enum::"BJF MN Property"::FieldCategory,
             Enum::"BJF MN Property"::ValidateAlways:
                 begin

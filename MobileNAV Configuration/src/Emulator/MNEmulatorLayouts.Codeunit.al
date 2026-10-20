@@ -55,19 +55,19 @@ codeunit 77734 "BJF MN Emulator Layouts"
         this.ClearState();
         if this.CacheNeedsCopy(ServiceName) then
             this.CopyLayoutCache(ServiceName);
-        TempLayout.Reset();
-        TempLayout.SetRange("Service Name", ServiceName);
-        TempLayout.SetCurrentKey("User ID", "Query ID", "Service Name", "Order");
+        this.TempLayout.Reset();
+        this.TempLayout.SetRange("Service Name", ServiceName);
+        this.TempLayout.SetCurrentKey("User ID", "Query ID", "Service Name", "Order");
         Position := this.Records.Position(SourceRef);
 
-        if TempLayout.FindSet() then
+        if this.TempLayout.FindSet() then
             repeat
-                if not TempLayout."StopCollection" then
-                    if this.LayoutMatches(TempLayout, TempCondition, FieldRows, SourceRef, Position) then begin
-                        this.MatchedLayouts.Add(TempLayout."Code");
-                        this.ApplyLayout(TempLayout, TempCachedAction, TempCachedActionLine);
+                if not this.TempLayout."StopCollection" then
+                    if this.LayoutMatches(this.TempLayout, this.TempCondition, FieldRows, SourceRef, Position) then begin
+                        this.MatchedLayouts.Add(this.TempLayout."Code");
+                        this.ApplyLayout(this.TempLayout, this.TempCachedAction, this.TempCachedActionLine);
                     end;
-            until TempLayout.Next() = 0;
+            until this.TempLayout.Next() = 0;
 
         exit(this.BuildEffects());
     end;
