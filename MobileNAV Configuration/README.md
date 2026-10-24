@@ -4,9 +4,31 @@ A Business Central framework for declaring, applying and diagnosing MobileNAV co
 
 You declare what a device shows in a few fluent lines: pages, fields, buttons, links, scan inputs, wizards. The framework knows the MobileNAV mechanics behind them: which service a control belongs to, how profile rows override service rows, when a companion web service is needed for a button to work, when a page needs Page Update, and how to scope a page to the signed-in device user. The same app diagnoses and repairs the MobileNAV and posting problems that surface as cryptic device errors.
 
+## Features
+
+| Feature | What it does | Since |
+|---|---|---|
+| Fluent provider declaration | You declare pages, fields, links, scan inputs and menu tiles in AL, and the framework works out the MobileNAV rows behind them. [Fluent reference](#fluent-reference) | |
+| Device buttons on any MobileNAV page | A button on any MobileNAV page reaches your code through the function router and one event. [Buttons end to end](#buttons-end-to-end) | |
+| Field control | Business Central puts a dialog, a colour, a toast or a refresh in front of the device user and gets the answer back. [Field control](#field-control) | |
+| Dynamic layouts | Layout rules change what a device page shows when their conditions match. [Dynamic layouts](#dynamic-layouts) | |
+| Wizards | A wizard declares the stages of a device scan flow and which controls show in each. [Wizard](#wizard) | |
+| Pictures, signatures and PDF | A button can capture an image, take a signature or open a file on the device. [Modifiers](#modifiers) | |
+| Lookup that is also scanned into | One control with `Validation()` and `MobileType()` takes a scan and opens a lookup, as MobileNAV does for Bin_Code, Lot_No and Serial_No. [Link and lookup details](#link-and-lookup-details) | 4.9.0.0 |
+| Lookup patterns | A lookup accepts `RegEx()` and `NoRegEx()` to set or clear the pattern a scan must match. [Control settings](#control-settings) | 4.9.0.1 |
+| Apply with fingerprints and preview | The framework fingerprints each provider and shows it Outdated when its declaration changes, and a preview runs the apply and rolls it back. [Applying, fingerprints and states](#applying-fingerprints-and-states) | |
+| MobileNAV Doctor | The Doctor compares each declaration with MobileNAV's live data and offers fixes. [Doctor and diagnostics](#doctor-and-diagnostics) | |
+| Nightly Doctor run | A job queue entry runs all checks at 02:00 and logs the findings as telemetry. [Nightly run and telemetry](#nightly-run-and-telemetry) | |
+| Checks from other extensions | An extension adds its own check by implementing `"BJF Diagnostic Check"` and registering an enum value. [Contributing a check from another extension](#contributing-a-check-from-another-extension) | |
+| Read-only MobileNAV data API | API pages return MobileNAV's services, profiles, devices and login log per company. [Applying, fingerprints and states](#applying-fingerprints-and-states) | |
+| Configuration snapshots and import API | Snapshots copy a MobileNAV configuration to another company through API pages. [Copying configuration between companies](#copying-configuration-between-companies) | 4.5.1.0 |
+| MobileNAV licence page and API | You read and install the MobileNAV licence string, and a string issued for another tenant is refused. [Copying the MobileNAV licence between environments](#copying-the-mobilenav-licence-between-environments) | 4.8.0.0 |
+| Device emulator | A page draws a user's device menu, lists and cards from the configuration, with no device login. [Device emulator](#device-emulator) | |
+| Provider unit test assert | `"BJF MN Provider Assert"` runs the validator against page metadata in a unit test. [Quick start](#quick-start) | |
+
 ## Quick start
 
-1. Add **MobileNAV Configuration 4.5.1.0** to the consumer's `app.json` dependencies. The framework uses namespaces, so the consumer needs `runtime` 12.0 or later.
+1. Add **MobileNAV Configuration 4.9.0.1** to the consumer's `app.json` dependencies. The framework uses namespaces, so the consumer needs `runtime` 12.0 or later.
 2. Implement `"BJF MN Config Provider"` in one codeunit and register it through an `enumextension` of `"BJF MN Config Provider"`:
 
 ```al
@@ -59,6 +81,25 @@ end;
 An apply with no client attached (install, upgrade) writes the configuration but cannot finish handing it to devices; see [Applying, fingerprints and states](#applying-fingerprints-and-states).
 
 4. Grant execute permission to the provider codeunit (and any event subscriber codeunits) and assign `"BJF MN Configuration"` to administrators.
+
+### Apply and check
+
+After you have deployed the framework and your app:
+
+1. Open **MobileNAV Configuration** and select your provider.
+2. Run **Preview on device** to see the screens the provider draws.
+3. Run **Apply selected**.
+4. Open **MobileNAV Doctor** and run **Run config checks** until it shows no findings. Use **Apply Fix** on each finding that offers one.
+5. Have every device log out and in. A page refresh does not download a new configuration.
+
+The same steps run without a client through the API pages, on `configProviders`: `preview` shows what an apply would change and rolls it back, then `apply` and `runConfigChecks`, and `diagnosticFindings` with `applyFix` (see [Developer actions](#developer-actions-on-the-mobilenav-configuration-page)). An API apply must run as a licensed user or a Microsoft Entra application, because a delegated administrator gets a confirmation prompt and an API call has nobody to answer it.
+
+## Articles
+
+- [Why configure MobileNAV in code](https://technicallybusinesscentral.co.uk/blog/mobilenav-configuration-why-code) explains what a declaration in AL saves over setup typed into the MobileNAV administration pages.
+- [Your first MobileNAV device page, from the Example app](https://technicallybusinesscentral.co.uk/blog/mobilenav-configuration-first-device-page) builds one device page step by step.
+- [The MobileNAV Doctor](https://technicallybusinesscentral.co.uk/blog/mobilenav-configuration-doctor) shows what the checks catch and how the fixes work.
+- [Copying a MobileNAV configuration to another company](https://technicallybusinesscentral.co.uk/blog/mobilenav-configuration-snapshots) covers snapshots and the import API.
 
 There is no version to maintain: the framework fingerprints the definition's content and notices on its own when it changes. The [MobileNAV Configuration Example](../MobileNAV%20Configuration%20Example/README.md) app is a complete provider to read and copy: fields, buttons with their handlers, a page of your own, a dialog, a field control, the install codeunit and the permission set.
 
