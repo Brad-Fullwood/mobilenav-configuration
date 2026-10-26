@@ -567,6 +567,19 @@ Search for **MobileNAV Licence Transfer**, or choose **MobileNAV licence** on th
 
 The `mobilenavLicences` API (page 77705, `api/bjf/mobilenav/v1.0/companies({id})/mobilenavLicences`) has one row with `licenceId`, `licensedDevices`, `assignedDevices`, `expiryDate` and `licenceString`. A GET returns the string. A POST with `{"licenceString": "..."}`, or a PATCH of `licenceString` on the row, installs it and answers with the new licence. Installing writes MobileNAV License Setup through MobileNAV's own code, so the caller needs a MobileNAV permission set that writes that table as well as `"BJF MN Configuration"`. `mnconfig.py` wraps the API as `licence` and `licence-copy`.
 
+## Setting up a company from a script
+
+The `mobilenavSetups` API (page 77708, `api/bjf/mobilenav/v1.0/companies({id})/mobilenavSetups`) has one row per company. A GET returns the state: `hasLicense`, `hasConfig`, `licenceExpiry`, `licensedDevices`, `authenticationType`, `o365TenantId`, `o365AppId`, `o365RedirectUri`, `o365AppIdUri`, `setupCompleted` and `httpAllowed`. A PATCH with `"runSetup": true` runs the setup steps and answers with the new state and a `log` text. The o365 fields in the same PATCH are the device login values to set, and all are optional. Each step checks first and skips what is already done, so a second run changes nothing. The steps:
+
+1. Allow HttpClient requests for MobileNAV (SaaS only).
+2. Start the 30 day trial when no licence exists, run the add-on upgrade, and import the base configuration when none exists.
+3. Set the login values and Authentication Type O365.
+4. Mark the MobileNAV Setup Wizard complete when a licence and a configuration exist.
+
+A partner delegated administrator cannot import the base configuration from a web service call. MobileNAV's import asks a delegated administrator to confirm, and an API call cannot answer. For that caller step 2 starts the trial and runs the upgrade, the `log` says the configuration was not imported, and the wizard stays incomplete. Run the setup again as a licensed user of the tenant.
+
+The `mobilenavUserSetupRequests` API (page 77709, same base path) sets up one device user. A POST with `userName`, `profileId` and optionally `languageCode` adds the MobileNAV User Setup row and the MOBILENAVUSER role, assigns the profile and generates the user's configuration. Existing rows are kept. The answer holds a `log` text. `mnconfig.py setup` and `setup-status` wrap the first API.
+
 ## Doctor and diagnostics
 
 **MobileNAV Doctor** (Administration) is the single place to check and repair MobileNAV setup:

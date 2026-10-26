@@ -32,6 +32,8 @@ permissionset 77780 "BJF MN Configuration"
         tabledata "BJF MN Preview Line" = RIMD,
         table "BJF MN Provider Buffer" = X,
         table "BJF MN Scaffold Page" = X,
+        table "BJF MN Setup" = X,
+        table "BJF MN User Setup Request" = X,
         tabledata "MobileNAV License Setup" = R,
         tabledata "MobileNAV Master Data" = R,
         tabledata "MobileNAV User Setup" = R,
@@ -117,6 +119,7 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF MN Scaffold Writer" = X,
         codeunit "BJF MN Screen Renderer" = X,
         codeunit "BJF MN Service Lookup" = X,
+        codeunit "BJF MN Setup Mgt" = X,
         codeunit "BJF MN Stage Mgt." = X,
         codeunit "BJF MN Table Functions" = X,
         codeunit "BJF MN Vocabulary" = X,
@@ -157,5 +160,7 @@ permissionset 77780 "BJF MN Configuration"
         page "BJF MN Scaffold Pages Part" = X,
         page "BJF MN Service Setup API" = X,
         page "BJF MN Session API" = X,
-        page "BJF MN User Setup API" = X;
+        page "BJF MN Setup API" = X,
+        page "BJF MN User Setup API" = X,
+        page "BJF MN User Setup Request API" = X;
 }
