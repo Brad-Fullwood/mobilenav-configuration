@@ -8,6 +8,8 @@ Three Business Central apps in one repository. Open `MobileNAV Configuration.cod
 | [`MobileNAV Configuration WMS/`](MobileNAV%20Configuration%20WMS/README.md) | MobileNAV Configuration WMS | Satellite: the doctor checks that need WMS MobileNAV installed. |
 | [`MobileNAV Configuration Example/`](MobileNAV%20Configuration%20Example/README.md) | MobileNAV Configuration Example | The example to read and copy: one provider in fifteen levels, from three fields on an item page to a scan wizard, a dialog and buttons on MobileNAV's own pages. Written for a Business Central developer who has not used MobileNAV. |
 
+Start with the [Features](MobileNAV%20Configuration/README.md#features), [Apply and check](MobileNAV%20Configuration/README.md#apply-and-check) and [Articles](MobileNAV%20Configuration/README.md#articles) sections of the framework README.
+
 Build each app from its own folder (see its README). The WMS and Example apps compile against the framework's `.app` in their `.alpackages`.
 
 Tools: `MobileNAV Configuration/tools/generate_table_functions.py` regenerates the table function codeunits from the MobileNAV symbols after a MobileNAV upgrade. The framework README's Build section has the command.
