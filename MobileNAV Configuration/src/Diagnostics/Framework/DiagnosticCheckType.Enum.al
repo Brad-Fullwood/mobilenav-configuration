@@ -31,6 +31,16 @@ enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
         Caption = 'Emulator: HttpClient Requests';
         Implementation = "BJF Diagnostic Check" = "BJF Check Emulator Http";
     }
+    value(6; "Layout Buffers")
+    {
+        Caption = 'Leftover Layout Buffers';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Layout Buffers";
+    }
+    value(7; "Option Captions")
+    {
+        Caption = 'Option Captions';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Option Captions";
+    }
     value(200; "Config Services")
     {
         Caption = 'Config: Services & Web Services';

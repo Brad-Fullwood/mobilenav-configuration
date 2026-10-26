@@ -36,7 +36,16 @@ page 77738 "BJF MN Caption API"
                 field(controlId; Rec."Control ID") { }
                 field(languageCode; Rec."Language Code") { }
                 field(caption; Rec."Caption ML") { }
+                field(optionCaption; this.OptionCaptionText) { }
             }
         }
     }
+
+    trigger OnAfterGetRecord()
+    begin
+        this.OptionCaptionText := Rec."Option Caption ML" + Rec."Option Caption ML 2";
+    end;
+
+    var
+        OptionCaptionText: Text;
 }

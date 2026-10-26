@@ -140,6 +140,8 @@ page 77793 "BJF MN Service Setup API"
                 field(searchType; Rec."Search Type") { }
                 field(ownFilterSet; Rec."Own Filter Set") { }
                 field(operationType; Rec."Operation Type") { }
+                field(optionValues; this.OptionValuesText) { }
+                field(optionCaptions; this.OptionCaptionsText) { }
             }
         }
     }
@@ -149,6 +151,9 @@ page 77793 "BJF MN Service Setup API"
         this.FunctionCodeunitName := '';
         this.CompanionCodeunitName := '';
         this.TableFieldName := '';
+        // The option values and captions the configuration build reads for the device.
+        this.OptionValuesText := Rec.BuildOptionValues(true);
+        this.OptionCaptionsText := Rec.BuildOptionCaptions(true);
         if Rec."Line Type" <> Rec."Line Type"::Main then begin
             // A flow filter is declared by its table field name, which the stored control name does not keep.
             if Rec.FieldClass = Rec.FieldClass::FlowFilter then
@@ -165,4 +170,6 @@ page 77793 "BJF MN Service Setup API"
         TableFieldName: Text[80];
         FunctionCodeunitName: Text[30];
         CompanionCodeunitName: Text[30];
+        OptionValuesText: Text;
+        OptionCaptionsText: Text;
 }

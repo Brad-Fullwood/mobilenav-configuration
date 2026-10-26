@@ -20,6 +20,8 @@ codeunit 50156 "Example Test Runner"
         this.RunTest(Codeunit::"Provider Writer Test");
         this.RunTest(Codeunit::"Emulator Test");
         this.RunTest(Codeunit::"Lookup Scan Builder Test");
+        this.RunTest(Codeunit::"Layout Buffer Check Test");
+        this.RunTest(Codeunit::"Option Captions Check Test");
     end;
 
     trigger OnBeforeTestRun(CodeunitId: Integer; CodeunitName: Text; FunctionName: Text; Permissions: TestPermissions): Boolean
