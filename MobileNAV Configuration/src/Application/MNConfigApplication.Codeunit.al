@@ -48,6 +48,7 @@ codeunit 77784 "BJF MN Config Application"
         ContentHash: Text[64];
         DeviceHandoverCompleted: Boolean;
     begin
+        this.BackgroundJobGuard.CheckOnHold();
         this.ProviderCatalog.GetMetadata(ProviderType, ProviderId, ProviderName, ProviderDescription);
         this.ProviderCatalog.BuildDefinition(ProviderType, TempConfigurationLine, TempConfigurationProperty);
         ContentHash := this.ConfigurationHash.Compute(TempConfigurationLine, TempConfigurationProperty);
@@ -986,6 +987,7 @@ codeunit 77784 "BJF MN Config Application"
         ConfigurationValidator: Codeunit "BJF MN Config Validator";
         ConfigurationHash: Codeunit "BJF MN Config Hash";
         Lookup: Codeunit "BJF MN Service Lookup";
+        BackgroundJobGuard: Codeunit "BJF MN Background Job Guard";
         PageManagement: Codeunit "BJF MN Page Mgt.";
         FieldManagement: Codeunit "BJF MN Field Mgt.";
         ProfileManagement: Codeunit "BJF MN Profile Mgt.";

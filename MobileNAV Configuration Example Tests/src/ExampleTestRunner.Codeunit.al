@@ -22,6 +22,7 @@ codeunit 50156 "Example Test Runner"
         this.RunTest(Codeunit::"Lookup Scan Builder Test");
         this.RunTest(Codeunit::"Layout Buffer Check Test");
         this.RunTest(Codeunit::"Option Captions Check Test");
+        this.RunTest(Codeunit::"Background Job Check Test");
     end;
 
     trigger OnBeforeTestRun(CodeunitId: Integer; CodeunitName: Text; FunctionName: Text; Permissions: TestPermissions): Boolean

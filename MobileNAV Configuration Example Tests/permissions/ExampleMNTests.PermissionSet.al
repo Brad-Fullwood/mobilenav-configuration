@@ -11,6 +11,7 @@ permissionset 50150 "Example MN Tests"
     Permissions =
         table "Example Test Result" = X,
         tabledata "MobileNAV Login Log" = R,
+        codeunit "Background Job Check Test" = X,
         codeunit "Emulator Test" = X,
         codeunit "Example Cookbook Test" = X,
         codeunit "Example Device Preview Test" = X,

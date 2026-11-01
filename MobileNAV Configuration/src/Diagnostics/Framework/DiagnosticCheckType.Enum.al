@@ -111,4 +111,9 @@ enum 77762 "BJF Diagnostic Check Type" implements "BJF Diagnostic Check"
         Caption = 'Config: Line Formats';
         Implementation = "BJF Diagnostic Check" = "BJF Check Config Line Formats";
     }
+    value(214; "Config Background Job")
+    {
+        Caption = 'Config: Background Job On Hold';
+        Implementation = "BJF Diagnostic Check" = "BJF Check Background Job";
+    }
 }

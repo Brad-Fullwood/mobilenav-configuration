@@ -68,6 +68,7 @@ codeunit 77814 "BJF MN Doctor Check Registry"
         Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Emulator HttpClient".AsInteger(), this.EmulatorHttpLbl);
         Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Layout Buffers".AsInteger(), this.LayoutBuffersLbl);
         Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Option Captions".AsInteger(), this.OptionCaptionsLbl);
+        Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Config Background Job".AsInteger(), this.BackgroundJobLbl);
         Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Config Services".AsInteger(), this.ConfigServicesLbl);
         Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Config Fields".AsInteger(), this.ConfigFieldsLbl);
         Descriptions.Add(Enum::"BJF Diagnostic Check Type"::"Config Profiles".AsInteger(), this.ConfigProfilesLbl);
@@ -93,6 +94,7 @@ codeunit 77814 "BJF MN Doctor Check Registry"
         VersionLbl: Label 'Whether the installed MobileNAV is older than the version this app was verified against.';
         OptionCaptionsLbl: Label 'Option fields whose captions outnumber their values, which stops the login with "Option captions don''t match to values", and whether Refresh Page takes option values from the field instead of the page''s WSDL.';
         LayoutBuffersLbl: Label 'Dynamic layout buffer rows left from old configuration builds, which stop a login once their Query ID comes round again.';
+        BackgroundJobLbl: Label 'Whether the MobileNAV BackgroundRefresh job queue entry is On Hold, which an apply needs.';
         EmulatorHttpLbl: Label 'Whether the device emulator may call the page services through HttpClient.';
         ConfigServicesLbl: Label 'Declared pages are registered, published as web services and reachable.';
         ConfigFieldsLbl: Label 'Declared control visibility and importance on the live field rows.';

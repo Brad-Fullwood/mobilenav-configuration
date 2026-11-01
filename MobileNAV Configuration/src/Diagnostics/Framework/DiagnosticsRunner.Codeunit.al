@@ -29,6 +29,7 @@ codeunit 77770 "BJF Diagnostics Runner"
         CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Master Data");
         CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Appearance");
         CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Line Formats");
+        CheckTypes.Add(Enum::"BJF Diagnostic Check Type"::"Config Background Job");
     end;
 
     /// <summary>Runs every check registered in "BJF Diagnostic Check Type".</summary>

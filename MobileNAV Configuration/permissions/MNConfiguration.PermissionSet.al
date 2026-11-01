@@ -1,5 +1,7 @@
 namespace BradFullwood.MobileNAV.Configuration;
 
+using System.Threading;
+
 /// <summary>Full access to the MobileNAV Configuration framework and doctor.</summary>
 permissionset 77780 "BJF MN Configuration"
 {
@@ -34,9 +36,11 @@ permissionset 77780 "BJF MN Configuration"
         table "BJF MN Scaffold Page" = X,
         table "BJF MN Setup" = X,
         table "BJF MN User Setup Request" = X,
+        tabledata "Job Queue Entry" = R,
         tabledata "MobileNAV License Setup" = R,
         tabledata "MobileNAV Master Data" = R,
         tabledata "MobileNAV User Setup" = R,
+        codeunit "BJF Check Background Job" = X,
         codeunit "BJF Check Config Appearance" = X,
         codeunit "BJF Check Config Apply State" = X,
         codeunit "BJF Check Config Fields" = X,
@@ -61,6 +65,7 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF Empty MN Provider" = X,
         codeunit "BJF MN AL Source" = X,
         codeunit "BJF MN Appearance Mgt." = X,
+        codeunit "BJF MN Background Job Guard" = X,
         codeunit "BJF MN Config Application" = X,
         codeunit "BJF MN Config Builder" = X,
         codeunit "BJF MN Config Hash" = X,
