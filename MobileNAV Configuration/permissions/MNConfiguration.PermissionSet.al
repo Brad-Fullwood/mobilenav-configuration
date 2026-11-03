@@ -65,6 +65,7 @@ permissionset 77780 "BJF MN Configuration"
         codeunit "BJF Empty MN Provider" = X,
         codeunit "BJF MN AL Source" = X,
         codeunit "BJF MN Appearance Mgt." = X,
+        codeunit "BJF MN Background Apply" = X,
         codeunit "BJF MN Background Job Guard" = X,
         codeunit "BJF MN Config Application" = X,
         codeunit "BJF MN Config Builder" = X,

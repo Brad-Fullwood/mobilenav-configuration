@@ -65,6 +65,20 @@ page 77790 "BJF MN Config Provider API"
         this.SetResult(ActionContext);
     end;
 
+    /// <summary>
+    /// Schedules the apply of this provider in a job queue session, which has no 8-minute request limit,
+    /// and returns at once. Poll the provider's state; a failure is in the Job Queue Log Entries.
+    /// </summary>
+    /// <param name="ActionContext">The web service action context.</param>
+    [ServiceEnabled]
+    procedure applyInBackground(var ActionContext: WebServiceActionContext)
+    var
+        BackgroundApply: Codeunit "BJF MN Background Apply";
+    begin
+        BackgroundApply.Schedule(Rec."Provider ID");
+        this.SetResult(ActionContext);
+    end;
+
     /// <summary>Marks this provider outdated so the next apply rebuilds it in full.</summary>
     /// <param name="ActionContext">The web service action context.</param>
     [ServiceEnabled]
