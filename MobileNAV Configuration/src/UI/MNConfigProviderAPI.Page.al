@@ -23,6 +23,7 @@ page 77790 "BJF MN Config Provider API"
     ModifyAllowed = false;
     ODataKeyFields = "Provider ID";
     PageType = API;
+    Permissions = tabledata "MobileNAV Master Data" = rm;
     SourceTable = "BJF MN Provider Buffer";
     SourceTableTemporary = true;
 
@@ -99,6 +100,26 @@ page 77790 "BJF MN Config Provider API"
         DiagnosticsRunner: Codeunit "BJF Diagnostics Runner";
     begin
         DiagnosticsRunner.Run(DiagnosticsRunner.ConfigCheckTypes());
+        this.SetResult(ActionContext);
+    end;
+
+    /// <summary>
+    /// Clears Under Construction on MobileNAV General Setup through the field's own validation, the
+    /// same as unticking it on that page: MobileNAV restarts its background job and devices can log on
+    /// again. For an unattended apply whose handover did not finish and left the window open. No
+    /// MobileNAV API exposes the field, and the providers page is not reachable without a client.
+    /// </summary>
+    /// <param name="ActionContext">The web service action context.</param>
+    [ServiceEnabled]
+    procedure closeConstructionWindow(var ActionContext: WebServiceActionContext)
+    var
+        MasterData: Record "MobileNAV Master Data";
+    begin
+        if MasterData.Get(MasterData.Type::General, '', 0, '', MasterData.Area::Normal) then
+            if MasterData."Under Construction" then begin
+                MasterData.Validate("Under Construction", false);
+                MasterData.Modify(true);
+            end;
         this.SetResult(ActionContext);
     end;
 
