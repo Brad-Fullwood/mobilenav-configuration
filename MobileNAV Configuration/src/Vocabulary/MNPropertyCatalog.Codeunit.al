@@ -305,8 +305,15 @@ codeunit 77719 "BJF MN Property Catalog"
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
                 end;
-            Enum::"BJF MN Property"::AllowSkip,
             Enum::"BJF MN Property"::FieldValidationBehavior:
+                begin
+                    // MobileNAV keeps a validation behaviour on plain field rows too (WMS sets Item_No to Scan or Manual Entry to Validate).
+                    Kinds.Add(Enum::"BJF MN Config Operation"::Field);
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
+                    Kinds.Add(Enum::"BJF MN Config Operation"::"Lookup Field");
+                end;
+            Enum::"BJF MN Property"::AllowSkip:
                 begin
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Function Field");
                     Kinds.Add(Enum::"BJF MN Config Operation"::"Scan Field");
