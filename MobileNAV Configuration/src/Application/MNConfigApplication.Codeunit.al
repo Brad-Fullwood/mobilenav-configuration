@@ -64,6 +64,7 @@ codeunit 77784 "BJF MN Config Application"
         this.ConfigurationStatus.RecordApplied(
             ProviderId, ProviderName, ContentHash, not DeviceHandoverCompleted);
         if Unattended and not DeviceHandoverCompleted then begin
+            this.ConfigurationStatus.RecordHandoverError(ProviderId, this.PageManagement.LastHandoverError());
             Commit(); // Keep the pending-handover status the Doctor reports; the error below would roll it back.
             Error(this.HandoverRefusedErr, ProviderId, this.PageManagement.LastHandoverError());
         end;
@@ -1004,7 +1005,7 @@ codeunit 77784 "BJF MN Config Application"
         PreviewMode: Boolean;
         TranslatedLanguageTok: Label '*', Locked = true;
         SubscriberFailedErr: Label 'A subscriber of OnGetTranslatedCaption failed: %1', Comment = '%1 = error text';
-        HandoverRefusedErr: Label 'Provider %1 was applied to MobileNAV''s tables, but MobileNAV refused the device handover: %2 MobileNAV asks a delegated administrator to confirm the handover, which an API call cannot answer; call the API as a licensed user or a Microsoft Entra application.', Comment = '%1 = provider id, %2 = MobileNAV error text';
+        HandoverRefusedErr: Label 'Provider %1 was applied to MobileNAV''s tables, but MobileNAV refused the device handover: %2 The provider stays Not Applied. Run the apply again in a background session (mnconfig.py apply, or applyInBackground), which hands over without the confirmation.', Comment = '%1 = provider id, %2 = MobileNAV error text';
         MenuUnreachableErr: Label 'Page %1 is not declared ShowInMenu(), no Link opens it and no MobileNAV page relates to it, so devices could never reach it. Declare ShowInMenu() or a Link from another page. To give buttons on a MobileNAV page a codeunit of yours, declare PageFunctions() without Publish().', Comment = '%1 = service name';
         PageMissingErr: Label 'Page %1 has not been registered in MobileNAV.', Comment = '%1 = page object id';
         FieldMissingErr: Label 'Control %1 was not found on MobileNAV service %2 after metadata refresh.', Comment = '%1 = control name, %2 = MobileNAV service name';

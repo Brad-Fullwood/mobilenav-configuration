@@ -47,6 +47,10 @@ table 77781 "BJF MN Config Status"
         {
             Caption = 'Content Hash';
         }
+        field(11; "Last Handover Error"; Text[2048])
+        {
+            Caption = 'Last Handover Error';
+        }
     }
 
     keys
@@ -67,6 +71,7 @@ table 77781 "BJF MN Config Status"
         TempProviderBuffer.Validate("Applied Hash", "Content Hash");
         TempProviderBuffer.Validate("Applied At", "Applied At");
         TempProviderBuffer.Validate("Applied By", "Applied By");
+        TempProviderBuffer.Validate("Last Handover Error", "Last Handover Error");
 
         // A pending device handover counts as outdated: the configuration is in the setup
         // tables but has not reached the devices.
@@ -90,8 +95,20 @@ table 77781 "BJF MN Config Status"
         "Applied By" := CopyStr(UserId(), 1, MaxStrLen("Applied By"));
         "Manually Outdated" := false;
         "Device Handover Pending" := DeviceHandoverPending;
+        Clear("Last Handover Error");
         Clear("Outdated At");
         Clear("Outdated By");
+        this.Modify(false);
+    end;
+
+    /// <summary>Keeps the error of a refused device handover, which an apply in a background session has no other way to report.</summary>
+    /// <param name="ProviderId">The provider.</param>
+    /// <param name="ErrorText">The error MobileNAV raised.</param>
+    procedure RecordHandoverError(ProviderId: Code[50]; ErrorText: Text)
+    begin
+        if not this.Get(ProviderId) then
+            exit;
+        "Last Handover Error" := CopyStr(ErrorText, 1, MaxStrLen("Last Handover Error"));
         this.Modify(false);
     end;
 

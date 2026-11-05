@@ -144,6 +144,7 @@ permissionset 77780 "BJF MN Configuration"
         page "BJF MN Device API" = X,
         page "BJF MN Device Emulator" = X,
         page "BJF MN Device Preview" = X,
+        page "BJF MN Device User API" = X,
         page "BJF MN Diagnostic Finding API" = X,
         page "BJF MN Doctor" = X,
         page "BJF MN Doctor Checks" = X,

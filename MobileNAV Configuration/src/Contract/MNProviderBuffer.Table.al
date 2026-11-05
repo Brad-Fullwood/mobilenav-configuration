@@ -64,6 +64,12 @@ table 77782 "BJF MN Provider Buffer"
             Caption = 'Applied By';
             ToolTip = 'Specifies who last applied the provider.';
         }
+        field(11; "Last Handover Error"; Text[2048])
+        {
+            Caption = 'Last Handover Error';
+            AllowInCustomizations = AsReadOnly;
+            ToolTip = 'Specifies the error MobileNAV raised when the last device handover failed. It is empty when the handover ran.';
+        }
     }
 
     keys

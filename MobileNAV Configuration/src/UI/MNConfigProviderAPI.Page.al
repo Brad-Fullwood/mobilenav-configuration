@@ -40,6 +40,7 @@ page 77790 "BJF MN Config Provider API"
                 field(appliedPreviously; Rec."Applied Previously") { }
                 field(appliedAt; Rec."Applied At") { }
                 field(appliedBy; Rec."Applied By") { }
+                field(lastHandoverError; Rec."Last Handover Error") { }
                 field(definedHash; Rec."Defined Hash") { }
                 field(appliedHash; Rec."Applied Hash") { }
             }

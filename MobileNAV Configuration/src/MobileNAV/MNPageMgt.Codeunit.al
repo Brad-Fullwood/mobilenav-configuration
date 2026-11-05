@@ -11,7 +11,10 @@ codeunit 77788 "BJF MN Page Mgt."
 {
     Access = Internal;
     Permissions = tabledata "MobileNAV Master Data" = rm,
-        tabledata "MobileNAV Service Setup" = im,
+        tabledata "MobileNAV Offline Admin." = d,
+        tabledata "MobileNAV Offline Admin. D." = d,
+        tabledata "MobileNAV Service Setup" = rim,
+        tabledata "MobileNAV User Setup" = r,
         tabledata "Tenant Web Service" = rim;
 
     /// <summary>Publishes declared endpoints without refreshing metadata. The caller must commit before WSDL reads.</summary>
@@ -311,7 +314,7 @@ codeunit 77788 "BJF MN Page Mgt."
         Commit(); // Codeunit.Run with a return value needs a committed transaction; the applied rows are kept if the handover is refused.
         if Codeunit.Run(Codeunit::"BJF MN Device Handover") then
             exit(true);
-        this.HandoverError := GetLastErrorText();
+        this.HandoverError := GetLastErrorText() + ' Call stack: ' + GetLastErrorCallStack();
         this.SetConstructionWindow(false);
         exit(false);
     end;
@@ -327,11 +330,66 @@ codeunit 77788 "BJF MN Page Mgt."
     begin
         this.OfflineFunctions.StopBackgroundJQ();
         this.OfflineFunctions.StopByTriggerJQ();
+        if not GuiAllowed() and this.PlatformSpecific.IsUserDelegatedAdmin() then begin
+            this.HandOverAsDelegatedAdmin();
+            exit;
+        end;
         this.CoreFunctions.SetPageHierarchyChanged();
         this.CoreFunctions.SetEnforcedMajorConfigChanged();
         this.CoreFunctions.RunPostConfigurationProcess();
         this.OfflineFunctions.StartBackgroundJQ();
         this.OfflineFunctions.StartByTriggerJQ();
+        this.SetConstructionWindow(false);
+    end;
+
+    /// <summary>
+    /// The handover for a delegated administrator calling the API. MobileNAV's own route,
+    /// RunPostConfigurationProcess, reaches DoEnforcedMajorConfigChange, which asks a delegated
+    /// administrator to confirm that its job queues will not be restarted. A web service session
+    /// cannot answer that dialog, so this runs the same steps in the same order (Core Functions
+    /// 12.0.0.48: RunPostConfigurationProcess and DoEnforcedMajorConfigChange) without the dialog.
+    /// That is what answering Yes in the web client does. As there, the background refresh and
+    /// trigger subscription job queue entries stay On Hold: set Ready by a delegated
+    /// administrator they would not run. RebuildProfileHierarchy is left out: it round-trips the
+    /// profiles through MobileNAV's XML import, whose InitializeImport asks the same question.
+    /// The apply writes the profile Page, Root Page and Parent Page rows itself (BJF MN Profile
+    /// Mgt.), which is the hierarchy that rebuild would produce.
+    /// </summary>
+    local procedure HandOverAsDelegatedAdmin()
+    var
+        UserSetup: Record "MobileNAV User Setup";
+        OfflineAdmin: Record "MobileNAV Offline Admin.";
+        OfflineAdminDetail: Record "MobileNAV Offline Admin. D.";
+        ServiceSetup: Record "MobileNAV Service Setup";
+    begin
+        UserSetup.SetLoadFields("User ID");
+        if UserSetup.FindSet() then
+            repeat
+                this.CoreFunctions.DoEnforcedMajorConfigChangePerUser(UserSetup."User ID");
+            until UserSetup.Next() = 0;
+        OfflineAdmin.DeleteAll(false);
+        OfflineAdminDetail.DeleteAll(false);
+        // MobileNAV revalidates each page's Check Type here (ValidateCheckType). It does not save the
+        // row, so the step's lasting effect is the trigger handled head of a By Trigger page, created
+        // directly. ValidateCheckType itself fails in a background session: it calls UnderConstruction,
+        // which runs a report there.
+        ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
+        ServiceSetup.SetRange("Check Type", ServiceSetup."Check Type"::"By Trigger");
+        ServiceSetup.SetLoadFields("Service Name");
+        if ServiceSetup.FindSet() then
+            repeat
+                this.OfflineFunctions.CreateTriggerHandledHead(ServiceSetup."Service Name");
+            until ServiceSetup.Next() = 0;
+        Codeunit.Run(Codeunit::"MobileNAV RecordID Functions");
+        // An empty filter refreshes every trigger handled page, which covers the pages flagged
+        // "Refresh ByTrigger Records" that RunPostConfigurationProcess refreshes one by one.
+        this.OfflineFunctions.RefreshTriggerHandledPages('');
+        ServiceSetup.Reset();
+        ServiceSetup.SetLoadFields("Refresh ByTrigger Records");
+        ServiceSetup.SetRange("Line Type", ServiceSetup."Line Type"::Main);
+        ServiceSetup.SetRange("Refresh ByTrigger Records", true);
+        ServiceSetup.ModifyAll("Refresh ByTrigger Records", false, false);
+        this.CoreFunctions.RebuildJsForAllPages();
         this.SetConstructionWindow(false);
     end;
 
@@ -475,6 +533,7 @@ codeunit 77788 "BJF MN Page Mgt."
         MetadataProcessing: Codeunit "MobileNAV Metadata Processing";
         CoreFunctions: Codeunit "MobileNAV Core Functions";
         OfflineFunctions: Codeunit "MobileNAV Offline Functions";
+        PlatformSpecific: Codeunit "MobileNAV Platform Specific";
         PreviewRecorder: Codeunit "BJF MN Preview Recorder";
         HandoverError: Text;
         CodeunitTok: Label 'Codeunit', Locked = true;
