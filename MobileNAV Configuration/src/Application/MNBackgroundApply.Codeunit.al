@@ -31,10 +31,14 @@ codeunit 77834 "BJF MN Background Apply"
     /// <returns>The id of the job queue entry.</returns>
     procedure Schedule(ProviderId: Code[50]): Guid
     var
+        ConfigurationStatus: Record "BJF MN Config Status";
         JobQueueEntry: Record "Job Queue Entry";
         PlatformSpecific: Codeunit "MobileNAV Platform Specific";
         EmptyRecordId: RecordId;
     begin
+        // A new attempt starts without the last error, so a caller polling for it sees a repeat of the same error.
+        ConfigurationStatus.RecordHandoverError(ProviderId, '');
+        Commit(); // The background session writes the same status row, so release it before that session starts.
         if PlatformSpecific.IsUserDelegatedAdmin() then begin
             this.StartBackgroundSession(ProviderId);
             exit(JobQueueEntry.ID);
