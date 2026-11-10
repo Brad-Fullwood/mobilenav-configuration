@@ -3,6 +3,7 @@
 .alcache/
 build/
 *.app
+*.app.zip
 
 ## Local launch and RAD settings (any app folder)
 **/.vscode/launch.json
