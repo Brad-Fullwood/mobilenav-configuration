@@ -143,9 +143,22 @@ codeunit 77702 "BJF Check Config Groups" implements "BJF Diagnostic Check"
         AnchorRow.SetLoadFields(Order);
         if not AnchorRow.Get(ServiceName, AnchorRow."Line Type"::Field, AnchorPageLineNo, 0, 0) then
             Error(this.FieldRowGoneErr, AnchorPageLineNo, ServiceName);
-        if GroupRow.Order <> AnchorRow.Order then
+        if not this.IsOrderNextToAnchor(GroupRow.Order, AnchorRow.Order, Offset) then
             exit(StrSubstNo(this.MarkerOrderLbl, GroupCode));
         exit('');
+    end;
+
+    /// <summary>
+    /// InsertGroupRow gives a marker its anchor's Order, and the dense Renumber after it moves the
+    /// marker one place before (start) or after (end) the anchor. Both keep the marker next to it.
+    /// </summary>
+    /// <param name="MarkerOrder">The Order of the group marker row.</param>
+    /// <param name="AnchorOrder">The Order of the member the marker wraps.</param>
+    /// <param name="Offset">-1 for a start marker, 1 for an end marker.</param>
+    /// <returns>True when the marker sorts next to its anchor.</returns>
+    local procedure IsOrderNextToAnchor(MarkerOrder: Integer; AnchorOrder: Integer; Offset: Integer): Boolean
+    begin
+        exit((MarkerOrder = AnchorOrder) or (MarkerOrder = AnchorOrder + Offset));
     end;
 
     local procedure ContiguityProblem(ServiceName: Text[100]; GroupCode: Code[20]; Members: List of [Integer]): Text
